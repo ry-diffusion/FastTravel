@@ -390,6 +390,11 @@ class GameService extends EventEmitter implements GamesAPI {
               '--progress'
             ]
 
+            const mirrorApiKey = process.env.VRSRC_API_KEY
+            if (mirrorApiKey) {
+              rcloneArgs.push('--header', `X-API-Key: ${mirrorApiKey}`)
+            }
+
             // Execute rclone using execa with progress reporting
             const rcloneProcess = execa(rclonePath, rcloneArgs, {
               stdio: ['ignore', 'pipe', 'pipe']
@@ -464,27 +469,30 @@ class GameService extends EventEmitter implements GamesAPI {
       // `copy <file_source> <dir_dest>` drops the file into the dir. Used here
       // (not `sync` or `copyto`) because the rclone HTTP backend with our flag
       // set was misclassifying source type, and `copy` is unambiguous.
-      const rcloneProcess = execa(
-        rclonePath,
-        [
-          'copy',
-          `:http:/meta.7z`,
-          dirname(destination),
-          '--config',
-          nullConfigPath,
-          '--http-url',
-          baseUri,
-          '--tpslimit',
-          '1.0',
-          '--tpslimit-burst',
-          '3',
-          '--no-check-certificate',
-          '--progress'
-        ],
-        {
-          stdio: ['ignore', 'pipe', 'pipe']
-        }
-      )
+      const publicArgs = [
+        'copy',
+        `:http:/meta.7z`,
+        dirname(destination),
+        '--config',
+        nullConfigPath,
+        '--http-url',
+        baseUri,
+        '--tpslimit',
+        '1.0',
+        '--tpslimit-burst',
+        '3',
+        '--no-check-certificate',
+        '--progress'
+      ]
+
+      const publicApiKey = process.env.VRSRC_API_KEY
+      if (publicApiKey) {
+        publicArgs.push('--header', `X-API-Key: ${publicApiKey}`)
+      }
+
+      const rcloneProcess = execa(rclonePath, publicArgs, {
+        stdio: ['ignore', 'pipe', 'pipe']
+      })
 
       // Process stdout for progress information
       if (rcloneProcess.stdout) {
