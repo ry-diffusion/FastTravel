@@ -338,7 +338,10 @@ export class DownloadProcessor {
         copyArgs.push('--bwlimit', `${downloadSpeedLimit}k`)
       }
 
-      console.log(`[DownProc] Running: rclone ${copyArgs.join(' ')}`)
+      const safeArgs = copyArgs.map((arg, i) =>
+        copyArgs[i - 1] === '--header' && arg.startsWith('X-API-Key:') ? 'X-API-Key:[REDACTED]' : arg
+      )
+      console.log(`[DownProc] Running: rclone ${safeArgs.join(' ')}`)
 
       const rcloneProcess = execa(rclonePath, copyArgs, {
         all: true,
