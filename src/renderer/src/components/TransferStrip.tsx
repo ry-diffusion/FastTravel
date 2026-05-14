@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Chip, Progress } from '@heroui/react'
+import { ArrowDownToLine, ArrowUpToLine } from 'lucide-react'
 import { useDownload } from '../hooks/useDownload'
 import { useUpload } from '@renderer/hooks/useUpload'
 import { DownloadItem, UploadItem } from '@shared/types'
-import { ArrowDownloadRegular, ArrowUploadRegular } from '@fluentui/react-icons'
 
 type Entry = {
   key: string
@@ -42,10 +42,9 @@ const uploadStageLabel = (item: UploadItem): string => {
 }
 
 /**
- * Compact Meta-style transfer status strip. Shows nothing when idle; when one
- * or more transfers are active, shows a single Chip row with direction icon,
- * name, stage, a thin Progress bar, and optional speed / ETA. Multiple
- * transfers rotate through every 4 s.
+ * Compact transfer status strip. Returns null when idle. When one or more
+ * transfers are active shows a single row with direction chip, name, stage,
+ * thin progress bar, and optional speed/ETA. Rotates through items every 4 s.
  */
 const TransferStrip: React.FC = () => {
   const { queue: downloadQueue } = useDownload()
@@ -56,7 +55,7 @@ const TransferStrip: React.FC = () => {
       .filter((d) => ['Queued', 'Downloading', 'Extracting', 'Installing'].includes(d.status))
       .map((d) => ({
         key: `d:${d.releaseName}`,
-        direction: 'down',
+        direction: 'down' as const,
         name: d.gameName,
         stage: downloadStageLabel(d.status),
         progress:
@@ -72,7 +71,7 @@ const TransferStrip: React.FC = () => {
       .filter((u) => ['Queued', 'Preparing', 'Uploading'].includes(u.status))
       .map((u) => ({
         key: `u:${u.packageName}`,
-        direction: 'up',
+        direction: 'up' as const,
         name: u.gameName,
         stage: uploadStageLabel(u),
         progress: typeof u.progress === 'number' ? u.progress : null
@@ -98,7 +97,6 @@ const TransferStrip: React.FC = () => {
   }, [entries.length, index])
 
   if (entries.length === 0) {
-    // Collapse entirely when idle — no decorative placeholder.
     return null
   }
 
@@ -108,7 +106,7 @@ const TransferStrip: React.FC = () => {
   const hasProgress = progressPct !== null
 
   return (
-    <div className="flex items-center gap-3 w-full min-w-0 py-1.5 px-1">
+    <div className="flex items-center gap-3 px-4 py-2 border-b border-divider bg-content1 min-w-0">
       {/* Direction chip */}
       <Chip
         size="sm"
@@ -116,9 +114,9 @@ const TransferStrip: React.FC = () => {
         color="primary"
         startContent={
           e.direction === 'down' ? (
-            <ArrowDownloadRegular fontSize={12} />
+            <ArrowDownToLine size={12} />
           ) : (
-            <ArrowUploadRegular fontSize={12} />
+            <ArrowUpToLine size={12} />
           )
         }
         className="shrink-0"
@@ -128,14 +126,14 @@ const TransferStrip: React.FC = () => {
 
       {/* Game name */}
       <span
-        className="text-small font-medium text-foreground truncate shrink min-w-0 max-w-[36%]"
+        className="text-sm font-medium text-foreground truncate shrink min-w-0 max-w-[36%]"
         title={e.name}
       >
         {e.name}
       </span>
 
       {/* Stage */}
-      <span className="text-small text-default-500 shrink-0">{e.stage}</span>
+      <span className="text-xs text-default-500 shrink-0">{e.stage}</span>
 
       {/* Progress bar + percentage */}
       {hasProgress && (
@@ -151,7 +149,7 @@ const TransferStrip: React.FC = () => {
               indicator: 'transition-[width] duration-300 ease-linear'
             }}
           />
-          <span className="text-small text-default-600 shrink-0 min-w-[38px] text-right tabular-nums">
+          <span className="text-sm text-default-500 shrink-0 min-w-[38px] text-right tabular-nums">
             {(progressPct ?? 0).toFixed(0)}%
           </span>
         </>
@@ -159,17 +157,17 @@ const TransferStrip: React.FC = () => {
 
       {/* Speed */}
       {e.speed && (
-        <span className="text-small text-default-500 shrink-0">{e.speed}</span>
+        <span className="text-xs text-default-500 shrink-0">{e.speed}</span>
       )}
 
       {/* ETA */}
       {e.eta && (
-        <span className="text-small text-default-400 shrink-0">ETA {e.eta}</span>
+        <span className="text-xs text-default-400 shrink-0">ETA {e.eta}</span>
       )}
 
       {/* Rotation indicator */}
       {entries.length > 1 && (
-        <span className="text-tiny text-default-400 shrink-0 ml-auto">
+        <span className="text-xs text-default-400 shrink-0 ml-auto">
           {safeIndex + 1}/{entries.length}
         </span>
       )}

@@ -1,14 +1,14 @@
 import React from 'react'
-import {
-  HeadsetVrRegular,
-  LibraryRegular,
-  ArrowDownloadRegular,
-  SettingsRegular,
-  QuestionCircleRegular,
-  WeatherMoonRegular,
-  WeatherSunnyRegular
-} from '@fluentui/react-icons'
 import { Avatar, Chip, Divider, Switch, Tooltip } from '@heroui/react'
+import {
+  Headphones,
+  LibraryBig,
+  ArrowDownToLine,
+  Settings,
+  HelpCircle,
+  Moon,
+  Sun
+} from 'lucide-react'
 import { useAdb } from '../hooks/useAdb'
 import { useGames } from '../hooks/useGames'
 import { useSettings } from '../hooks/useSettings'
@@ -38,11 +38,11 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, active, onClick, badge }
     onClick={onClick}
     type="button"
     className={[
-      'flex items-center gap-3 w-full px-3 py-2 rounded-large text-small font-medium',
+      'flex items-center gap-3 w-full px-3 py-2 rounded-medium text-sm font-medium',
       'transition-colors duration-100 cursor-pointer border-none outline-none',
       active
         ? 'bg-primary/15 text-primary'
-        : 'bg-transparent text-default-500 hover:bg-content3 hover:text-foreground'
+        : 'bg-transparent text-default-500 hover:bg-content2 hover:text-foreground'
     ].join(' ')}
     aria-current={active ? 'page' : undefined}
   >
@@ -57,7 +57,7 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, active, onClick, badge }
     </span>
     <span className="flex-1 min-w-0 text-left truncate">{label}</span>
     {badge != null && badge > 0 && (
-      <Chip size="sm" color="primary" variant="solid" className="h-4 min-w-4 px-1 text-tiny">
+      <Chip size="sm" color="primary" variant="solid" className="h-4 min-w-4 px-1 text-xs">
         {badge > 99 ? '99+' : badge}
       </Chip>
     )}
@@ -78,14 +78,14 @@ const StatusRow: React.FC<StatusRowProps> = ({ label, value, variant = 'default'
       : variant === 'warn'
         ? 'text-warning'
         : variant === 'dim'
-          ? 'text-default-400'
-          : 'text-default-600'
+          ? 'text-default-500'
+          : 'text-foreground'
 
   return (
     <div className="flex justify-between items-baseline gap-2">
-      <span className="text-tiny text-default-400 font-medium shrink-0">{label}</span>
+      <span className="text-xs text-default-500 font-medium shrink-0">{label}</span>
       <span
-        className={`text-tiny font-medium truncate max-w-[136px] ${valueClass}`}
+        className={`text-xs font-medium truncate max-w-[136px] ${valueClass}`}
         title={title}
       >
         {value}
@@ -94,7 +94,6 @@ const StatusRow: React.FC<StatusRowProps> = ({ label, value, variant = 'default'
   )
 }
 
-// Meta Business-Manager / Horizon OS-style sidebar.
 const Sidebar: React.FC<SidebarProps> = ({
   currentView,
   onSelectView,
@@ -136,23 +135,23 @@ const Sidebar: React.FC<SidebarProps> = ({
           alt="Fast Travel"
         />
         <div className="flex flex-col min-w-0">
-          <span className="text-small font-bold text-foreground leading-tight tracking-tight">
+          <span className="text-sm font-bold text-foreground leading-tight tracking-tight">
             Fast Travel
           </span>
-          <span className="text-tiny text-default-400 leading-tight">Sideload manager</span>
+          <span className="text-xs text-default-500 leading-tight">Sideload manager</span>
         </div>
       </div>
 
       {/* Primary nav */}
       <nav className="flex flex-col gap-0.5">
         <NavItem
-          icon={<HeadsetVrRegular fontSize={18} />}
+          icon={<Headphones size={18} />}
           label="Devices"
           active={currentView === 'devices'}
           onClick={() => onSelectView('devices')}
         />
         <NavItem
-          icon={<LibraryRegular fontSize={18} />}
+          icon={<LibraryBig size={18} />}
           label="Library"
           active={currentView === 'library'}
           onClick={() => onSelectView('library')}
@@ -164,14 +163,14 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Secondary nav */}
       <nav className="flex flex-col gap-0.5">
         <NavItem
-          icon={<ArrowDownloadRegular fontSize={18} />}
+          icon={<ArrowDownToLine size={18} />}
           label="Transfers"
           active={currentView === 'transfers'}
           onClick={() => onSelectView('transfers')}
           badge={activeTransfers || undefined}
         />
         <NavItem
-          icon={<SettingsRegular fontSize={18} />}
+          icon={<Settings size={18} />}
           label="Settings"
           active={currentView === 'settings'}
           onClick={() => onSelectView('settings')}
@@ -181,7 +180,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Footer — push to bottom */}
       <div className="mt-auto flex flex-col gap-2 pt-3 border-t border-divider">
         {/* Status rows */}
-        <div className="flex flex-col gap-1 px-2 py-1">
+        <dl className="flex flex-col gap-1 px-2 py-1">
           <StatusRow
             label="Server"
             value={hasServer ? 'Online' : 'Offline'}
@@ -197,11 +196,11 @@ const Sidebar: React.FC<SidebarProps> = ({
             label="Library"
             value={totalGames ? `${totalGames.toLocaleString()} games` : '—'}
           />
-        </div>
+        </dl>
 
         {/* Theme toggle */}
         <div className="flex items-center justify-between px-2 py-1">
-          <span className="text-tiny text-default-500 font-medium">
+          <span className="text-xs text-default-500 font-medium">
             {isDark ? 'Dark mode' : 'Light mode'}
           </span>
           <Switch
@@ -209,8 +208,8 @@ const Sidebar: React.FC<SidebarProps> = ({
             color="primary"
             isSelected={isDark}
             onValueChange={(val) => setColorScheme(val ? 'dark' : 'light')}
-            startContent={<WeatherMoonRegular fontSize={12} />}
-            endContent={<WeatherSunnyRegular fontSize={12} />}
+            startContent={<Moon size={12} />}
+            endContent={<Sun size={12} />}
             classNames={{
               wrapper: 'bg-default-200 group-data-[selected=true]:bg-primary'
             }}
@@ -220,7 +219,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Version + credits */}
         <div className="flex items-center justify-between px-2 pb-1 gap-2">
-          <span className="text-tiny text-default-400">
+          <span className="text-xs text-default-500">
             v{appVersion || '—'} · Made with ♥ by DMP
           </span>
           <Tooltip content="Credits" placement="top" size="sm">
@@ -228,9 +227,9 @@ const Sidebar: React.FC<SidebarProps> = ({
               type="button"
               onClick={onOpenCredits}
               aria-label="Credits"
-              className="inline-flex items-center justify-center w-5 h-5 rounded-full text-default-400 hover:text-default-600 hover:bg-content3 transition-colors duration-100 border-none bg-transparent cursor-pointer"
+              className="inline-flex items-center justify-center w-6 h-6 rounded-full text-default-500 hover:text-default-700 hover:bg-content2 transition-colors duration-100 border-none bg-transparent cursor-pointer"
             >
-              <QuestionCircleRegular fontSize={14} />
+              <HelpCircle size={14} />
             </button>
           </Tooltip>
         </div>

@@ -1,29 +1,29 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { Button, Card, CardBody, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/react'
+import { FluentProvider, teamsDarkTheme, teamsLightTheme } from '@fluentui/react-components'
 import { AdbProvider } from '../context/AdbProvider'
 import { GamesProvider } from '../context/GamesProvider'
-import DeviceList from './DeviceList'
-import GamesView from './GamesView'
-import Settings from './Settings'
-import { UpdateNotification } from './UpdateNotification'
-import UploadGamesDialog from './UploadGamesDialog'
-import { Button } from '@heroui/react'
-import { FluentProvider, teamsDarkTheme, teamsLightTheme } from '@fluentui/react-components'
-import QuestLoader from './QuestLoader'
-import Sidebar, { SidebarView } from './Sidebar'
-import TransfersPage from './TransfersPage'
-import { useDependency } from '../hooks/useDependency'
+import { GameDialogProvider } from '@renderer/context/GameDialogProvider'
 import { DependencyProvider } from '../context/DependencyProvider'
 import { DownloadProvider } from '../context/DownloadProvider'
 import { SettingsProvider } from '../context/SettingsProvider'
-import { useDownload } from '../hooks/useDownload'
 import { UploadProvider } from '@renderer/context/UploadProvider'
-import { useUpload } from '@renderer/hooks/useUpload'
-import { GameDialogProvider } from '@renderer/context/GameDialogProvider'
-import { useSettings } from '@renderer/hooks/useSettings'
 import { LanguageProvider } from '@renderer/context/LanguageProvider'
-import CreditsDialog from './CreditsDialog'
-import TransferStrip from './TransferStrip'
+import { useSettings } from '@renderer/hooks/useSettings'
+import { useDownload } from '../hooks/useDownload'
+import { useUpload } from '@renderer/hooks/useUpload'
+import { useDependency } from '../hooks/useDependency'
 import { ErrorBoundary } from './ErrorBoundary'
+import { UpdateNotification } from './UpdateNotification'
+import CreditsDialog from './CreditsDialog'
+import UploadGamesDialog from './UploadGamesDialog'
+import Sidebar, { SidebarView } from './Sidebar'
+import TransferStrip from './TransferStrip'
+import QuestLoader from './QuestLoader'
+import DeviceList from './DeviceList'
+import GamesView from './GamesView'
+import TransfersPage from './TransfersPage'
+import Settings from './Settings'
 import { playSound } from '../hooks/useSoundEffects'
 import '../assets/credits-dialog.css'
 
@@ -85,36 +85,40 @@ const MainContent: React.FC<MainContentProps> = ({
 
         return (
           <div className="flex-1 flex flex-col items-center justify-center gap-4 p-8 text-center">
-            <p className="text-medium font-semibold text-danger">Network Connectivity Issues</p>
-            <p className="text-small text-default-500">Cannot reach the following services:</p>
-            <ul className="text-left mt-2 flex flex-col gap-1">
-              {failedUrls.map((url, i) => (
-                <li key={i} className="text-tiny font-mono text-default-600">
-                  {url}
-                </li>
-              ))}
-            </ul>
-            <p className="text-small text-default-500 mt-2">
-              This is likely due to DNS or firewall restrictions. Please try:
-            </p>
-            <ol className="text-left flex flex-col gap-1 mt-1">
-              <li className="text-small text-default-600">
-                Change your DNS to Cloudflare (1.1.1.1) or Google (8.8.8.8)
-              </li>
-              <li className="text-small text-default-600">Use a VPN like ProtonVPN or 1.1.1.1 VPN</li>
-              <li className="text-small text-default-600">Check your router/firewall settings</li>
-            </ol>
-            <p className="text-small text-default-500 mt-2">
-              For detailed troubleshooting, see:{' '}
-              <a
-                href="https://github.com/jimzrt/apprenticeVr#troubleshooting-guide"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary underline"
-              >
-                Troubleshooting Guide
-              </a>
-            </p>
+            <Card className="bg-danger/10 border border-danger/30 max-w-md w-full">
+              <CardBody className="gap-3">
+                <p className="text-sm font-semibold text-danger">Network connectivity issues</p>
+                <p className="text-xs text-default-500">Cannot reach the following services:</p>
+                <ul className="text-left flex flex-col gap-1">
+                  {failedUrls.map((url, i) => (
+                    <li key={i} className="text-xs font-mono text-default-500">
+                      {url}
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-xs text-default-500">
+                  This is likely due to DNS or firewall restrictions. Please try:
+                </p>
+                <ol className="text-left flex flex-col gap-1">
+                  <li className="text-xs text-default-500">
+                    Change your DNS to Cloudflare (1.1.1.1) or Google (8.8.8.8)
+                  </li>
+                  <li className="text-xs text-default-500">Use a VPN like ProtonVPN or 1.1.1.1 VPN</li>
+                  <li className="text-xs text-default-500">Check your router/firewall settings</li>
+                </ol>
+                <p className="text-xs text-default-500">
+                  For detailed troubleshooting, see:{' '}
+                  <a
+                    href="https://github.com/jimzrt/apprenticeVr#troubleshooting-guide"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline"
+                  >
+                    Troubleshooting guide
+                  </a>
+                </p>
+              </CardBody>
+            </Card>
           </div>
         )
       }
@@ -127,11 +131,15 @@ const MainContent: React.FC<MainContentProps> = ({
       const failedDeps = errorDetails.length > 0 ? ` (${errorDetails.join(', ')})` : ''
 
       return (
-        <div className="flex-1 flex flex-col items-center justify-center gap-3">
-          <p className="text-medium font-semibold text-danger">
-            Dependency Error{failedDeps}
-          </p>
-          <p className="text-small text-default-500">{dependencyError}</p>
+        <div className="flex-1 flex flex-col items-center justify-center gap-3 p-8">
+          <Card className="bg-danger/10 border border-danger/30 max-w-md w-full">
+            <CardBody className="gap-2">
+              <p className="text-sm font-semibold text-danger">
+                Dependency error{failedDeps}
+              </p>
+              <p className="text-xs text-default-500">{dependencyError}</p>
+            </CardBody>
+          </Card>
         </div>
       )
     }
@@ -174,7 +182,7 @@ const MainContent: React.FC<MainContentProps> = ({
     }
 
     return (
-      <div className="flex-1 flex flex-col items-center justify-center">
+      <div className="flex-1 flex flex-col items-center justify-center p-8">
         <QuestLoader title={title} subtitle={subtitle} progress={progress} />
       </div>
     )
@@ -258,16 +266,10 @@ const AppLayout: React.FC = () => {
     return () => mq.removeEventListener('change', handleChange)
   }, [setColorScheme])
 
-  // Keep the document class in sync with the setting
+  // Keep the document class in sync with the setting; preserve .quest class
   useEffect(() => {
-    const root = document.documentElement
-    if (colorScheme === 'light') {
-      root.classList.remove('dark')
-      root.classList.add('light')
-    } else {
-      root.classList.remove('light')
-      root.classList.add('dark')
-    }
+    document.documentElement.classList.toggle('dark', colorScheme === 'dark')
+    document.documentElement.classList.toggle('light', colorScheme === 'light')
   }, [colorScheme])
 
   const currentTheme = colorScheme === 'dark' ? teamsDarkTheme : teamsLightTheme
@@ -278,7 +280,7 @@ const AppLayout: React.FC = () => {
         <GamesProvider>
           <GameDialogProvider>
             {/* App shell */}
-            <div className="flex flex-row h-screen overflow-hidden bg-background text-foreground">
+            <div className="flex h-screen w-screen bg-background text-foreground overflow-hidden">
               <Sidebar
                 currentView={
                   currentView === AppView.DEVICE_LIST
@@ -305,11 +307,9 @@ const AppLayout: React.FC = () => {
               />
 
               {/* Main column */}
-              <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
-                {/* Transfer strip — collapses to nothing when idle */}
-                <div className="shrink-0 px-5 overflow-hidden">
-                  <TransferStrip />
-                </div>
+              <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
+                {/* Transfer strip — collapses to null when idle */}
+                <TransferStrip />
 
                 {/* Routed page */}
                 <div
@@ -325,49 +325,10 @@ const AppLayout: React.FC = () => {
                     onSettings={() => setCurrentView(AppView.SETTINGS)}
                   />
                 </div>
-              </div>
+              </main>
 
               {/* Update notification — manages its own visibility */}
               <UpdateNotification />
-
-              {/* Close confirmation when transfers are still in progress */}
-              {isCloseConfirmOpen && (
-                <div
-                  className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/60 backdrop-blur-sm"
-                  onClick={(e) => {
-                    if (e.target === e.currentTarget) setIsCloseConfirmOpen(false)
-                  }}
-                >
-                  <div className="w-[min(440px,90vw)] bg-content1 border border-divider rounded-large p-6 flex flex-col gap-3 shadow-2xl">
-                    <h2 className="m-0 text-large font-semibold text-foreground tracking-tight">
-                      Transfers still in progress
-                    </h2>
-                    <p className="m-0 text-small text-default-500 leading-relaxed">
-                      Closing now will stop any active downloads, uploads, and installs.
-                      You can resume them later from the Transfers page.
-                    </p>
-                    <div className="flex gap-2 justify-end mt-2">
-                      <Button
-                        variant="bordered"
-                        size="sm"
-                        onPress={() => setIsCloseConfirmOpen(false)}
-                      >
-                        Stay
-                      </Button>
-                      <Button
-                        color="primary"
-                        size="sm"
-                        onPress={() => {
-                          setIsCloseConfirmOpen(false)
-                          window.api.app.confirmClose()
-                        }}
-                      >
-                        Quit anyway
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Portal mount node — pointer-events passthrough */}
@@ -385,6 +346,45 @@ const AppLayout: React.FC = () => {
             >
               <div ref={mountNodeRef} id="portal" style={{ pointerEvents: 'auto' }} />
             </div>
+
+            {/* Close confirmation modal */}
+            <Modal
+              isOpen={isCloseConfirmOpen}
+              onClose={() => setIsCloseConfirmOpen(false)}
+              backdrop="blur"
+              size="sm"
+            >
+              <ModalContent>
+                {(onClose) => (
+                  <>
+                    <ModalHeader className="text-base font-semibold">
+                      Transfers still in progress
+                    </ModalHeader>
+                    <ModalBody>
+                      <p className="text-sm text-default-500 leading-relaxed">
+                        Closing now will stop any active downloads, uploads, and installs.
+                        You can resume them later from the Transfers page.
+                      </p>
+                    </ModalBody>
+                    <ModalFooter className="gap-2">
+                      <Button variant="bordered" size="sm" onPress={onClose}>
+                        Stay
+                      </Button>
+                      <Button
+                        color="primary"
+                        size="sm"
+                        onPress={() => {
+                          onClose()
+                          window.api.app.confirmClose()
+                        }}
+                      >
+                        Quit anyway
+                      </Button>
+                    </ModalFooter>
+                  </>
+                )}
+              </ModalContent>
+            </Modal>
           </GameDialogProvider>
         </GamesProvider>
       </AdbProvider>
