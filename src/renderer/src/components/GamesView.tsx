@@ -93,6 +93,20 @@ const FIXED_COLUMNS_WIDTH =
   COLUMN_WIDTHS.LAST_UPDATED
 
 type FilterType = 'all' | 'installed' | 'update'
+type CategoryFilter = 'all' | 'adult' | 'non-adult'
+
+const CATEGORY_FILTER_KEY = 'vrcyberdeck:categoryFilter'
+
+const isAdultGame = (name: string | undefined): boolean =>
+  String(name ?? '').includes('18+')
+
+const readCategoryFilter = (): CategoryFilter => {
+  try {
+    const v = localStorage.getItem(CATEGORY_FILTER_KEY)
+    if (v === 'all' || v === 'adult' || v === 'non-adult') return v
+  } catch { /* ignore */ }
+  return 'all'
+}
 
 // Parse "1.2 GB" / "500 MB" / "100 KB" to bytes for numeric sort
 const parseSizeBytes = (s: string): number => {
@@ -508,6 +522,11 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
   )
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [activeFilter, setActiveFilter] = useState<FilterType>('all')
+  const [categoryFilter, setCategoryFilterState] = useState<CategoryFilter>(() => readCategoryFilter())
+  const setCategoryFilter = useCallback((v: CategoryFilter) => {
+    setCategoryFilterState(v)
+    try { localStorage.setItem(CATEGORY_FILTER_KEY, v) } catch { /* ignore */ }
+  }, [])
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [dialogGame, setDialogGame] = useGameDialog()
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false)
@@ -912,10 +931,15 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
     return games.filter((game) => {
       const size = String(game.size ?? '').trim()
       if (size === '0 MB' || size === '') return false
-      if (hideAdult && String(game.name ?? '').includes('18+')) return false
+      const adult = isAdultGame(game.name)
+      // Category filter (next to Sort). 'all' bypasses; explicit picks win even
+      // if the global Hide-Adult setting would otherwise hide the entry.
+      if (categoryFilter === 'adult' && !adult) return false
+      if (categoryFilter === 'non-adult' && adult) return false
+      if (categoryFilter === 'all' && hideAdult && adult) return false
       return true
     })
-  }, [games])
+  }, [games, categoryFilter])
 
   const table = useReactTable({
     data: filteredGames,
@@ -1667,6 +1691,26 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
                 {t('filterUpdates')} ({counts.updates})
               </button>
             </div>
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value as CategoryFilter)}
+              title="Filter games by category"
+              style={{
+                background: '#050514',
+                color: 'var(--vrcd-neon)',
+                border: '1px solid rgba(var(--vrcd-neon-raw),0.35)',
+                borderRadius: 6,
+                padding: '3px 8px',
+                fontFamily: 'monospace',
+                fontSize: 12,
+                letterSpacing: '0.04em',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="all">CATEGORY: ALL</option>
+              <option value="non-adult">CATEGORY: SAFE</option>
+              <option value="adult">CATEGORY: ADULT (18+)</option>
+            </select>
             <span className="game-count">{table.getFilteredRowModel().rows.length} {t('displayed')}</span>
             <Button
               appearance="subtle"
