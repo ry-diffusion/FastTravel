@@ -1,180 +1,222 @@
-# Fast Travel — UI SPEC (HeroUI / Meta Quest aesthetic)
+# Fast Travel — UI SPEC (shadcn/ui, latest)
 
-This is the contract every redesign agent works against. **Read this fully before
-writing any code.** Each per-surface section below tells you exactly what to
-build, but every page must obey the shared rules in §1–§3.
+This document is the contract every redesign agent works against.
+**Read it in full before writing any code.** Each per-surface section tells
+you exactly what to build; every page must obey the shared rules in §1–§3.
+
+You are also **required to invoke the `/frontend-design:frontend-design`
+skill** at the start of your run. The skill produces the aesthetic discipline
+you need; this SPEC produces the scope. Both inform your work.
 
 ---
 
-## 1. Hard rules (apply to every page)
+## 1. Hard rules (every page)
 
-### Stack
-- **Only `@heroui/react`** for UI components. No `@fluentui/react-components`, no
-  `@fluentui/react-icons` imports in pages you own. Replace icons with
-  [`lucide-react`](https://lucide.dev/) (already in HeroUI examples — install
-  if missing: `npm install lucide-react`) or simple inline SVG. If `lucide-react`
-  is missing from `package.json` after `cd`, install it before coding.
-- **Tailwind utilities** for layout, spacing, sizing, simple text styles.
-- **No CSS files**. Do not create or import `.css` files for your page. If your
-  page used to import a CSS file (e.g. `device-list.css`), drop that import and
-  delete the file in your worktree if it's unreferenced.
-- **No `style={{}}` inline objects** except for one-off arbitrary values that
-  Tailwind can't express (e.g. `gridTemplateColumns: '64px 1fr ...'`).
-- **No `var(--vrcd-*)`**. Those variables remain in `src/renderer/src/assets/index.css`
-  for legacy reasons but you must not reference them.
+### Stack — shadcn defaults only
 
-### Theme & contrast
-- HeroUI theme `quest` is active (`<html class="quest dark">`). Use semantic
-  HeroUI tokens:
-  - Surfaces: `bg-background` (page), `bg-content1` (sidebar/cards), `bg-content2`
-    (raised card on a card), `bg-content3` (hover state).
-  - Borders: `border-divider`. For stronger separation use `border-default-100`.
-  - Text:
-    - Primary text → `text-foreground`
-    - Secondary text → `text-default-500` (gray #A5A8B2 → 9:1 on bg, passes AAA)
-    - Tertiary / disabled-ish → `text-default-400` (#8A8D97 → 6.4:1)
-    - Don't use `text-default-300` or lower for body text — too low contrast.
-  - Accent: `text-primary`, `bg-primary`, `border-primary`. Primary is Quest
-    blue `#3D7DFF`.
-  - Status: `text-success` (green), `text-warning` (amber), `text-danger` (red).
-- **Every text label must hit WCAG-AA (4.5:1) minimum.** If you're tempted to
-  use `text-default-300` (~3:1), pick `text-default-500` instead.
+- All UI primitives come from **shadcn/ui (new-york style, zinc base)**
+  already installed under `src/renderer/src/components/ui/*`. Available:
+  `button`, `card`, `dialog`, `input`, `label`, `select`, `slider`, `switch`,
+  `tabs`, `tooltip`, `scroll-area`, `dropdown-menu`, `separator`, `sheet`,
+  `badge`, `progress`, `popover`, `sonner`, `avatar`, `accordion`,
+  `radio-group`, `table`, `skeleton`.
+- Need a primitive that isn't installed? Add it with
+  `npx shadcn@latest add <name>` from the project root.
+- **Do not modify the files under `components/ui/`.** They are the shadcn
+  primitives; treat them as vendor code.
+- **No `@heroui/*` or `@fluentui/*` imports.** Both libraries are being phased
+  out; HeroUI has been uninstalled. If you find a file still importing from
+  either, replace those imports with shadcn equivalents.
+- **No per-page CSS files** (`.css` in `assets/`). Style with Tailwind
+  utility classes plus the shadcn variants. The only allowed CSS file is
+  `assets/tailwind.css` (already set up — don't touch it) and the global
+  resets in `assets/index.css` (also don't touch).
+
+### Theme — shadcn default zinc dark theme
+
+- The theme is the **default shadcn new-york zinc dark theme** with one
+  override: `--primary` is set to a Quest-style blue (`217 91% 60%`). Do
+  not over-customize. Do not introduce new CSS variables for colors.
+- Use the semantic class names: `bg-background`, `bg-card`, `bg-popover`,
+  `bg-muted`, `bg-secondary`, `bg-accent`, `bg-primary`, `text-foreground`,
+  `text-muted-foreground`, `text-primary`, `border-border`, `border-input`,
+  `ring-ring`. Status colors: `text-destructive`, `bg-destructive`.
+- For "success" / "warning" semantics, shadcn does **not** ship dedicated
+  variables — use Tailwind utilities: `text-emerald-500` /
+  `text-amber-500` etc., or a `Badge` with `variant="secondary"` plus a
+  green dot.
 
 ### Typography
-- Sans-serif everywhere (Inter via the Tailwind `font-sans` default).
-- **No monospace** except actual code/path strings.
-- Sentence case headings. No ALL CAPS labels. No `tracking-wider` letterspacing
-  on titles. No glow/text-shadow.
+- Sans-serif via the Inter system stack already wired in `tailwind.config.cjs`
+  (`font-sans` is the default). Don't pick custom font families.
+- Sentence case headings. No ALL CAPS labels. No `tracking-wider` on body.
 - Heading scale:
-  - Page title: `text-2xl font-bold tracking-tight` (24px / 600+)
-  - Section heading: `text-base font-semibold` (16px / 600)
-  - Card heading: `text-sm font-semibold` (14px / 600)
-  - Body: `text-sm` (14px / 400-500)
-  - Caption / hint: `text-xs text-default-500` (12px)
+  - Page title: `text-2xl font-semibold tracking-tight`
+  - Section heading: `text-lg font-semibold`
+  - Card title: `text-base font-semibold` (already done by shadcn `CardTitle`)
+  - Body: `text-sm`
+  - Caption: `text-xs text-muted-foreground`
 
-### Motion
-- HeroUI's built-in transitions are enough. Don't add custom keyframes.
-- If you need motion, use `framer-motion` for fades / slides only.
+### Icons — lucide-react only
+- Already installed. Examples:
+  - Devices: `Headphones`, `Smartphone`, `Glasses`
+  - Library: `LibraryBig`
+  - Transfers: `ArrowDownToLine`, `ArrowUpToLine`
+  - Settings: `Settings`
+  - Search: `Search`
+  - More: `MoreHorizontal`
+  - Close: `X`
+  - Refresh: `RefreshCw`
+  - Pause/Play: `Pause`, `Play`
+  - Trash: `Trash2`
+  - Folder: `Folder`
+  - Theme: `Sun`, `Moon`
+  - Help: `HelpCircle`, `Info`
+  - Battery: `BatteryMedium`
+  - Wi-Fi: `Wifi`
+  - USB: `Usb`
+- Size in nav / button: 16–20 px. Pass `size={N}` or wrap with `className="h-4 w-4"`.
 
-### Behavior
-- **Preserve every hook, IPC call, localStorage key, and prop signature**
-  documented in your section. Behavior is the contract; visuals are yours.
-- The redesign is renderer-only — never edit `src/main/*`, `src/preload/*`,
-  `src/shared/*`, hooks (`src/renderer/src/hooks/*`), or contexts
-  (`src/renderer/src/context/*`).
+### Behavior — preserve everything
+- The redesign is renderer-only. Never edit `src/main/*`, `src/preload/*`,
+  `src/shared/*`, `src/renderer/src/hooks/*`, `src/renderer/src/context/*`.
+- Preserve every hook call, IPC call, localStorage key, and exported prop
+  signature in the surface you own. Read the existing files (where they
+  still exist) to capture behavior **before** deleting them.
+- App entry / Tailwind / shadcn primitives are already configured — do not
+  re-init them.
 
-### Process (do this for every file you own)
+### Mandatory process for every owned file
 1. `cd /home/zesmoi/src/FastTravel`.
-2. **Delete** the existing file (`rm path/to/File.tsx`) before authoring the
-   replacement. Treat it as a from-scratch implementation; do not read the
-   old version's JSX. (You may still read sibling files to understand hook
-   signatures.)
-3. Write the new file using HeroUI + Tailwind only.
-4. Verify `npx tsc --noEmit -p tsconfig.web.json` returns clean. The
-   `gameService.ts` error in the node project is pre-existing and irrelevant.
-5. `git add` + `git commit -m "..."` in your worktree.
+2. **Invoke the `/frontend-design:frontend-design` skill** with your
+   surface description. The skill output guides aesthetic decisions you
+   make under the rules in this SPEC.
+3. If a file already exists at the path, **delete it** (`rm path`) so you
+   author from scratch — no inheriting old patterns.
+4. Write the new file using shadcn primitives + Tailwind utilities only.
+5. Verify `npx tsc --noEmit -p tsconfig.web.json` is clean. The
+   pre-existing `gameService.ts` error in the node project is fine.
+6. `git add` your files and `git commit -m "..."` in your worktree.
 
 ---
 
-## 2. HeroUI component cheat-sheet
+## 2. shadcn cheat sheet
 
-| Need | Use |
+| Need | shadcn primitive |
 |---|---|
-| Page-level card | `Card` + `CardBody` (`bg-content1` for raised, `shadow="none"` if nested in a darker bg). |
-| Primary action | `Button color="primary"`. |
-| Secondary action | `Button variant="flat"` or `variant="bordered"`. |
-| Destructive | `Button color="danger" variant="flat"` or `solid` for confirm. |
-| Icon-only | `Button isIconOnly variant="light" size="sm" aria-label="..."`. |
-| Toggle | `Switch` (with `size="md"` for visible track). |
-| Single-select from a list | `Select` + `SelectItem`. |
-| Number / discrete options group | `Tabs` (variant `solid` for segmented), OR `Select`. Never a row of "1 2 3 4 5 6" pill outlines. |
-| Slider | `Slider` (with `marks` for labelled stops). |
-| Status pill | `Chip size="sm" color="..." variant="flat"`. |
-| Tabs | `Tabs variant="underlined" color="primary"`. |
-| Modal | `Modal` + `ModalContent` + `ModalHeader/Body/Footer`. |
-| Tooltip | `Tooltip`. |
-| Avatar / image | `Avatar` for users, `Image` for game thumbnails. |
-| Empty state | Plain `<div>` with centered icon + sentence-case message in `text-default-500`. |
-| Loading | `Spinner` (size sm/md). |
-| Progress bar | `Progress` (with `value` for determinate, `isIndeterminate` for not). |
+| Page-level container with subtle elevation | `Card` + `CardHeader` + `CardContent` |
+| Primary action | `Button` (default variant). |
+| Secondary | `Button variant="secondary"`. |
+| Subtle / icon-only | `Button variant="ghost" size="icon"`. |
+| Outlined | `Button variant="outline"`. |
+| Destructive | `Button variant="destructive"`. |
+| Toggle | `Switch` (has visible track + thumb out of the box). |
+| Choice from a list | `Select` + `SelectTrigger` + `SelectContent` + `SelectItem`. |
+| Radio group | `RadioGroup` + `RadioGroupItem`. |
+| Slider | `Slider`. |
+| Tabs | `Tabs` + `TabsList` + `TabsTrigger` + `TabsContent`. |
+| Status pill | `Badge` with `variant="secondary"`/`"destructive"`/`"outline"`. |
+| Modal | `Dialog` + `DialogContent` + `DialogHeader` + `DialogTitle` + `DialogDescription` + `DialogFooter`. |
+| Side panel (right) | `Sheet` + `SheetContent` (`side="right"`). |
+| Drawer (bottom) | `Drawer` (via vaul — not added yet, run `add drawer` if needed). |
+| Popover | `Popover` + `PopoverTrigger` + `PopoverContent`. |
+| Dropdown / context menu | `DropdownMenu` + `DropdownMenuTrigger` + `DropdownMenuContent` + `DropdownMenuItem`. |
+| Tooltip | `Tooltip` + `TooltipTrigger` + `TooltipContent`. Wrap the page in `<TooltipProvider>` at the chrome level. |
+| Avatar / image fallback | `Avatar` + `AvatarImage` + `AvatarFallback`. |
+| Table | shadcn `Table` (and `@tanstack/react-table` is still installed for virtualization). |
+| Progress | `Progress` with `value`. |
+| Loading | `Skeleton` for content placeholders. For spinning loaders, use a simple lucide `Loader2` with `animate-spin`. |
+| Toast | `sonner` `<Toaster />` is mounted in `main.tsx`. Call `toast("...")` from anywhere. |
 
-Always pass `aria-label` on icon-only buttons and form controls without a
-visible label.
-
----
-
-## 3. Icons
-
-Use `lucide-react`. Common ones:
-
-| Concept | Lucide |
-|---|---|
-| Devices | `Headphones` or `Smartphone` |
-| Library | `LibraryBig` |
-| Transfers | `ArrowDownToLine` |
-| Settings | `Settings` |
-| Search | `Search` |
-| Filter | `Filter` |
-| Sort | `ArrowUpDown` |
-| More menu | `MoreHorizontal` |
-| Close | `X` |
-| Battery | `BatteryMedium` (or full/low) |
-| Wi-Fi | `Wifi` |
-| USB | `Usb` |
-| Refresh | `RefreshCw` |
-| Pause | `Pause` |
-| Play / resume | `Play` |
-| Trash | `Trash2` |
-| Folder | `Folder` |
-| Theme | `Sun` / `Moon` |
-| Info | `Info` |
-| Help | `HelpCircle` |
-
-Size 16–20 px in nav / buttons; pass via `size={N}` or wrap in
-`<svg className="h-4 w-4" ...>`.
+Always pass `aria-label` on icon-only buttons and unlabeled controls.
 
 ---
 
-## 4. Per-surface specs
+## 3. Per-surface specs
 
-### 4.1 Sidebar — `src/renderer/src/components/Sidebar.tsx`
+> **Note for every surface:** the legacy `Settings.tsx`, `GamesView.tsx`,
+> `DeviceList.tsx`, `Sidebar.tsx`, `AppLayout.tsx`, etc. have already been
+> **deleted** by the SPEC author. The current `App.tsx` is a stub. You'll
+> create the files from scratch. Read sibling files (hooks, contexts, types)
+> to understand what data your page consumes, but you have no old JSX to
+> work from.
 
-**Width** 256 px, full-height, `bg-content1`, right border `border-divider`.
-Sticks to the left. Flex column.
+### 3.1 Layout (chrome) — owned by the "layout" agent
 
-**Layout (top → bottom):**
-1. **Brand block** (top, ~64 px tall): `Avatar src={electronLogo} radius="md"
-   size="sm"` + two stacked spans → "Fast Travel" (`text-sm font-bold`) /
-   "Sideload manager" (`text-xs text-default-500`). Imports `electronLogo` from
-   `'../assets/icon.svg'`.
-2. **Primary nav** (Devices, Library): two `Button`-like items rendered as
-   `<button>` with classes:
-   - Base: `flex items-center gap-3 w-full px-3 py-2 rounded-medium text-sm font-medium transition-colors`
-   - Inactive: `text-default-500 hover:bg-content2 hover:text-foreground`
-   - Active: `bg-primary/15 text-primary` (icon also `text-primary`)
-   - Each item has a 20px lucide icon + label + optional right-aligned
-     `Chip size="sm" color="primary" variant="solid"` badge for counts.
-3. `Divider` with `my-2`.
-4. **Secondary nav** (Transfers — with badge from active queue count, Settings).
-   Same item style as primary nav.
-5. **Footer** (pushed to bottom with `mt-auto`):
-   - Top border (`border-t border-divider pt-3`).
-   - Status rows: `<dl>` with three rows (Server, Device, Library) — label on
-     left in `text-xs text-default-500 font-medium`, value on right in
-     `text-xs font-medium` colored by state:
-     - Server online → `text-success`, offline → `text-warning`.
-     - Device connected → `text-success`, otherwise → `text-default-500`.
-     - Library → `text-default-700` (or `text-foreground`).
-   - **Theme toggle row** — label "Dark mode" / "Light mode" (`text-xs
-     text-default-500`) + a HeroUI `Switch` (`size="md" color="primary"`,
-     `startContent={<Moon />}` and `endContent={<Sun />}` for clear visual
-     state). The track MUST be visible in both states.
-   - **Version row**: `<span class="text-xs text-default-500">v{appVersion} ·
-     Made with ♥ by DMP</span>` + small icon-only `Button isIconOnly
-     variant="light" size="sm" aria-label="Credits"` with a `HelpCircle`
-     opening credits.
+Files to author:
+- `src/renderer/src/components/AppLayout.tsx` — the root app shell
+- `src/renderer/src/components/Sidebar.tsx`
+- `src/renderer/src/components/TransferStrip.tsx`
+- `src/renderer/src/components/QuestLoader.tsx`
+- Replace `src/renderer/src/App.tsx` so it renders `AppLayout` instead of
+  the rebuilding-spinner stub.
 
-**Props:**
+**AppView enum** — export from `AppLayout`:
+```ts
+export enum AppView { DEVICE_LIST, GAMES, TRANSFERS, SETTINGS }
+```
+
+**Provider chain** (read the OLD AppLayout via `git show HEAD~5:src/renderer/src/components/AppLayout.tsx` to confirm — DO NOT preserve any visuals from it, only the provider order):
+```
+ErrorBoundary
+  SettingsProvider
+    LanguageProvider
+      DependencyProvider
+        DownloadProvider
+          UploadProvider
+            AdbProvider
+              GamesProvider
+                GameDialogProvider
+                  <TooltipProvider>     ← add this (shadcn)
+                    <App layout JSX>
+```
+
+`FluentProvider` is **no longer needed** — we are fully on shadcn. If any
+existing dialog (`AdbShellDialog`, `UploadGamesDialog`, `LocalUploadDialog`,
+`MirrorManagement`, `CreditsDialog`, `UpdateNotification`, `ServerConfigSettings`)
+imports from `@fluentui/react-components`, leave those alone — they'll be
+migrated in a later pass — but do not mount a `FluentProvider`. Wrap any
+Fluent-using dialog with a tiny inline `FluentProvider` itself if necessary,
+but try first without it.
+
+**Layout structure:**
+- Root: `<div class="flex h-screen w-screen overflow-hidden bg-background text-foreground">`.
+- Left: `<Sidebar ... />` width ~16rem.
+- Right: `<main class="flex-1 min-w-0 flex flex-col overflow-hidden">`:
+  - Optional `<TransferStrip />` at top (returns null when no transfers).
+  - `<MainContent currentView=... />` filling the rest.
+- `MainContent` switches on `currentView`:
+  - `DEVICE_LIST` → `<DeviceList ... />`
+  - `GAMES` → `<GamesView ... />`
+  - `TRANSFERS` → `<TransfersPage />`
+  - `SETTINGS` → `<Settings />`
+  - When `!dependenciesReady`: render a centered `<QuestLoader title ... />`
+    or the connectivity-error card (use shadcn `Card`).
+- Close-confirm modal: shadcn `Dialog` triggered by the existing IPC.
+- Render `<UpdateNotification />`, `<CreditsDialog />`, `<UploadGamesDialog />`
+  near the bottom of the tree.
+
+**Sidebar** — width `w-64`, full-height, `bg-card border-r border-border`,
+flex column:
+1. Brand block (`px-4 py-5`): `Avatar` (image `'../assets/icon.svg'`) +
+   stacked "Fast Travel" / "Sideload manager".
+2. Primary nav (Devices, Library): each item is a `Button variant="ghost"`
+   with full width, `justify-start`, lucide icon + label. Active item uses
+   `variant="secondary"` to highlight.
+3. `Separator` with `my-2`.
+4. Secondary nav (Transfers — with `Badge` count if `activeTransfers > 0`,
+   Settings).
+5. Footer pinned to bottom (`mt-auto border-t border-border pt-3 px-3`):
+   - Three status rows in a `<dl>`:
+     - Server: "Online" (`text-emerald-500`) or "Offline" (`text-amber-500`).
+     - Device: model name (`text-emerald-500` if connected, `text-muted-foreground` else).
+     - Library: "N games".
+   - Theme toggle: a `Switch` with `Moon`/`Sun` adjacent (visible track).
+   - Version line: `<span class="text-xs text-muted-foreground">v{appVersion}
+     · Made with ♥ by DMP</span>` + `Button variant="ghost" size="icon"`
+     with `HelpCircle` opening credits.
+
+**Sidebar props:**
 ```ts
 type SidebarView = 'devices' | 'library' | 'transfers' | 'settings'
 interface SidebarProps {
@@ -184,366 +226,180 @@ interface SidebarProps {
   appVersion: string
 }
 ```
-Hooks: `useAdb()` (`isConnected`, `selectedDeviceDetails`), `useGames()`
-(`games`), `useSettings()` (`serverConfig`, `colorScheme`, `setColorScheme`),
-`useDownload()` (`queue`), `useUpload()` (`queue`).
 
-`activeTransfers` = downloads in Queued/Downloading/Extracting/Installing +
-uploads in Queued/Preparing/Uploading. Show only if `> 0`.
+Hooks: `useAdb` (`isConnected, selectedDeviceDetails`),
+`useGames` (`games`), `useSettings` (`serverConfig, colorScheme, setColorScheme`),
+`useDownload` (`queue`), `useUpload` (`queue`).
 
----
+**TransferStrip** — collapses to `null` when no active transfers. Otherwise:
+- A compact strip `px-4 py-2 border-b border-border bg-card flex items-center gap-3`.
+- `Badge variant="secondary"` with `ArrowDownToLine`/`ArrowUpToLine`.
+- Game name (truncated).
+- Stage (`text-xs text-muted-foreground`).
+- shadcn `Progress` (`h-1`).
+- Percentage.
+- Rotates through entries every 4s.
 
-### 4.2 AppLayout + chrome — `src/renderer/src/components/AppLayout.tsx`,
-`TransferStrip.tsx`, `QuestLoader.tsx`
-
-**AppLayout structure:**
-- Wrap in providers (preserve the existing chain):
-  ```
-  <FluentProvider theme={...}>  // KEEP — Fluent is still used inside dialogs not in scope
-    <AdbProvider>
-      <GamesProvider>
-        <GameDialogProvider>
-          <root layout>
-  ```
-- Root layout = `flex h-screen w-screen bg-background text-foreground`.
-- Left: `<Sidebar ... />`.
-- Right: `<main class="flex-1 min-w-0 flex flex-col overflow-hidden">` →
-  optional `<TransferStrip />` then `<MainContent ... />`.
-- `MainContent` dispatches on `currentView`:
-  - `DEVICE_LIST` → `<DeviceList ... />`
-  - `GAMES` → `<GamesView ... />`
-  - `TRANSFERS` → `<TransfersPage />`
-  - `SETTINGS` → `<Settings />`
-  - If dependencies not ready: render the bootstrap state — either the
-    connectivity error block or `<QuestLoader title=... subtitle=...
-    progress=... />`. Use HeroUI `Card` for the error block.
-- Theme toggle in Sidebar drives `setColorScheme`. AppLayout syncs the html
-  class:
-  ```ts
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', colorScheme === 'dark')
-  }, [colorScheme])
-  ```
-  (Keep `.quest` always.)
-- Close-confirm modal: HeroUI `Modal`.
-- Render `<UpdateNotification />` and `<CreditsDialog ... />` near the bottom.
-- Portal-parent div stays for legacy.
-
-**TransferStrip** — collapse to `null` when idle. Otherwise:
-- A compact strip `px-4 py-2 border-b border-divider bg-content1` with:
-  - `Chip startContent={<ArrowDown/Up />} color="primary" variant="flat" size="sm"`.
-  - Game name (truncated, `text-sm font-medium`).
-  - Stage (`text-xs text-default-500`).
-  - `Progress size="sm" color="primary" value={pct}` (`flex-1`).
-  - Percentage on the right.
-- Rotates through items every 4 s with the existing rotation logic.
-
-**QuestLoader** — centered. Layout: `flex flex-col gap-6 max-w-[560px]`.
-- `Progress` (indeterminate if `progress` is null, else value) — `size="sm" color="primary"`.
-- Title `text-3xl font-bold tracking-tight`.
-- Subtitle `text-base text-default-500`.
+**QuestLoader** props: `{ title: string; subtitle?: string; progress?: number | null }`.
+Centered. Big bold title, muted subtitle, shadcn `Progress` (indeterminate
+when `progress == null`).
 
 ---
 
-### 4.3 Devices page — `src/renderer/src/components/DeviceList.tsx`
+### 3.2 Devices page — owned by the "devices" agent
 
-**Default export `DeviceList`** with props
-`{ onSkip?: () => void; onConnected?: () => void }`.
+File: `src/renderer/src/components/DeviceList.tsx`.
+
+**Props:** `{ onSkip?: () => void; onConnected?: () => void }`.
 
 **Layout:**
-- Outer: `flex h-full w-full items-center justify-center p-8 bg-background overflow-auto`.
-- Inner card: HeroUI `Card` `radius="lg" shadow="md" className="w-full max-w-xl bg-content1"`.
-- Header row inside `CardBody`: title "Devices" (`text-lg font-semibold`),
-  small `Spinner size="sm" color="primary"` while loading, action buttons on
-  the right:
-  - `Button size="sm" variant="flat" onPress={refreshDevices}` "Scan" (loading
-    state via `isLoading`).
-  - If `onSkip` and not connected: `Button size="sm" variant="bordered"
-    onPress={onSkip}` "Continue offline".
-  - If `onSkip` and connected: `Button size="sm" color="primary"
-    onPress={onSkip}` "Continue".
-- Below header: error banner (only if `error`): `Card className="bg-danger/10
-  border border-danger/30"` + danger text.
-- "Add by IP" subsection: small label `text-xs font-medium text-default-500
-  uppercase tracking-wide`, then a row of `Input size="sm" variant="bordered"
-  placeholder="192.168.x.x"`, `Input` for port (default 5555, `w-24`),
-  `Button size="sm" color="primary" onPress={...}` "Add".
-- Device list: array of device cards rendered as `Card shadow="none"
-  className="bg-content2"`. Each card:
-  - Left: `Avatar` (rounded, `bg-primary/10 text-primary`) with a Lucide
-    `Headphones` icon (Quest) or `Wifi` icon (Wi-Fi bookmark) inside.
-  - Middle: name (sentence case, `text-sm font-medium`), then meta row of
-    pieces separated by `·` in `text-xs text-default-500` — USB / Wi-Fi /
-    IP / Battery % / Free storage / Ping latency in "12 ms · good".
-  - Status `Chip size="sm" variant="flat" color={...}` — success/Connected,
-    danger/Failed, primary/Connecting, warning/Unauthorized, default/Offline.
-  - Right: action buttons:
-    - Connected: `Button size="sm" color="primary" onPress={onOpenShell}`
-      "Shell", `Button size="sm" variant="flat" onPress={onDisconnect}`
-      "Disconnect".
-    - Otherwise: `Button size="sm" color="primary" onPress={onConnect}`
-      "Connect" + optional `Button size="sm" variant="flat"` "Save"
-      (bookmark) or "Remove" (bookmark) etc.
-- Empty state when no devices: centered icon + "No devices found" + secondary
-  caption "Connect a headset over USB or add one by IP above.".
-- Footer: when connected, a thin row at the bottom of the card with a small
-  green dot + "Connected".
-- Render `<AdbShellDialog deviceId={...} isOpen onDismiss />` at the end —
-  controlled by `shellDialogDeviceId` state.
+- Outer: `<div class="flex h-full w-full items-center justify-center p-8 overflow-auto">`.
+- Inner: shadcn `Card class="w-full max-w-2xl"`:
+  - `CardHeader`: `CardTitle` "Devices" + small `Loader2` spinner when scanning. Right side: `Button size="sm" variant="outline"` Scan (`RefreshCw` icon, loading state), `Button size="sm" variant="secondary"` "Continue offline" or `Button size="sm"` "Continue".
+  - `CardContent`:
+    - Error banner (when `error`): a `Card class="bg-destructive/10 border-destructive/30"` with destructive text.
+    - "Add by IP" subsection: `Label` "Add by IP", then a row of `Input placeholder="192.168.x.x"`, `Input class="w-24" placeholder="Port"` (default 5555), `Button` "Add".
+    - Device list: each is a `Card class="bg-muted/30"`:
+      - Left: `Avatar` (or shaded square) with `Headphones` / `Wifi` icon.
+      - Middle: model name (sentence case, `text-sm font-medium`), meta row in `text-xs text-muted-foreground` with parts separated by `·`: USB/Wi-Fi/IP/Battery/Free storage/Ping latency in "12 ms · good".
+      - Status `Badge` colored by state — connected (`bg-emerald-500/15 text-emerald-500 border-emerald-500/30`), connecting (`bg-primary/15 text-primary border-primary/30`), error (`bg-destructive/15 text-destructive border-destructive/30`), saved (`variant="outline"`), offline (`variant="secondary"`).
+      - Right: action buttons (Shell + Disconnect when connected; Connect [+ Save / Remove bookmark] otherwise).
+  - Empty: centered icon + "No devices found" + "Connect a headset over USB or add one by IP above.".
+  - Connected footer: dot + "Connected" (`text-emerald-500`).
+- Render `<AdbShellDialog deviceId=... isOpen onDismiss />` at the end — controlled by `shellDialogDeviceId` state.
 
-**Hooks/types:** `useAdb()` → `devices, isConnected, selectedDevice, error,
-isLoading, connectToDevice, connectTcpDevice, disconnectTcpDevice,
-refreshDevices, disconnectDevice`. `ExtendedDeviceInfo` from `@shared/types` —
-fields are `id, type, friendlyModelName, (device as any).model,
-(device as any).ipAddress, (device as any).batteryLevel,
-(device as any).storageFree, (device as any).pingStatus,
-(device as any).pingResponseTime, (device as any).isQuestDevice`, plus
-`isWiFiBookmark(device)` / `hasBookmarkData(device)` from `@shared/types`.
-
-Keep auto-connect to a Quest on discovery via `hasAutoConnected` ref.
+**Hooks/types**: see SPEC §3.2 of the previous spec — unchanged. The hook
+signatures and IPC calls are the same. Read `git show HEAD~7:src/renderer/src/components/DeviceList.tsx` for behavior.
 
 ---
 
-### 4.4 Library page — `src/renderer/src/components/GamesView.tsx`,
-`src/renderer/src/components/GameDetailsDialog.tsx`
+### 3.3 Library page — owned by the "library" agent
 
-**Default export `GamesView`** with props
-`{ onBackToDevices, onTransfers, onSettings }`.
+Files: `GamesView.tsx`, `GameDetailsDialog.tsx`.
 
-**Top of page = a single sticky header bar inside the page.** No left
-sub-sidebar.
+**Default export `GamesView`** with props `{ onBackToDevices, onTransfers, onSettings }`.
 
-Header bar layout (`px-8 py-4 border-b border-divider`):
-- Row 1: `<h1 class="text-2xl font-bold tracking-tight">Library</h1>` and a
-  small `<span class="text-sm text-default-500">{game count, last sync time}</span>`
-  on the right. Plus a `ConnectedDeviceChip` on the right edge (`Chip
-  color="primary" variant="flat"` showing model + battery, opens a Popover
-  with Disconnect / Refresh packages / ADB shell).
-- Row 2: a flex row of toolbar controls (`gap-3`):
-  - `Input` (`startContent={<Search />}`, `isClearable`, `size="sm"`,
-    `placeholder="Search by name or package"`, `className="flex-1 max-w-md"`).
-  - `Tabs` (`variant="solid" size="sm" color="primary"`) with three items All
-    / Installed / Updates — each tab rendered with a small badge for count.
-  - `Select size="sm"` (Category): All / Safe / Adult.
-  - `Button isIconOnly variant="flat" size="sm" aria-label="Toggle view"`
-    that flips between table icon and grid icon (toggles
-    `prefs.viewMode`).
-  - `Popover` triggered by `Button isIconOnly variant="flat" size="sm"
-    aria-label="Display options"` with a `Sliders` icon — content:
-    - In card mode: a `Slider` for card size, a `Select` for sort key, a
-      `Button isIconOnly` for sort direction.
-    - In table mode: a `Slider` for row density (50-100), a `Switch` for
-      alternating rows, two row colour pickers (HeroUI doesn't ship a colour
-      picker — use a small grid of `Button isIconOnly` swatches).
-  - `Dropdown` ("More" menu) with `Button isIconOnly variant="flat" size="sm"
-    aria-label="More"` and a `MoreHorizontal` icon. Items:
-    - Refresh games
-    - Manage mirrors → opens `<MirrorManagement>` (existing component)
-    - Upload local files → opens `<LocalUploadDialog>` (existing component;
-      let it handle its own trigger if it already does)
-    - Manual install
-    - ADB shell → opens `<AdbShellDialog>` for the connected device
-    - Disconnect device (if connected)
+**Header bar (sticky inside the page):**
+- Row 1: page title "Library" + game count + last sync time. Right edge:
+  a "ConnectedDeviceChip" component — shadcn `Badge` with model + battery%
+  that opens a `Popover` with Disconnect / Refresh packages / ADB shell.
+- Row 2: toolbar — search `Input` (with `Search` icon), filter `Tabs`
+  (All/Installed/Updates with count badges), `Select` category (All/Safe/Adult),
+  view-mode toggle icon `Button`, display-options `Popover` (sort, density,
+  alternating rows), `DropdownMenu` "More" (Refresh games, Manage mirrors,
+  Upload local files, Manual install, ADB shell, Disconnect device).
 
-Below header = content area `flex-1 overflow-auto px-8 py-6`:
-- Loading state: HeroUI `Spinner` + status text.
-- Error: `Card bg-danger/10` banner.
-- Otherwise: either the **table** or the **card grid**.
+**Body:** virtualized TanStack table OR grid of `Card`s. Keep TanStack +
+TanStack-virtual for the table.
 
-**Card grid** (`prefs.viewMode === 'cards'`):
-- CSS grid with arbitrary `[grid-template-columns:repeat(auto-fill,minmax(var(--card-min-w,200px),1fr))]`
-  AND inline style for the `--card-min-w` based on `prefs.cardSize`. OR use
-  Tailwind `grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5
-  gap-4` for simplicity.
-- Each card = `Card isPressable shadow="sm" onPress={() => setDialogGame(g)}`.
-  - `CardBody class="p-0"` containing `Image src={`file://${g.thumbnailPath}`}`
-    (with fallback to placeholder) `radius="none" className="aspect-square w-full object-cover"`.
-  - Below: `p-3 flex flex-col gap-1` with name (`text-sm font-semibold
-    line-clamp-2`), package/version line (`text-xs text-default-500`).
-  - Top-right overlay: status `Chip size="sm" variant="flat"` (Installed →
-    success, Update → warning).
+**Card grid:**
+- CSS grid `grid-template-columns: repeat(auto-fill, minmax(220px, 1fr))`
+  with `gap-4`.
+- Each card = shadcn `Card class="overflow-hidden cursor-pointer hover:bg-accent transition-colors"`. Inside:
+  - Square thumbnail at the top (use `<img>` with `class="aspect-square w-full object-cover"`).
+  - `CardContent class="p-3 space-y-1"`: name (`text-sm font-semibold line-clamp-2`), package/version (`text-xs text-muted-foreground`).
+  - Top-right overlay `Badge` for Installed (`bg-emerald-500`) / Update (`bg-amber-500`).
 
-**Table**:
-- Keep the existing `@tanstack/react-table` + `@tanstack/react-virtual` setup.
-  Don't rewrite the virtualization logic.
-- Wrap rows in plain `<tr>` styled via Tailwind:
-  `hover:bg-content2 cursor-pointer transition-colors`.
-- Columns same as today: Status (icon + chip), Thumbnail, Name+Package,
-  Version, Popularity, Size, Last Updated.
-- Header: `<th class="text-xs font-semibold text-default-500 px-3 py-2
-  border-b border-divider bg-content1 sticky top-0">`.
-- Cell: `<td class="text-sm text-foreground px-3 py-2 border-b border-divider
-  whitespace-nowrap truncate">`. Name cell shows package below in
-  `text-xs text-default-500`.
+**Table:**
+- Use shadcn `Table` + the TanStack rendering you already have. Style header
+  rows as `bg-card text-muted-foreground sticky top-0`. Cell hover via
+  `hover:bg-accent`.
 
-**Empty state**: centered: lucide `LibraryBig` icon at 48 px, "No games match
-your filters." in `text-base text-default-500`.
+**GameDetailsDialog** — shadcn `Dialog` with `DialogContent class="max-w-2xl"`.
+- `DialogHeader` `DialogTitle` = game name.
+- Body grid: thumbnail (`w-48 aspect-square rounded-lg`) on left, info column
+  on right (version, package, size, popularity, last updated, install/blacklist
+  status, OBB info).
+- `DialogFooter` action `Button`s (Install / Reinstall / Update / Uninstall /
+  Download / Cancel / Delete from queue).
 
-**GameDetailsDialog**: rebuild with HeroUI `Modal` / `ModalContent`
-(`size="2xl"`). Header = game name. Body = grid: thumbnail on left
-(`aspect-square w-48 rounded-medium overflow-hidden`), info on right
-(version, package, size, popularity, last updated, blacklist status, install
-status, OBB info). Footer = action `Button`s: Install / Reinstall / Update /
-Uninstall / Download / Cancel / Delete from queue — same logic as current.
-
-**State to preserve** (read from current file before deleting):
-- `activeFilter: 'all'|'installed'|'update'`
-- `categoryFilter: 'all'|'adult'|'non-adult'` (persists to `localStorage`
-  `'vrcyberdeck:categoryFilter'`).
-- `prefs` (viewMode, cardSize, cardSortKey, cardSortDir, rowDensity,
-  alternatingRows, evenRowColor, oddRowColor, tableSortKey, tableSortDir) —
-  read/write via the same `useGameDialog` / localStorage keys as today.
-
-**Hooks**: same as the current GamesView. Read the file to capture the hook
-list before deleting it.
+**Hooks:** `useGames, useAdb, useDownload, useUpload, useLanguage,
+useGameDialog, useExtrasSettings, useSettings`. Read `git show HEAD~7:src/renderer/src/components/GamesView.tsx` for the handler implementations.
 
 ---
 
-### 4.5 Transfers page — `src/renderer/src/components/TransfersPage.tsx`,
-`DownloadsView.tsx`, `UploadsView.tsx`, `ErrorDetailDialog.tsx`
+### 3.4 Transfers page — owned by the "transfers" agent
 
-**TransfersPage**: full-page container.
-- Header (`px-8 py-6`): `<h1 class="text-2xl font-bold">Transfers</h1>` +
-  `<p class="text-sm text-default-500 mt-1">Downloads and uploads queued on
-  this device.</p>`.
-- `Tabs variant="underlined" color="primary"`: Downloads / Uploads tabs.
-  Uploads tab shows `<Chip size="sm" color="primary" variant="flat">{count}</Chip>`
-  when > 0 active uploads.
-- Tab state persisted to `localStorage` under `'vrcyberdeck:transfersTab'`.
-- Body (`px-8 pb-8`): renders either `<DownloadsView onClose={()=>{}}/>` or
-  `<UploadsView />`.
+Files: `TransfersPage.tsx`, `DownloadsView.tsx`, `UploadsView.tsx`, `ErrorDetailDialog.tsx`.
 
-**DownloadsView** (`onClose: () => void` — accept but ignore):
-- Top action bar: `flex gap-2 mb-4` →
-  - `Button variant="flat" size="sm" startContent={<Folder/>}` "Scan downloads"
-    (calls `window.api.downloads.scanForCompleted()`).
-  - `Button variant="light" size="sm" startContent={<Trash2/>}` "Clear
-    completed" (loops `removeFromQueueOnly` over completed/cancelled items).
-- Row layout per item: `flex items-center gap-4 p-3 rounded-medium
-  hover:bg-content2`:
-  - `Image` 64×64 rounded.
-  - Middle: name (`text-sm font-medium`) + release name
-    (`text-xs text-default-500 font-mono` — only for the release name,
-    elsewhere stays sans) + relative time
-    (`text-xs text-default-400`).
-  - Right (progress + status): when active, `Progress size="sm" color="primary"
-    value={pct}` + percentage label; when finished, `Chip variant="flat"
-    color={...}` with status label.
-  - Far right: action buttons:
-    - In-progress: `Button size="sm" variant="flat"` Pause/Resume; `Button
-      isIconOnly size="sm" variant="light" aria-label="Cancel"` X (Cancel).
-    - Completed + connected + sideloading enabled: `Button size="sm"
-      color="primary" startContent={<ArrowDownToLine/>}` "Install"; `Button
-      isIconOnly size="sm" variant="light"` Trash (delete).
-    - Error: `Button size="sm" variant="flat" color="primary"` "Retry";
-      `Button isIconOnly size="sm" variant="light" aria-label="View error"`
-      `Info` (opens `ErrorDetailDialog`); `Button isIconOnly size="sm"
-      variant="light"` Trash.
-- Inline delete confirmation when `getDeleteOnRemove() === 'ask'`: replace
-  the action column with a small `Card bg-warning/10 border-warning/30` row:
-  "Delete files too?" + `Button size="sm" variant="light"` Keep files /
-  `Button size="sm" color="danger" variant="flat"` Delete / `Button isIconOnly
-  size="sm" variant="light"` X to cancel.
-- Empty state: `LibraryBig` icon + "No active downloads." + helper line.
+**TransfersPage:**
+- Page header "Transfers" + subtitle.
+- shadcn `Tabs` (Downloads / Uploads) — Uploads tab shows a `Badge` count.
+- Tab state persisted to `localStorage` `'vrcyberdeck:transfersTab'`.
 
-**UploadsView**: same row idiom as Downloads. Hooks `useUpload()`. Statuses:
-Queued (default), Preparing (primary), Uploading (primary), Completed
-(success), Cancelled (default), Error (danger). Action buttons: Cancel
-(in-progress), Retry (error), Trash (any).
+**DownloadsView** — props `{ onClose: () => void }` (accept but ignore).
+- Top action row: `Button variant="outline" size="sm"` "Scan downloads"
+  (calls `window.api.downloads.scanDownloadFolder()`); `Button variant="ghost"
+  size="sm"` "Clear completed".
+- Each item row: thumbnail (64×64 rounded), name + release + relative time,
+  progress `Progress` + status `Badge`, action `Button`s (Pause/Resume,
+  Cancel, Install, Retry, View error, Delete).
+- Inline delete confirmation when `getDeleteOnRemove() === 'ask'` — a small
+  `Card bg-amber-500/10 border-amber-500/30` row with Keep files / Delete /
+  Cancel.
+- Empty state: icon + "No active downloads." + helper.
 
-**ErrorDetailDialog**: HeroUI `Modal size="lg"`. Header = "Download error".
-Body = pre-formatted error text in `bg-content2 rounded-medium p-3 text-xs
-font-mono whitespace-pre-wrap`. Footer = `Button color="primary"` "Close".
-Export `ErrorPhase` type. Don't touch the diagnosis-rules logic.
+**UploadsView** — analogous to DownloadsView with upload statuses.
+
+**ErrorDetailDialog** — shadcn `Dialog size="lg"`. Header = "Download error".
+Body has the diagnosis rules text in `<pre class="bg-muted rounded-md p-3 text-xs font-mono whitespace-pre-wrap">`. Footer = `Button` "Close".
 
 ---
 
-### 4.6 Settings page — `src/renderer/src/components/Settings.tsx`
+### 3.5 Settings page — owned by the "settings" agent
 
-**Default export `Settings`**, no props.
+File: `Settings.tsx`. **No props.**
 
-**Layout:**
-- Outer container: `flex flex-col h-full overflow-auto bg-background`.
-- Header (`px-8 py-6 max-w-[1280px] w-full mx-auto`): `<h1 class="text-2xl
-  font-bold">Settings</h1>` + `<p class="text-sm text-default-500 mt-1">Configure
-  preferences and manage your downloads. · v{appVersion}</p>`.
-- Body (`px-8 pb-8 max-w-[1280px] w-full mx-auto`): a 2-column CSS grid
-  (`grid grid-cols-1 lg:grid-cols-2 gap-4`).
+**Layout** — full page:
+- Header: `text-2xl font-semibold tracking-tight` "Settings" + muted
+  subtitle "Configure preferences and manage your downloads. · v{appVersion}".
+- Body: 2-column CSS grid (`grid grid-cols-1 lg:grid-cols-2 gap-4`).
+- Each section is a **shadcn `Card`** (always expanded, NOT an Accordion):
+  - `CardHeader` with `CardTitle`.
+  - `CardContent class="space-y-5"`.
+- Dense sections span both columns (`lg:col-span-2`):
+  - **Appearance** (was "Appearance & extras"): disable auto-update,
+    disable sideloading, colorblind mode, accent color (`<input type="color">`
+    + `Badge` showing hex + Reset `Button`), font family (`Select` + preview),
+    sound effects (master `Switch` + `Slider` volume + per-`SOUND_NAMES`
+    rows with `Switch` and a play `Button variant="ghost" size="icon"`),
+    UI zoom (`Slider` 0.75–2.0 step 0.05, marks at 0.75/1/1.25/1.5/2 — but
+    keep the marks UNDER the slider, not overlapping the description),
+    delete-on-remove (`Select`), concurrent downloads (`Select` 1–6),
+    limit-extraction-threads (`Switch`), existing-download-action (`Select`).
+  - **Downloads & speed**: download path `Input` with `endContent` folder
+    `Button` + Save; speed limits two `Input` + unit `Select`s; server config.
+- Single-column sections:
+  - **Multiplayer identity**: `Input` + Save `Button`.
+  - **Log upload**: three `Button`s (Open folder / Open file / Upload).
+  - **Game blacklist**: list of rows with `Button variant="ghost" size="sm"` Remove.
+  - **Content filter**: single `Switch` "Hide adult content".
 
-**Section rendering** — each section is its own HeroUI `Card shadow="sm"
-className="bg-content1"`. Inside each `Card`:
-- `CardHeader` with `<h2 class="text-base font-semibold">Section title</h2>`.
-- `Divider`.
-- `CardBody class="p-5 flex flex-col gap-5"` containing the controls.
+**Control rules** (HARD):
+- Every toggle is a row: label + description on the left, `Switch` on the right. Use a tiny `<div class="flex items-start justify-between gap-4">`.
+- Every discrete choice → `Select` (never custom button groups).
+- Sliders: `Slider` with `step`/`min`/`max`. For "marks", show a separate
+  `<div class="flex justify-between text-xs text-muted-foreground mt-1">`
+  row BELOW the slider — don't use `Slider` marks if shadcn doesn't have them
+  natively (it doesn't ship marks, so just render labels manually).
+- Footer card: `<span class="text-xs text-muted-foreground">For the VR community</span>` + "Made with ♥ by DMP of Armgddn Games" + a help icon button opening Credits.
 
-**No `Accordion`** — sections are always expanded. The grid handles vertical
-flow.
-
-**Section grid placement**:
-- "Appearance" → `lg:col-span-2` (full width — densest).
-- "Downloads & speed" → `lg:col-span-2` (also dense).
-- "Multiplayer identity" → 1 col.
-- "Log upload" → 1 col.
-- "Game blacklist" → 1 col.
-- "Content filter" → 1 col.
-
-**Control rules:**
-- Every toggle is a row: `<div class="flex items-start justify-between gap-4">`
-  with left side = label (`text-sm font-medium text-foreground`) +
-  description (`text-xs text-default-500 mt-0.5`); right side = HeroUI
-  `Switch size="md" color="primary"`.
-- Every choice that used to be a "1 2 3 4 5 6" or "ASK ME / INSTALL FROM
-  EXISTING / RE-DOWNLOAD" pill row → use `Select` (not custom buttons).
-- UI Zoom → `Slider` from 0.75 to 2.0 step 0.05, with `marks` at 0.75/1/1.25/
-  1.5/2. Show "100%" beside the slider.
-- Accent color → `Input type="color"` + a `Chip variant="flat"` showing the
-  hex, and a `Button variant="light" size="sm"` to reset.
-- Font picker → `Select` with FONT_FAMILY_OPTIONS choices. Below it, a small
-  preview line "The quick brown fox" using `style={{ fontFamily: stack }}`.
-- Sound effects → master `Switch`, `Slider` for volume (0-100), then for
-  each `SOUND_NAMES` item a row with the name, a `Switch`, and an icon-only
-  `Button` to play it (`window.api…play(name)` via the hook).
-- Concurrent downloads → `Select` with options 1–6.
-- "When download already exists" → `Select` with three options.
-- Download path → `Input` with `endContent` `Button isIconOnly` Folder
-  (calls `window.api.dialog.showDirectoryPicker()`), plus a `Button
-  color="primary"` "Save" to commit.
-- Speed limits → two `Input`s side-by-side, each with a `Select` for unit.
-- Multiplayer username → `Input` + `Button color="primary"` Save. Disabled
-  when not connected.
-- Log upload → three flat `Button`s: "Open log folder", "Open log file",
-  "Upload to rentry.co" (primary). When upload succeeds show a small
-  `Card bg-success/10 border-success/30` with the slug + copy buttons.
-- Game blacklist → list of rows in `Card` items, each with package name +
-  version + `Button variant="light" color="danger" size="sm"` "Remove".
-- Content filter → single Switch row "Hide adult content".
-
-**Footer** at the bottom (still inside max-w container): a small card
-`bg-content1` with `<span class="text-xs text-default-500">For the VR
-community</span>` and `<span class="text-sm font-medium text-foreground">Made
-with ♥ by DMP of Armgddn Games</span>` and a `Button isIconOnly variant="light"
-size="sm" aria-label="Credits"` `HelpCircle` opening `<CreditsDialog
-open={isCreditsOpen} onClose={...} variant="settings" />`.
-
-**Hooks/IPC to preserve**: everything the current Settings.tsx imports —
-`useSettings`, `useExtrasSettings` (`disableAutoUpdate, fontScale,
-deleteOnRemove, disableSideloading, colorblindMode, accentColor, fontFamily`),
-`useSoundEffects` (`enabled, volume, loaded, perName, setEnabled, setVolume,
-setPerName, play, SOUND_NAMES`), `useLogs`, `useAdb` (`userName, setUserName,
-loadingUserName, isConnected`), `useGames` (`getBlacklistGames,
-removeGameFromBlacklist`), `useLanguage` (`t`), `window.api.settings.*`,
-`window.api.dialog.showDirectoryPicker`, `localStorage.vrcyberdeck:hideAdult`.
+**Hooks/IPC to preserve**: same as the previous SPEC — `useSettings`,
+`useExtrasSettings`, `useSoundEffects` (`SOUND_NAMES`), `useLogs`, `useAdb`
+(`userName, setUserName, loadingUserName, isConnected`), `useGames`
+(`getBlacklistGames, removeGameFromBlacklist`), `useLanguage`, plus all
+`window.api.*` calls and the localStorage key `'vrcyberdeck:hideAdult'`.
 
 ---
 
-## 5. Done means
+## 4. Done means
 
-- File compiles (`tsc --noEmit -p tsconfig.web.json` clean).
-- No reference to `@fluentui/*`, `var(--vrcd-*)`, monospace as decoration,
-  ALL-CAPS labels, or removed CSS files.
-- Every text label visibly readable on its background (manual check OK).
-- Every interactive control has a visible state at rest, hover, focus, active,
-  and disabled.
-- Component preserves the hook API and props listed in its section.
+- File type-checks (`tsc --noEmit -p tsconfig.web.json` clean).
+- No `@fluentui/*` / `@heroui/*` imports in your owned files. No
+  custom CSS files. No `var(--vrcd-*)` / `var(--quest-*)`.
+- Every text reads on its background (shadcn's default tokens are
+  WCAG-AA on the dark theme).
+- Every interactive control has visible rest, hover, focus, active, and
+  disabled states (shadcn handles this — don't override).
 - Single commit per surface, message:
-  `refactor(<surface>): rebuild in HeroUI per UI_SPEC`.
+  `refactor(<surface>): rebuild in shadcn per UI_SPEC`.
