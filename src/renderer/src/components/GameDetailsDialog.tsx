@@ -1,28 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { GameInfo } from '@shared/types'
-import {
-  Dialog,
-  DialogSurface,
-  DialogBody,
-  Button,
-  Spinner,
-  ProgressBar,
-  Text
-} from '@fluentui/react-components'
-import {
-  ArrowClockwiseRegular,
-  DismissRegular,
-  DocumentDataRegular,
-  CalendarClockRegular,
-  ArrowDownloadRegular as DownloadIcon,
-  TagRegular,
-  DeleteRegular,
-  ArrowSyncRegular,
-  ArrowUpRegular,
-  InfoRegular,
-  CheckmarkCircleRegular,
-  BroomRegular as UninstallIcon
-} from '@fluentui/react-icons'
+import { Button, Chip, Progress, Spinner } from '@heroui/react'
 import placeholderImage from '../assets/images/game-placeholder.png'
 import { useGames } from '@renderer/hooks/useGames'
 import { useAdb } from '@renderer/hooks/useAdb'
@@ -30,22 +8,57 @@ import { getSideloadingDisabled } from '@renderer/hooks/useExtrasSettings'
 import ErrorDetailDialog, { ErrorPhase } from './ErrorDetailDialog'
 import NoteRenderer from './NoteRenderer'
 
-const NEON = 'var(--vrcd-neon)'
-const PURPLE = 'var(--vrcd-purple)'
-const BG = '#030310'
-const SURFACE_VARS = {
-  '--colorNeutralBackground1': BG,
-  '--colorNeutralBackground2': '#050520',
-  '--colorNeutralBackground3': '#040418',
-  '--colorNeutralForeground1': NEON,
-  '--colorNeutralForeground2': 'rgba(var(--vrcd-neon-raw),0.75)',
-  '--colorNeutralForeground3': 'rgba(var(--vrcd-neon-raw),0.5)',
-  '--colorNeutralStroke1': 'rgba(var(--vrcd-neon-raw),0.2)',
-  '--colorBrandBackground': NEON,
-  '--colorNeutralForegroundOnBrand': BG,
-  '--colorPaletteRedForeground1': '#ff5555',
-  '--colorPaletteRedBackground2': 'rgba(255,50,50,0.12)',
-} as React.CSSProperties
+// ─── Inline icons ─────────────────────────────────────────────────────────────
+const XIcon = ({ size = 16 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+)
+const DownloadIcon = ({ size = 14 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+  </svg>
+)
+const TrashIcon = ({ size = 14 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+  </svg>
+)
+const RefreshIcon = ({ size = 14 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+  </svg>
+)
+const ArrowUpIcon = ({ size = 14 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="19" x2="12" y2="5" /><polyline points="5 12 12 5 19 12" />
+  </svg>
+)
+const UninstallIcon = ({ size = 14 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
+  </svg>
+)
+const CheckCircleIcon = ({ size = 14 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
+  </svg>
+)
+const InfoIcon = ({ size = 14 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+  </svg>
+)
+const PlayIcon = ({ size = 14 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polygon points="5 3 19 12 5 21 5 3" />
+  </svg>
+)
+const ChevronDownIcon = ({ size = 14 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="6 9 12 15 18 9" />
+  </svg>
+)
 
 interface GameDetailsDialogProps {
   game: GameInfo | null
@@ -81,10 +94,7 @@ const GameDetailsDialog: React.FC<GameDetailsDialogProps> = ({
   const [errorDetailOpen, setErrorDetailOpen] = useState(false)
   const webviewRef = useRef<HTMLElement>(null)
 
-  // The trailer is loaded as the actual youtube.com/watch page (not /embed/,
-  // which gets rejected with error 152 for many trailers). On dom-ready we
-  // strip out everything except the player so the result looks like an
-  // embed. Same approach as ApprenticeVRSrc.
+  // Trailer CSS injection — same approach as before
   const handleWebviewReady = useCallback(() => {
     const wv = webviewRef.current as
       | (HTMLElement & {
@@ -168,6 +178,13 @@ const GameDetailsDialog: React.FC<GameDetailsDialogProps> = ({
     return () => { alive = false }
   }, [open, game, getTrailerUrl])
 
+  // Close on Escape
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    if (open) document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [open, onClose])
+
   const renderActionButtons = (g: GameInfo): React.ReactNode => {
     const status = downloadStatusMap.get(g.releaseName || '')?.status
     const canCancel = status === 'Downloading' || status === 'Extracting' || status === 'Queued'
@@ -178,167 +195,275 @@ const GameDetailsDialog: React.FC<GameDetailsDialogProps> = ({
     const noSideload = getSideloadingDisabled()
 
     if (isInstalling) return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <Spinner size="small" /><Text>Installing...</Text>
+      <div className="flex items-center gap-2 text-sm text-default-500">
+        <Spinner size="sm" color="primary" />
+        <span>Installing...</span>
       </div>
     )
+
     if (canCancel) return (
-      <Button appearance="secondary" style={{ color: '#ff5555', borderColor: 'rgba(255,85,85,0.5)' }} icon={<DismissRegular />} onClick={() => onCancelDownload(g)} disabled={isBusy}>
-        Cancel Download
+      <Button
+        color="danger"
+        variant="flat"
+        size="sm"
+        startContent={<XIcon size={13} />}
+        onPress={() => onCancelDownload(g)}
+        isDisabled={isBusy}
+      >
+        Cancel download
       </Button>
     )
+
     if (isInstallError || isErrorOrCancelled) return (
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <Button appearance="primary" icon={<ArrowClockwiseRegular />} onClick={() => onRetry(g)} disabled={isBusy}>Retry</Button>
+      <div className="flex gap-2 flex-wrap">
+        <Button
+          color="primary"
+          size="sm"
+          startContent={<RefreshIcon size={13} />}
+          onPress={() => onRetry(g)}
+          isDisabled={isBusy}
+        >
+          Retry
+        </Button>
         {(isInstallError || status === 'Error') && (
           <Button
-            appearance="secondary"
-            icon={<InfoRegular />}
-            style={{ color: '#ff5555', borderColor: 'rgba(255,85,85,0.5)' }}
-            onClick={() => setErrorDetailOpen(true)}
+            color="danger"
+            variant="flat"
+            size="sm"
+            startContent={<InfoIcon size={13} />}
+            onPress={() => setErrorDetailOpen(true)}
           >
-            Error info
+            Error details
           </Button>
         )}
-        <Button appearance="secondary" style={{ color: '#ff5555', borderColor: 'rgba(255,85,85,0.5)' }} icon={<DeleteRegular />} onClick={() => onDeleteDownloaded(g)} disabled={isBusy}>Delete Files</Button>
+        <Button
+          color="danger"
+          variant="flat"
+          size="sm"
+          startContent={<TrashIcon size={13} />}
+          onPress={() => onDeleteDownloaded(g)}
+          isDisabled={isBusy}
+        >
+          Delete files
+        </Button>
       </div>
     )
+
     if (g.isInstalled) {
       if (g.hasUpdate) return (
-        <div style={{ display: 'flex', gap: 8 }}>
-          {!noSideload && <Button appearance="primary" icon={<ArrowUpRegular />} onClick={() => onUpdate(g)} disabled={!isConnected || isBusy}>Update</Button>}
-          {!noSideload && <Button appearance="secondary" style={{ color: '#ff5555', borderColor: 'rgba(255,85,85,0.5)' }} icon={<UninstallIcon />} onClick={() => onUninstall(g)} disabled={!isConnected || isBusy}>Uninstall</Button>}
-          {noSideload && <Text size={200} style={{ color: 'rgba(var(--vrcd-neon-raw),0.5)', fontFamily: 'monospace' }}>Sideloading disabled</Text>}
+        <div className="flex gap-2 flex-wrap">
+          {!noSideload && (
+            <Button
+              color="primary"
+              size="sm"
+              startContent={<ArrowUpIcon size={13} />}
+              onPress={() => onUpdate(g)}
+              isDisabled={!isConnected || isBusy}
+            >
+              Update
+            </Button>
+          )}
+          {!noSideload && (
+            <Button
+              color="danger"
+              variant="flat"
+              size="sm"
+              startContent={<UninstallIcon size={13} />}
+              onPress={() => onUninstall(g)}
+              isDisabled={!isConnected || isBusy}
+            >
+              Uninstall
+            </Button>
+          )}
+          {noSideload && (
+            <span className="text-xs text-default-400">Sideloading disabled</span>
+          )}
         </div>
       )
       return (
-        <div style={{ display: 'flex', gap: 8 }}>
-          {!noSideload && <Button appearance="secondary" icon={<ArrowSyncRegular />} onClick={() => onReinstall(g)} disabled={!isConnected || isBusy}>Reinstall</Button>}
-          {!noSideload && <Button appearance="secondary" style={{ color: '#ff5555', borderColor: 'rgba(255,85,85,0.5)' }} icon={<UninstallIcon />} onClick={() => onUninstall(g)} disabled={!isConnected || isBusy}>Uninstall</Button>}
-          {noSideload && <Text size={200} style={{ color: 'rgba(var(--vrcd-neon-raw),0.5)', fontFamily: 'monospace' }}>Sideloading disabled</Text>}
+        <div className="flex gap-2 flex-wrap">
+          {!noSideload && (
+            <Button
+              color="default"
+              variant="flat"
+              size="sm"
+              startContent={<RefreshIcon size={13} />}
+              onPress={() => onReinstall(g)}
+              isDisabled={!isConnected || isBusy}
+            >
+              Reinstall
+            </Button>
+          )}
+          {!noSideload && (
+            <Button
+              color="danger"
+              variant="flat"
+              size="sm"
+              startContent={<UninstallIcon size={13} />}
+              onPress={() => onUninstall(g)}
+              isDisabled={!isConnected || isBusy}
+            >
+              Uninstall
+            </Button>
+          )}
+          {noSideload && (
+            <span className="text-xs text-default-400">Sideloading disabled</span>
+          )}
         </div>
       )
     }
+
     if (isDownloaded) return (
-      <div style={{ display: 'flex', gap: 8 }}>
-        {!noSideload && <Button appearance="primary" icon={<CheckmarkCircleRegular />} onClick={() => onInstallFromCompleted(g)} disabled={!isConnected || isBusy}>Install</Button>}
-        <Button appearance="secondary" style={{ color: '#ff5555', borderColor: 'rgba(255,85,85,0.5)' }} icon={<DeleteRegular />} onClick={() => onDeleteDownloaded(g)} disabled={isBusy}>Delete Files</Button>
+      <div className="flex gap-2 flex-wrap">
+        {!noSideload && (
+          <Button
+            color="primary"
+            size="sm"
+            startContent={<CheckCircleIcon size={13} />}
+            onPress={() => onInstallFromCompleted(g)}
+            isDisabled={!isConnected || isBusy}
+          >
+            Install
+          </Button>
+        )}
+        <Button
+          color="danger"
+          variant="flat"
+          size="sm"
+          startContent={<TrashIcon size={13} />}
+          onPress={() => onDeleteDownloaded(g)}
+          isDisabled={isBusy}
+        >
+          Delete files
+        </Button>
       </div>
     )
+
     return (
-      <Button appearance="primary" icon={<DownloadIcon />} onClick={() => onInstall(g)} disabled={isBusy}>
+      <Button
+        color="primary"
+        size="sm"
+        startContent={<DownloadIcon size={13} />}
+        onPress={() => onInstall(g)}
+        isDisabled={isBusy}
+      >
         Download
       </Button>
     )
   }
 
-  if (!game) return null
+  if (!game || !open) return null
 
   const statusEntry = game.releaseName ? downloadStatusMap.get(game.releaseName) : undefined
   const dlStatus = statusEntry?.status
   const dlProgress = statusEntry?.progress ?? 0
   const showProgress = dlStatus === 'Downloading' || dlStatus === 'Extracting' || dlStatus === 'Installing'
 
-  const statusColor = game.isInstalled ? NEON
-    : dlStatus === 'Completed' ? 'rgba(var(--vrcd-neon-raw),0.5)'
-    : dlStatus === 'InstallError' || dlStatus === 'Error' ? '#ff5555'
-    : 'rgba(var(--vrcd-neon-raw),0.4)'
-  const statusLabel = game.isInstalled ? (game.hasUpdate ? 'Update Available' : 'Installed')
+  // Status chip color + label
+  const statusColor: 'success' | 'warning' | 'danger' | 'default' | 'primary' =
+    game.isInstalled
+      ? (game.hasUpdate ? 'warning' : 'success')
+      : dlStatus === 'Completed' ? 'default'
+      : dlStatus === 'InstallError' || dlStatus === 'Error' ? 'danger'
+      : dlStatus === 'Installing' ? 'primary'
+      : 'default'
+
+  const statusLabel =
+    game.isInstalled ? (game.hasUpdate ? 'Update available' : 'Installed')
     : dlStatus === 'Completed' ? 'Downloaded'
-    : dlStatus === 'InstallError' ? 'Install Error'
-    : dlStatus === 'Error' ? 'Download Error'
+    : dlStatus === 'InstallError' ? 'Install error'
+    : dlStatus === 'Error' ? 'Download error'
     : dlStatus === 'Installing' ? 'Installing...'
-    : 'Not Installed'
+    : 'Not installed'
 
   return (
-    <Dialog open={open} onOpenChange={(_e, d) => !d.open && onClose()} modalType="modal">
-      <DialogSurface
-        mountNode={document.getElementById('portal')}
-        style={{
-          ...SURFACE_VARS,
-          background: BG,
-          border: `1px solid rgba(var(--vrcd-neon-raw),0.4)`,
-          boxShadow: `0 0 50px rgba(var(--vrcd-neon-raw),0.08), 0 0 1px rgba(var(--vrcd-purple-raw),0.3)`,
-          maxWidth: '680px',
-          width: '90vw',
-          maxHeight: '92vh',
-          padding: 0,
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column'
-        }}
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div
+        className="bg-content1 border border-divider rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+        style={{ width: '90vw', maxWidth: 680, maxHeight: '92vh' }}
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          style={{
-            position: 'absolute', top: 10, right: 12, zIndex: 10,
-            background: 'transparent', border: 'none', cursor: 'pointer',
-            color: 'rgba(var(--vrcd-neon-raw),0.6)', fontSize: 18, lineHeight: 1,
-            padding: '2px 6px'
-          }}
-          aria-label="Close"
-        >✕</button>
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-divider flex-shrink-0">
+          <h2 className="text-base font-semibold text-foreground truncate pr-4">{game.name}</h2>
+          <button
+            onClick={onClose}
+            className="flex-shrink-0 text-default-400 hover:text-default-700 transition-colors rounded-lg p-1 hover:bg-default-100"
+            aria-label="Close"
+          >
+            <XIcon size={16} />
+          </button>
+        </div>
 
-        <DialogBody style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-5">
 
-          {/* ── Cover + info row ── */}
-          <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr', gap: 16, alignItems: 'start' }}>
+          {/* Cover + meta row */}
+          <div className="flex gap-4">
             {/* Cover image */}
-            <img
-              src={game.thumbnailPath ? `file://${game.thumbnailPath}` : placeholderImage}
-              alt={game.name}
-              style={{ width: 140, height: 140, objectFit: 'cover', borderRadius: 8, border: '1px solid rgba(var(--vrcd-neon-raw),0.3)', display: 'block' }}
-            />
+            <div className="flex-shrink-0 w-32 h-32 rounded-xl overflow-hidden border border-divider bg-content2">
+              <img
+                src={game.thumbnailPath ? `file://${game.thumbnailPath}` : placeholderImage}
+                alt={game.name}
+                className="w-full h-full object-cover block"
+              />
+            </div>
 
-            {/* Game meta */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <div style={{ fontSize: 18, fontWeight: 700, color: NEON, fontFamily: 'monospace', letterSpacing: '0.04em', lineHeight: 1.2 }}>{game.name}</div>
-              <div style={{ fontSize: 11, color: `${PURPLE}cc`, fontFamily: 'monospace' }}>{game.packageName}</div>
+            {/* Meta */}
+            <div className="flex flex-col gap-2 min-w-0 flex-1">
+              <p className="text-xs text-default-400 font-mono truncate">{game.packageName}</p>
 
-              {/* Status badge */}
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginTop: 2 }}>
+              {/* Status + badges row */}
+              <div className="flex items-center gap-2 flex-wrap">
                 {(dlStatus === 'InstallError' || dlStatus === 'Error') ? (
                   <button
                     type="button"
                     onClick={() => setErrorDetailOpen(true)}
                     title="Click for error details"
-                    style={{
-                      fontSize: 11, fontFamily: 'monospace', fontWeight: 600,
-                      color: statusColor, border: `1px solid ${statusColor}`,
-                      borderRadius: 4, padding: '1px 7px', letterSpacing: '0.06em',
-                      background: 'transparent', cursor: 'pointer'
-                    }}
+                    className="flex items-center gap-1"
                   >
-                    {statusLabel} ⓘ
+                    <Chip size="sm" color={statusColor} variant="flat" className="text-xs cursor-pointer hover:opacity-80">
+                      {statusLabel} <InfoIcon size={11} />
+                    </Chip>
                   </button>
                 ) : (
-                  <span style={{ fontSize: 11, fontFamily: 'monospace', fontWeight: 600, color: statusColor, border: `1px solid ${statusColor}`, borderRadius: 4, padding: '1px 7px', letterSpacing: '0.06em' }}>
-                    {statusLabel}
+                  <Chip size="sm" color={statusColor} variant="flat" className="text-xs">{statusLabel}</Chip>
+                )}
+              </div>
+
+              {/* Info row */}
+              <div className="flex items-center gap-3 flex-wrap">
+                {game.size && game.size !== '0 MB' && (
+                  <span className="text-xs text-default-400">{game.size}</span>
+                )}
+                {game.downloads != null && (
+                  <span className="text-xs text-default-400">{game.downloads.toLocaleString()} downloads</span>
+                )}
+                {game.version && (
+                  <span className="text-xs text-default-400">
+                    v{game.version}
+                    {game.isInstalled && game.deviceVersionCode && (
+                      <span className="text-default-300"> (installed: v{game.deviceVersionCode})</span>
+                    )}
                   </span>
                 )}
-                <span style={{ fontSize: 11, color: 'rgba(var(--vrcd-neon-raw),0.6)', fontFamily: 'monospace' }}>
-                  <DocumentDataRegular fontSize={12} style={{ verticalAlign: 'middle', marginRight: 3 }} />{game.size || '-'}
-                </span>
-                <span style={{ fontSize: 11, color: 'rgba(var(--vrcd-neon-raw),0.6)', fontFamily: 'monospace' }}>
-                  <DownloadIcon fontSize={12} style={{ verticalAlign: 'middle', marginRight: 3 }} />{game.downloads?.toLocaleString() || '-'}
-                </span>
-                <span style={{ fontSize: 11, color: 'rgba(var(--vrcd-neon-raw),0.6)', fontFamily: 'monospace' }}>
-                  <InfoRegular fontSize={12} style={{ verticalAlign: 'middle', marginRight: 3 }} />
-                  {game.version ? `v${game.version}` : '-'}
-                  {game.isInstalled && game.deviceVersionCode && <span style={{ color: 'rgba(var(--vrcd-neon-raw),0.4)' }}> (dev: v{game.deviceVersionCode})</span>}
-                </span>
               </div>
 
-              <div style={{ height: '1px', background: 'rgba(var(--vrcd-neon-raw),0.15)', marginTop: 4 }} />
-
-              <div style={{ fontSize: 11, color: 'rgba(var(--vrcd-neon-raw),0.7)', fontFamily: 'monospace', display: 'flex', flexDirection: 'column', gap: 3 }}>
-                <span><TagRegular fontSize={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />{game.releaseName || '-'}</span>
-                <span><CalendarClockRegular fontSize={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />{String(game.lastUpdated || '-')}</span>
+              {/* Release + date */}
+              <div className="flex flex-col gap-0.5">
+                {game.releaseName && (
+                  <p className="text-xs text-default-400 truncate">{game.releaseName}</p>
+                )}
+                {game.lastUpdated && (
+                  <p className="text-xs text-default-400">{String(game.lastUpdated)}</p>
+                )}
               </div>
 
-              {/* ── ACTION BUTTONS (moved up) ── */}
-              <div style={{ marginTop: 8 }}>
+              {/* Action buttons */}
+              <div className="mt-1">
                 {renderActionButtons(game)}
               </div>
             </div>
@@ -346,36 +471,42 @@ const GameDetailsDialog: React.FC<GameDetailsDialogProps> = ({
 
           {/* Download progress */}
           {showProgress && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Spinner size="tiny" />
-                <span style={{ color: NEON, fontFamily: 'monospace', fontSize: 12 }}>{dlStatus}... {dlProgress}%</span>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <Spinner size="sm" color="primary" />
+                <span className="text-xs text-default-500">
+                  {dlStatus}... {dlProgress}%
+                </span>
               </div>
-              <ProgressBar value={dlProgress} max={100} shape="rounded" thickness="medium" />
+              <Progress value={dlProgress} maxValue={100} color="primary" size="sm" className="w-full" aria-label="Download progress" />
             </div>
           )}
 
-          {/* ── Collapsible Trailer ── */}
-          <div style={{ borderTop: '1px solid rgba(var(--vrcd-neon-raw),0.12)', paddingTop: 12 }}>
+          {/* Divider */}
+          <div className="h-px bg-divider" />
+
+          {/* Trailer section */}
+          <div>
             <button
               onClick={() => setTrailerOpen(!trailerOpen)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 8, width: '100%',
-                background: 'transparent', border: 'none', cursor: 'pointer',
-                color: 'rgba(var(--vrcd-neon-raw),0.8)', fontFamily: 'monospace', fontSize: 12,
-                letterSpacing: '0.1em', textAlign: 'left', padding: '2px 0'
-              }}
+              className="flex items-center gap-2 text-xs text-default-500 hover:text-foreground transition-colors w-full text-left"
             >
-              <span style={{ fontSize: 10 }}>{trailerOpen ? '▼' : '▶'}</span>
-              <span>TRAILER</span>
-              {loadingVideo && <Spinner size="tiny" style={{ marginLeft: 4 }} />}
+              <span className={`transition-transform ${trailerOpen ? 'rotate-180' : ''}`}>
+                <ChevronDownIcon size={13} />
+              </span>
+              <PlayIcon size={13} />
+              <span className="font-medium">Trailer</span>
+              {loadingVideo && <Spinner size="sm" color="default" className="ml-1" />}
               {!trailerUrl && !loadingVideo && (
-                <span style={{ marginLeft: 'auto', fontSize: 10, color: 'rgba(var(--vrcd-neon-raw),0.35)' }}>no trailer found</span>
+                <span className="ml-auto text-default-300">Not available</span>
               )}
             </button>
 
             {trailerOpen && trailerUrl && (
-              <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%', marginTop: 10, borderRadius: 6, overflow: 'hidden', border: '1px solid rgba(var(--vrcd-neon-raw),0.2)', background: '#000' }}>
+              <div
+                className="relative mt-3 rounded-xl overflow-hidden bg-black border border-divider"
+                style={{ paddingTop: '56.25%' }}
+              >
                 {/youtube(?:-nocookie)?\.com|youtu\.be/.test(trailerUrl) ? (
                   <webview
                     ref={webviewRef}
@@ -399,15 +530,21 @@ const GameDetailsDialog: React.FC<GameDetailsDialogProps> = ({
               </div>
             )}
             {trailerOpen && !trailerUrl && !loadingVideo && (
-              <p style={{ color: 'rgba(var(--vrcd-neon-raw),0.4)', fontFamily: 'monospace', fontSize: 12, margin: '8px 0 0' }}>No trailer available.</p>
+              <p className="text-xs text-default-400 mt-2">No trailer available.</p>
             )}
           </div>
 
-          {/* ── Note section (bottom) ── */}
-          <div style={{ borderTop: '1px solid rgba(var(--vrcd-neon-raw),0.12)', paddingTop: 12 }}>
-            <div style={{ fontSize: 11, fontFamily: 'monospace', letterSpacing: '0.1em', color: 'rgba(var(--vrcd-neon-raw),0.6)', marginBottom: 6 }}>// NOTE</div>
+          {/* Divider */}
+          <div className="h-px bg-divider" />
+
+          {/* Notes section */}
+          <div>
+            <p className="text-xs font-medium text-default-500 uppercase tracking-wide mb-2">Notes</p>
             {loadingNote ? (
-              <Spinner size="tiny" label="Loading..." />
+              <div className="flex items-center gap-2 text-xs text-default-400">
+                <Spinner size="sm" color="default" />
+                <span>Loading...</span>
+              </div>
             ) : currentGameNote ? (
               <NoteRenderer
                 note={currentGameNote}
@@ -415,12 +552,12 @@ const GameDetailsDialog: React.FC<GameDetailsDialogProps> = ({
                 downloadPath={statusEntry?.downloadPath ?? null}
               />
             ) : (
-              <span style={{ fontFamily: 'monospace', fontSize: 12, color: 'rgba(var(--vrcd-neon-raw),0.35)' }}>No note available.</span>
+              <p className="text-xs text-default-400">No notes available.</p>
             )}
           </div>
+        </div>
+      </div>
 
-        </DialogBody>
-      </DialogSurface>
       <ErrorDetailDialog
         open={errorDetailOpen}
         onClose={() => setErrorDetailOpen(false)}
@@ -429,7 +566,7 @@ const GameDetailsDialog: React.FC<GameDetailsDialogProps> = ({
         contextLabel={`${game.name}${game.releaseName ? ` (${game.releaseName})` : ''}`}
         onRetry={() => onRetry(game)}
       />
-    </Dialog>
+    </div>
   )
 }
 
