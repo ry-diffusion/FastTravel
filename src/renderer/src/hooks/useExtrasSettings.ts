@@ -139,17 +139,17 @@ export function applyAccentColor(hex: string | null): void {
 export function shouldShowIntro(): boolean {
   // Master disable wins
   if (readBool(DISABLE_ALL_EXTRAS_KEY, false)) return false
-  return readBool(INTRO_STORAGE_KEY, true)
+  return readBool(INTRO_STORAGE_KEY, false)
 }
 
 export function shouldShowBreach(): boolean {
   if (readBool(DISABLE_ALL_EXTRAS_KEY, false)) return false
-  return readBool(BREACH_STORAGE_KEY, true)
+  return readBool(BREACH_STORAGE_KEY, false)
 }
 
 export function shouldShowMatrixShell(): boolean {
   if (readBool(DISABLE_ALL_EXTRAS_KEY, false)) return false
-  return readBool(MATRIX_SHELL_STORAGE_KEY, true)
+  return readBool(MATRIX_SHELL_STORAGE_KEY, false)
 }
 
 export function isAutoUpdateDisabled(): boolean {
@@ -188,9 +188,9 @@ export interface ExtrasSettings {
 }
 
 export function useExtrasSettings(): ExtrasSettings {
-  const [showIntro, setShowIntroState] = useState<boolean>(() => readBool(INTRO_STORAGE_KEY, true))
-  const [showBreach, setShowBreachState] = useState<boolean>(() => readBool(BREACH_STORAGE_KEY, true))
-  const [showMatrixShell, setShowMatrixShellState] = useState<boolean>(() => readBool(MATRIX_SHELL_STORAGE_KEY, true))
+  const [showIntro, setShowIntroState] = useState<boolean>(() => readBool(INTRO_STORAGE_KEY, false))
+  const [showBreach, setShowBreachState] = useState<boolean>(() => readBool(BREACH_STORAGE_KEY, false))
+  const [showMatrixShell, setShowMatrixShellState] = useState<boolean>(() => readBool(MATRIX_SHELL_STORAGE_KEY, false))
   const [disableAllExtras, setDisableAllExtrasState] = useState<boolean>(() => readBool(DISABLE_ALL_EXTRAS_KEY, false))
   const [disableAutoUpdate, setDisableAutoUpdateState] = useState<boolean>(() => readBool(DISABLE_AUTO_UPDATE_KEY, false))
   const [fontScale, setFontScaleState] = useState<number>(() => getFontScale())
