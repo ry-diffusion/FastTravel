@@ -1,12 +1,6 @@
 import React from 'react'
 import { Button, Chip, Progress } from '@heroui/react'
-import {
-  DismissRegular,
-  DeleteRegular,
-  ArrowCounterclockwiseRegular,
-  DismissCircleRegular,
-  ArrowUploadRegular
-} from '@fluentui/react-icons'
+import { X, Trash2, RotateCcw, XCircle, ArrowUpToLine } from 'lucide-react'
 import { useUpload } from '../hooks/useUpload'
 import { useLanguage } from '../hooks/useLanguage'
 import { UploadItem } from '@shared/types'
@@ -63,10 +57,10 @@ const UploadRow: React.FC<{ item: UploadItem }> = ({ item }) => {
   const showBar = item.status === 'Preparing' || item.status === 'Uploading'
 
   return (
-    <div className="group flex items-center gap-4 rounded-large px-4 py-3 transition-colors duration-100 hover:bg-white/[0.03]">
+    <div className="group flex items-center gap-4 rounded-large px-4 py-3 transition-colors duration-100 hover:bg-content2">
       {/* Icon placeholder */}
       <div className="flex-shrink-0 w-16 h-16 rounded-medium bg-content2 flex items-center justify-center">
-        <ArrowUploadRegular className="h-7 w-7 text-default-300" />
+        <ArrowUpToLine size={28} className="text-default-300" />
       </div>
 
       {/* Info */}
@@ -122,11 +116,12 @@ const UploadRow: React.FC<{ item: UploadItem }> = ({ item }) => {
             isIconOnly
             size="sm"
             variant="light"
-            onClick={() => cancelUpload(item.packageName)}
+            aria-label={t('cancelUpload')}
+            onPress={() => cancelUpload(item.packageName)}
             title={t('cancelUpload')}
             className="h-7 w-7 text-default-400"
           >
-            <DismissRegular className="h-3.5 w-3.5" />
+            <X size={14} />
           </Button>
         )}
 
@@ -136,11 +131,12 @@ const UploadRow: React.FC<{ item: UploadItem }> = ({ item }) => {
             isIconOnly
             size="sm"
             variant="light"
-            onClick={() => retryUpload(item.packageName)}
+            aria-label={t('retryUpload')}
+            onPress={() => retryUpload(item.packageName)}
             title={t('retryUpload')}
             className="h-7 w-7 text-default-400"
           >
-            <ArrowCounterclockwiseRegular className="h-3.5 w-3.5" />
+            <RotateCcw size={14} />
           </Button>
         )}
 
@@ -153,13 +149,16 @@ const UploadRow: React.FC<{ item: UploadItem }> = ({ item }) => {
             isIconOnly
             size="sm"
             variant="light"
-            onClick={() => removeFromQueue(item.packageName)}
+            aria-label={
+              item.status === 'Completed' ? t('removeFromHistory') : t('removeFromQueue')
+            }
+            onPress={() => removeFromQueue(item.packageName)}
             title={
               item.status === 'Completed' ? t('removeFromHistory') : t('removeFromQueue')
             }
             className="h-7 w-7 text-default-400"
           >
-            <DeleteRegular className="h-3.5 w-3.5" />
+            <Trash2 size={14} />
           </Button>
         )}
       </div>
@@ -173,36 +172,10 @@ const UploadRow: React.FC<{ item: UploadItem }> = ({ item }) => {
 
 const UploadsView: React.FC = () => {
   const { queue, clearCompleted } = useUpload()
-  const { t } = useLanguage()
 
   const hasClearable = queue.some(
     (i) => i.status === 'Completed' || i.status === 'Cancelled'
   )
-
-  if (queue.length === 0) {
-    return (
-      <div className="flex flex-col gap-4 pb-8">
-        <div className="flex items-center gap-2 mb-2">
-          <Button
-            size="sm"
-            variant="light"
-            startContent={<DismissCircleRegular className="h-3.5 w-3.5" />}
-            isDisabled
-            className="h-8 text-xs text-default-500"
-          >
-            Clear completed
-          </Button>
-        </div>
-        <div className="flex flex-col items-center justify-center gap-3 py-20 text-default-400">
-          <ArrowUploadRegular className="h-10 w-10 opacity-30" />
-          <span className="text-sm font-medium">No active transfers.</span>
-          <span className="text-xs text-default-300">
-            {t('noUploadsInQueue')}
-          </span>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="flex flex-col gap-2 pb-8">
@@ -211,21 +184,32 @@ const UploadsView: React.FC = () => {
         <Button
           size="sm"
           variant="light"
-          startContent={<DismissCircleRegular className="h-3.5 w-3.5" />}
+          startContent={<XCircle size={14} />}
           isDisabled={!hasClearable}
-          onClick={clearCompleted}
+          onPress={clearCompleted}
           className="h-8 text-xs text-default-500"
         >
           Clear completed
         </Button>
       </div>
 
-      {/* Upload rows */}
-      <div className="flex flex-col divide-y divide-white/[0.04]">
-        {queue.map((item) => (
-          <UploadRow key={item.packageName} item={item} />
-        ))}
-      </div>
+      {/* Empty state */}
+      {queue.length === 0 ? (
+        <div className="flex flex-col items-center justify-center gap-3 py-20 text-default-400">
+          <ArrowUpToLine size={40} className="opacity-30" />
+          <span className="text-sm font-medium">No active uploads.</span>
+          <span className="text-xs text-default-500">
+            Games you upload to VRSource will appear here.
+          </span>
+        </div>
+      ) : (
+        /* Upload rows */
+        <div className="flex flex-col divide-y divide-divider">
+          {queue.map((item) => (
+            <UploadRow key={item.packageName} item={item} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

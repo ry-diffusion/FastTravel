@@ -1,18 +1,17 @@
 import React, { useState } from 'react'
 import { Button, Chip, Image, Progress, Spinner, cn } from '@heroui/react'
 import {
-  FolderRegular,
-  DismissCircleRegular,
-  PauseRegular,
-  PlayRegular,
-  ArrowUpRegular,
-  DismissRegular,
-  ArrowCounterclockwiseRegular,
-  InfoRegular,
-  DeleteRegular,
-  ArrowDownloadRegular,
-  BroomRegular
-} from '@fluentui/react-icons'
+  Folder,
+  X,
+  Pause,
+  Play,
+  ArrowUp,
+  RotateCcw,
+  Info,
+  Trash2,
+  ArrowDownToLine,
+  XCircle
+} from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { useDownload } from '../hooks/useDownload'
 import { useAdb } from '../hooks/useAdb'
@@ -72,7 +71,7 @@ function statusLabel(item: DownloadItem): string {
     case 'Error':
       return 'Error'
     case 'InstallError':
-      return 'Install Error'
+      return 'Install error'
     default:
       return status
   }
@@ -116,23 +115,23 @@ const DeleteConfirmBanner: React.FC<DeleteConfirmBannerProps> = ({
   onDelete,
   onCancel
 }) => (
-  <div className="flex items-center gap-2 rounded-medium bg-warning-50/10 border border-warning-200/30 px-3 py-2 text-xs">
-    <span className="text-warning-500 font-medium whitespace-nowrap">Delete files too?</span>
+  <div className="flex items-center gap-2 rounded-medium bg-warning/10 border border-warning/30 px-3 py-2 text-xs">
+    <span className="text-warning font-medium whitespace-nowrap">Delete files too?</span>
     <Button
       size="sm"
       variant="light"
       color="default"
       className="h-6 min-w-0 px-2 text-xs"
-      onClick={onKeep}
+      onPress={onKeep}
     >
       Keep files
     </Button>
     <Button
       size="sm"
-      variant="light"
+      variant="flat"
       color="danger"
       className="h-6 min-w-0 px-2 text-xs"
-      onClick={onDelete}
+      onPress={onDelete}
     >
       Delete
     </Button>
@@ -140,10 +139,11 @@ const DeleteConfirmBanner: React.FC<DeleteConfirmBannerProps> = ({
       isIconOnly
       size="sm"
       variant="light"
+      aria-label="Cancel delete"
       className="h-6 w-6 min-w-0 text-default-400"
-      onClick={onCancel}
+      onPress={onCancel}
     >
-      <DismissRegular className="h-3 w-3" />
+      <X size={12} />
     </Button>
   </div>
 )
@@ -217,7 +217,7 @@ const DownloadRow: React.FC<DownloadRowProps> = ({
     <div
       className={cn(
         'group flex items-center gap-4 rounded-large px-4 py-3 transition-colors duration-100',
-        'hover:bg-white/[0.03]'
+        'hover:bg-content2'
       )}
     >
       {/* Thumbnail */}
@@ -251,18 +251,13 @@ const DownloadRow: React.FC<DownloadRowProps> = ({
             </Chip>
           )}
         </div>
-        <span className="text-default-500 text-xs truncate">{item.releaseName}</span>
+        <span className="text-default-500 text-xs font-mono truncate">{item.releaseName}</span>
         <span className="text-default-400 text-xs">{formatAddedTime(item.addedDate)}</span>
       </div>
 
       {/* Progress + status */}
       <div className="flex flex-col items-end gap-1.5 w-44 flex-shrink-0">
-        <Chip
-          size="sm"
-          color={chipColor}
-          variant="flat"
-          className="text-xs h-5"
-        >
+        <Chip size="sm" color={chipColor} variant="flat" className="text-xs h-5">
           {statusLabel(item)}
         </Chip>
 
@@ -294,9 +289,9 @@ const DownloadRow: React.FC<DownloadRowProps> = ({
             size="sm"
             color="primary"
             variant="flat"
-            startContent={<ArrowDownloadRegular className="h-3.5 w-3.5" />}
+            startContent={<ArrowDownToLine size={14} />}
             isDisabled={!isConnected}
-            onClick={() => onInstall(item.releaseName)}
+            onPress={() => onInstall(item.releaseName)}
             title={!isConnected ? 'Connect a device to install' : 'Install game'}
             className="h-7 text-xs"
           >
@@ -308,9 +303,9 @@ const DownloadRow: React.FC<DownloadRowProps> = ({
           <Button
             size="sm"
             variant="bordered"
-            startContent={<BroomRegular className="h-3.5 w-3.5" />}
+            startContent={<Trash2 size={14} />}
             isDisabled={!isConnected}
-            onClick={() => onUninstall(item)}
+            onPress={() => onUninstall(item)}
             title={!isConnected ? 'Connect a device to uninstall' : 'Uninstall game'}
             className="h-7 text-xs text-default-500"
           >
@@ -324,8 +319,8 @@ const DownloadRow: React.FC<DownloadRowProps> = ({
             size="sm"
             color="danger"
             variant="flat"
-            startContent={<InfoRegular className="h-3.5 w-3.5" />}
-            onClick={() => onViewError(item)}
+            startContent={<Info size={14} />}
+            onPress={() => onViewError(item)}
             className="h-7 text-xs"
           >
             View error
@@ -340,8 +335,8 @@ const DownloadRow: React.FC<DownloadRowProps> = ({
           <Button
             size="sm"
             variant="light"
-            startContent={<PauseRegular className="h-3.5 w-3.5" />}
-            onClick={() => onPause(item.releaseName)}
+            startContent={<Pause size={14} />}
+            onPress={() => onPause(item.releaseName)}
             title="Pause download"
             className="h-7 text-xs text-default-500"
           >
@@ -354,8 +349,8 @@ const DownloadRow: React.FC<DownloadRowProps> = ({
           <Button
             size="sm"
             variant="light"
-            startContent={<PlayRegular className="h-3.5 w-3.5" />}
-            onClick={() => onResume(item.releaseName)}
+            startContent={<Play size={14} />}
+            onPress={() => onResume(item.releaseName)}
             title="Resume download"
             className="h-7 text-xs text-default-500"
           >
@@ -369,11 +364,12 @@ const DownloadRow: React.FC<DownloadRowProps> = ({
             isIconOnly
             size="sm"
             variant="light"
-            onClick={() => onMoveToFront(item.releaseName)}
+            aria-label="Download next"
+            onPress={() => onMoveToFront(item.releaseName)}
             title="Download next"
             className="h-7 w-7 text-default-400"
           >
-            <ArrowUpRegular className="h-3.5 w-3.5" />
+            <ArrowUp size={14} />
           </Button>
         )}
 
@@ -382,8 +378,8 @@ const DownloadRow: React.FC<DownloadRowProps> = ({
           <Button
             size="sm"
             variant="light"
-            startContent={<ArrowCounterclockwiseRegular className="h-3.5 w-3.5" />}
-            onClick={() => onRetry(item.releaseName)}
+            startContent={<RotateCcw size={14} />}
+            onPress={() => onRetry(item.releaseName)}
             title="Retry"
             className="h-7 text-xs text-default-500"
           >
@@ -397,11 +393,12 @@ const DownloadRow: React.FC<DownloadRowProps> = ({
             isIconOnly
             size="sm"
             variant="light"
-            onClick={() => onCancel(item.releaseName)}
+            aria-label="Cancel"
+            onPress={() => onCancel(item.releaseName)}
             title="Cancel"
             className="h-7 w-7 text-default-400"
           >
-            <DismissRegular className="h-3.5 w-3.5" />
+            <X size={14} />
           </Button>
         )}
 
@@ -418,11 +415,12 @@ const DownloadRow: React.FC<DownloadRowProps> = ({
               isIconOnly
               size="sm"
               variant="light"
-              onClick={() => onDelete(item.releaseName)}
+              aria-label="Remove from list"
+              onPress={() => onDelete(item.releaseName)}
               title="Remove from list"
               className="h-7 w-7 text-default-400"
             >
-              <DeleteRegular className="h-3.5 w-3.5" />
+              <Trash2 size={14} />
             </Button>
           )
         )}
@@ -572,10 +570,10 @@ const DownloadsView: React.FC<DownloadsViewProps> = ({ onClose }) => {
       <div className="flex items-center gap-2 mb-2">
         <Button
           size="sm"
-          variant="bordered"
-          startContent={<FolderRegular className="h-3.5 w-3.5" />}
+          variant="flat"
+          startContent={<Folder size={14} />}
           isLoading={isScanning}
-          onClick={handleScan}
+          onPress={handleScan}
           className="h-8 text-xs text-default-500"
         >
           {isScanning ? 'Scanning…' : 'Scan downloads'}
@@ -583,9 +581,9 @@ const DownloadsView: React.FC<DownloadsViewProps> = ({ onClose }) => {
         <Button
           size="sm"
           variant="light"
-          startContent={<DismissCircleRegular className="h-3.5 w-3.5" />}
+          startContent={<XCircle size={14} />}
           isDisabled={!hasClearable}
-          onClick={handleClearCompleted}
+          onPress={handleClearCompleted}
           className="h-8 text-xs text-default-500"
         >
           Clear completed
@@ -598,14 +596,14 @@ const DownloadsView: React.FC<DownloadsViewProps> = ({ onClose }) => {
       {/* Empty state */}
       {sortedQueue.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 py-20 text-default-400">
-          <ArrowDownloadRegular className="h-10 w-10 opacity-30" />
-          <span className="text-sm font-medium">No active transfers.</span>
-          <span className="text-xs text-default-300">
+          <ArrowDownToLine size={40} className="opacity-30" />
+          <span className="text-sm font-medium">No active downloads.</span>
+          <span className="text-xs text-default-500">
             Games you download will appear here.
           </span>
         </div>
       ) : (
-        <div className="flex flex-col divide-y divide-white/[0.04]">
+        <div className="flex flex-col divide-y divide-divider">
           {sortedQueue.map((item) => (
             <DownloadRow
               key={item.releaseName}

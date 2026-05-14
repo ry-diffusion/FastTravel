@@ -8,7 +8,7 @@ import {
   Button,
   Chip
 } from '@heroui/react'
-import { CopyRegular } from '@fluentui/react-icons'
+import { Copy, FileText } from 'lucide-react'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -23,7 +23,7 @@ interface ErrorDiagnosis {
 }
 
 // ---------------------------------------------------------------------------
-// Diagnosis rules
+// Diagnosis rules (15 rules — do not modify logic)
 // ---------------------------------------------------------------------------
 
 const DIAGNOSES: Array<{
@@ -297,15 +297,15 @@ const ErrorDetailDialog: React.FC<ErrorDetailDialogProps> = ({
       classNames={{
         backdrop: 'bg-black/60 backdrop-blur-sm',
         base: 'max-w-[560px]',
-        header: 'border-b border-white/8 pb-3',
-        footer: 'border-t border-white/8 pt-3'
+        header: 'border-b border-divider pb-3',
+        footer: 'border-t border-divider pt-3'
       }}
     >
       <ModalContent>
         <ModalHeader className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
             <Chip size="sm" color="danger" variant="flat" className="text-xs">
-              {phase === 'install' ? 'Install Error' : 'Download Error'}
+              {phase === 'install' ? 'Install error' : 'Download error'}
             </Chip>
           </div>
           <span className="text-base font-semibold text-foreground">{diag.title}</span>
@@ -316,17 +316,15 @@ const ErrorDetailDialog: React.FC<ErrorDetailDialogProps> = ({
 
         <ModalBody className="gap-4 py-4">
           {/* Summary */}
-          <p className="text-sm text-default-600 leading-relaxed">{diag.summary}</p>
+          <p className="text-sm text-default-500 leading-relaxed">{diag.summary}</p>
 
           {/* Suggestions */}
           {diag.suggestions.length > 0 && (
             <div className="flex flex-col gap-2">
-              <span className="text-xs font-medium text-default-400 uppercase tracking-wide">
-                What to try
-              </span>
+              <span className="text-xs font-semibold text-default-500">What to try</span>
               <ul className="flex flex-col gap-2 pl-4">
                 {diag.suggestions.map((s, i) => (
-                  <li key={i} className="text-sm text-default-600 leading-relaxed list-disc">
+                  <li key={i} className="text-sm text-default-500 leading-relaxed list-disc">
                     {s}
                   </li>
                 ))}
@@ -336,10 +334,8 @@ const ErrorDetailDialog: React.FC<ErrorDetailDialogProps> = ({
 
           {/* Raw error */}
           <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium text-default-400 uppercase tracking-wide">
-              Raw error
-            </span>
-            <div className="rounded-medium bg-content2 border border-white/8 p-3 max-h-44 overflow-y-auto">
+            <span className="text-xs font-semibold text-default-500">Raw error</span>
+            <div className="rounded-medium bg-content2 border border-divider p-3 max-h-44 overflow-y-auto">
               <pre className="text-xs text-default-500 whitespace-pre-wrap break-words font-mono leading-relaxed">
                 {raw}
               </pre>
@@ -353,7 +349,7 @@ const ErrorDetailDialog: React.FC<ErrorDetailDialogProps> = ({
               color="primary"
               variant="flat"
               size="sm"
-              onClick={() => {
+              onPress={() => {
                 onRetry()
                 onClose()
               }}
@@ -364,15 +360,20 @@ const ErrorDetailDialog: React.FC<ErrorDetailDialogProps> = ({
           <Button
             variant="bordered"
             size="sm"
-            startContent={<CopyRegular className="h-3.5 w-3.5" />}
-            onClick={handleCopy}
+            startContent={<Copy size={14} />}
+            onPress={handleCopy}
           >
             Copy error
           </Button>
-          <Button variant="light" size="sm" onClick={handleOpenLog}>
+          <Button
+            variant="light"
+            size="sm"
+            startContent={<FileText size={14} />}
+            onPress={handleOpenLog}
+          >
             Open log file
           </Button>
-          <Button variant="light" size="sm" onClick={onClose}>
+          <Button variant="light" size="sm" onPress={onClose}>
             Close
           </Button>
         </ModalFooter>

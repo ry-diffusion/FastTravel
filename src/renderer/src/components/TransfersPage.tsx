@@ -6,10 +6,10 @@ import UploadsView from './UploadsView'
 
 const TAB_STORAGE_KEY = 'vrcyberdeck:transfersTab'
 
-type Tab = 'downloads' | 'uploads'
+type TransferTab = 'downloads' | 'uploads'
 
 const TransfersPage: React.FC = () => {
-  const [tab, setTab] = useState<Tab>(() => {
+  const [tab, setTab] = useState<TransferTab>(() => {
     try {
       const v = localStorage.getItem(TAB_STORAGE_KEY)
       return v === 'uploads' ? 'uploads' : 'downloads'
@@ -24,7 +24,7 @@ const TransfersPage: React.FC = () => {
   ).length
 
   const handleTabChange = (key: React.Key): void => {
-    const next = key as Tab
+    const next = key as TransferTab
     setTab(next)
     try {
       localStorage.setItem(TAB_STORAGE_KEY, next)
@@ -34,15 +34,15 @@ const TransfersPage: React.FC = () => {
   }
 
   return (
-    <div className="quest-page">
-      <header className="quest-page__header">
-        <div>
-          <h1 className="quest-page__title">Transfers</h1>
-          <p className="quest-page__subtitle">Downloads and uploads queued on this device.</p>
-        </div>
+    <div className="flex flex-col h-full overflow-hidden bg-background">
+      {/* Page header */}
+      <header className="px-8 py-6 flex-shrink-0">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">Transfers</h1>
+        <p className="text-sm text-default-500 mt-1">Downloads and uploads queued on this device.</p>
       </header>
 
-      <div className="px-9 border-b border-white/8">
+      {/* Tab bar */}
+      <div className="px-8 border-b border-divider flex-shrink-0">
         <Tabs
           selectedKey={tab}
           onSelectionChange={handleTabChange}
@@ -71,7 +71,8 @@ const TransfersPage: React.FC = () => {
         </Tabs>
       </div>
 
-      <div className="quest-page__body">
+      {/* Body */}
+      <div className="flex-1 overflow-auto px-8 pb-8 pt-6">
         {tab === 'downloads' ? (
           <DownloadsView onClose={() => { /* sidebar handles navigation */ }} />
         ) : (
