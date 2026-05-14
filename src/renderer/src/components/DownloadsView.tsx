@@ -36,17 +36,21 @@ const useStyles = makeStyles({
   root: {
     display: 'flex',
     flexDirection: 'column',
-    padding: tokens.spacingHorizontalXXL,
-    gap: tokens.spacingVerticalL
+    padding: '16px 0 24px',
+    gap: tokens.spacingVerticalL,
+    color: 'var(--quest-text)'
   },
   itemRow: {
     display: 'grid',
-    gridTemplateColumns: '60px 1fr auto auto', // Thumbnail, Info, Progress/Status, Actions
+    gridTemplateColumns: '64px 1fr auto auto',
     alignItems: 'center',
     gap: tokens.spacingHorizontalL,
-    paddingTop: tokens.spacingVerticalM,
-    paddingBottom: tokens.spacingVerticalM,
-    borderBottom: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`
+    padding: '14px 16px',
+    borderRadius: 'var(--quest-radius-md)',
+    transition: 'background-color 0.12s',
+    ':hover': {
+      backgroundColor: 'rgba(255, 255, 255, 0.03)'
+    }
   },
   thumbnail: {
     width: '60px',
@@ -225,9 +229,9 @@ const DownloadsView: React.FC<DownloadsViewProps> = ({ onClose }) => {
           onClick={handleScan}
           disabled={isScanning}
           title="Scan downloads folder and register any untracked completed downloads"
-          style={{ fontFamily: 'monospace', fontSize: '11px', color: 'rgba(var(--vrcd-neon-raw),0.8)', border: '1px solid rgba(var(--vrcd-neon-raw),0.3)' }}
+          style={{ fontSize: '13px', color: 'var(--quest-text)', border: '1px solid var(--quest-border-strong)', borderRadius: 'var(--quest-radius-pill)' }}
         >
-          {isScanning ? 'Scanning...' : 'Scan Downloads'}
+          {isScanning ? 'Scanning…' : 'Scan downloads'}
         </Button>
         <Button
           size="small"
@@ -236,12 +240,12 @@ const DownloadsView: React.FC<DownloadsViewProps> = ({ onClose }) => {
           onClick={handleClearCompleted}
           disabled={!queue.some((i) => i.status === 'Completed' || i.status === 'Cancelled')}
           title="Remove all completed and cancelled entries from the list (keeps downloaded files)"
-          style={{ fontFamily: 'monospace', fontSize: '11px', color: 'rgba(var(--vrcd-neon-raw),0.8)', border: '1px solid rgba(var(--vrcd-neon-raw),0.3)' }}
+          style={{ fontSize: '13px', color: 'var(--quest-text)', border: '1px solid var(--quest-border-strong)', borderRadius: 'var(--quest-radius-pill)' }}
         >
-          Clear Completed
+          Clear completed
         </Button>
         {scanResult && (
-          <Text size={200} style={{ color: 'rgba(var(--vrcd-neon-raw),0.6)', fontFamily: 'monospace' }}>
+          <Text size={200} style={{ color: 'var(--quest-text-muted)' }}>
             {scanResult}
           </Text>
         )}

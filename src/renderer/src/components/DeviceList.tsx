@@ -424,14 +424,15 @@ const DeviceList: React.FC<DeviceListProps> = ({ onSkip, onConnected }) => {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      minHeight: '100%', padding: '24px',
+      height: '100%', width: '100%', padding: '32px',
       background: 'var(--quest-bg)',
-      position: 'relative', overflow: 'hidden'
+      position: 'relative', overflow: 'auto'
     }}>
       {/* Main panel */}
       <div style={{
         position: 'relative', zIndex: 2,
-        width: '100%', maxWidth: '640px',
+        width: '100%', maxWidth: '560px',
+        margin: 'auto',
         background: 'var(--quest-bg-raised)',
         border: '1px solid var(--quest-border)',
         borderRadius: 'var(--quest-radius-lg)',
