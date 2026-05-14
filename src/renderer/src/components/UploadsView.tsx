@@ -1,211 +1,231 @@
 import React from 'react'
+import { Button, Chip, Progress } from '@heroui/react'
 import {
-  makeStyles,
-  Text,
-  Table,
-  TableHeader,
-  TableRow,
-  TableHeaderCell,
-  TableBody,
-  TableCell,
-  Button,
-  tokens
-} from '@fluentui/react-components'
+  DismissRegular,
+  DeleteRegular,
+  ArrowCounterclockwiseRegular,
+  DismissCircleRegular,
+  ArrowUploadRegular
+} from '@fluentui/react-icons'
 import { useUpload } from '../hooks/useUpload'
 import { useLanguage } from '../hooks/useLanguage'
 import { UploadItem } from '@shared/types'
-import { DismissRegular, DeleteRegular, ArrowCounterclockwiseRegular, DismissCircleRegular } from '@fluentui/react-icons'
 
-const useStyles = makeStyles({
-  wrapper: {
-    padding: '20px'
-  },
-  emptyState: {
-    textAlign: 'center',
-    margin: '40px 0'
-  },
-  progressBar: {
-    height: '8px',
-    backgroundColor: tokens.colorNeutralBackground3,
-    borderRadius: '4px',
-    overflow: 'hidden'
-  },
-  progress: {
-    height: '100%',
-    backgroundColor: tokens.colorBrandBackground,
-    borderRadius: '4px'
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+type StatusChipColor = 'default' | 'primary' | 'success' | 'danger'
+
+function chipColor(status: UploadItem['status']): StatusChipColor {
+  switch (status) {
+    case 'Preparing':
+    case 'Uploading':
+      return 'primary'
+    case 'Completed':
+      return 'success'
+    case 'Error':
+      return 'danger'
+    default:
+      return 'default'
   }
-})
+}
+
+function chipLabel(item: UploadItem): string {
+  switch (item.status) {
+    case 'Queued':
+      return 'Queued'
+    case 'Preparing':
+      return item.stage ? item.stage : 'Preparing'
+    case 'Uploading':
+      return item.stage ? item.stage : 'Uploading'
+    case 'Completed':
+      return 'Completed'
+    case 'Error':
+      return 'Error'
+    case 'Cancelled':
+      return 'Cancelled'
+    default:
+      return item.status
+  }
+}
+
+// ---------------------------------------------------------------------------
+// UploadRow
+// ---------------------------------------------------------------------------
 
 const UploadRow: React.FC<{ item: UploadItem }> = ({ item }) => {
-  const styles = useStyles()
   const { removeFromQueue, cancelUpload, retryUpload } = useUpload()
   const { t } = useLanguage()
 
-  let statusElement = <Text>{item.status}</Text>
-  let actions: React.ReactNode = null
-
-  const progressValue = item.progress || 0
-
-  switch (item.status) {
-    case 'Queued':
-      statusElement = <Text>{t('waitingInQueue')}</Text>
-      actions = (
-        <Button
-          icon={<DismissRegular />}
-          appearance="subtle"
-          onClick={() => removeFromQueue(item.packageName)}
-          aria-label={t('removeFromQueue')}
-        />
-      )
-      break
-
-    case 'Preparing':
-    case 'Uploading':
-      statusElement = (
-        <>
-          <Text>
-            {item.stage || item.status} ({progressValue}%)
-          </Text>
-          <div className={styles.progressBar}>
-            <div className={styles.progress} style={{ width: `${progressValue}%` }} />
-          </div>
-        </>
-      )
-      actions = (
-        <Button
-          icon={<DismissRegular />}
-          appearance="subtle"
-          onClick={() => cancelUpload(item.packageName)}
-          aria-label={t('cancelUpload')}
-        />
-      )
-      break
-
-    case 'Completed':
-      statusElement = <Text weight="semibold">{t('completed')}</Text>
-      actions = (
-        <Button
-          icon={<DeleteRegular />}
-          appearance="subtle"
-          onClick={() => removeFromQueue(item.packageName)}
-          aria-label={t('removeFromHistory')}
-        />
-      )
-      break
-
-    case 'Error':
-      statusElement = (
-        <>
-          <Text
-            weight="semibold"
-            style={{ color: tokens.colorPaletteRedForeground1, marginRight: '4px' }}
-          >
-            {t('error')}
-          </Text>
-          {item.error && <Text size={200}>{item.error}</Text>}
-        </>
-      )
-      actions = (
-        <>
-          <Button
-            icon={<ArrowCounterclockwiseRegular />}
-            appearance="subtle"
-            onClick={() => retryUpload(item.packageName)}
-            aria-label={t('retryUpload')}
-            title={t('retryUpload')}
-          />
-          <Button
-            icon={<DeleteRegular />}
-            appearance="subtle"
-            onClick={() => removeFromQueue(item.packageName)}
-            aria-label={t('removeFromQueue')}
-          />
-        </>
-      )
-      break
-
-    case 'Cancelled':
-      statusElement = <Text>{t('cancelled')}</Text>
-      actions = (
-        <>
-          <Button
-            icon={<ArrowCounterclockwiseRegular />}
-            appearance="subtle"
-            onClick={() => retryUpload(item.packageName)}
-            aria-label={t('retryUpload')}
-            title={t('retryUpload')}
-          />
-          <Button
-            icon={<DeleteRegular />}
-            appearance="subtle"
-            onClick={() => removeFromQueue(item.packageName)}
-            aria-label={t('removeFromQueue')}
-          />
-        </>
-      )
-      break
-  }
+  const color = chipColor(item.status)
+  const pct = item.progress || 0
+  const showBar = item.status === 'Preparing' || item.status === 'Uploading'
 
   return (
-    <TableRow>
-      <TableCell>{item.gameName}</TableCell>
-      <TableCell style={{ wordBreak: 'break-all' }}>
-        {item.isLocalUpload ? <em style={{ color: tokens.colorNeutralForeground3 }}>local</em> : item.packageName}
-      </TableCell>
-      <TableCell>{item.versionCode > 0 ? item.versionCode : '—'}</TableCell>
-      <TableCell>{statusElement}</TableCell>
-      <TableCell>{actions}</TableCell>
-    </TableRow>
+    <div className="group flex items-center gap-4 rounded-large px-4 py-3 transition-colors duration-100 hover:bg-white/[0.03]">
+      {/* Icon placeholder */}
+      <div className="flex-shrink-0 w-16 h-16 rounded-medium bg-content2 flex items-center justify-center">
+        <ArrowUploadRegular className="h-7 w-7 text-default-300" />
+      </div>
+
+      {/* Info */}
+      <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+        <span className="text-foreground font-medium text-sm truncate">{item.gameName}</span>
+        <span className="text-default-500 text-xs truncate">
+          {item.isLocalUpload ? (
+            <em className="text-default-400 not-italic">Local upload</em>
+          ) : (
+            item.packageName
+          )}
+        </span>
+        {item.versionCode > 0 && (
+          <span className="text-default-400 text-xs">v{item.versionCode}</span>
+        )}
+      </div>
+
+      {/* Progress + status */}
+      <div className="flex flex-col items-end gap-1.5 w-44 flex-shrink-0">
+        <Chip size="sm" color={color} variant="flat" className="text-xs h-5">
+          {chipLabel(item)}
+        </Chip>
+
+        {showBar && (
+          <div className="w-full flex items-center gap-2">
+            <Progress
+              size="sm"
+              value={pct}
+              color="primary"
+              className="flex-1"
+              aria-label="Upload progress"
+            />
+            <span className="text-default-400 text-xs w-7 text-right flex-shrink-0">
+              {Math.round(pct)}%
+            </span>
+          </div>
+        )}
+
+        {item.status === 'Error' && item.error && (
+          <span className="text-danger text-xs text-right line-clamp-2 max-w-full">
+            {item.error}
+          </span>
+        )}
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center gap-1 flex-shrink-0">
+        {/* Cancel active */}
+        {(item.status === 'Queued' ||
+          item.status === 'Preparing' ||
+          item.status === 'Uploading') && (
+          <Button
+            isIconOnly
+            size="sm"
+            variant="light"
+            onClick={() => cancelUpload(item.packageName)}
+            title={t('cancelUpload')}
+            className="h-7 w-7 text-default-400"
+          >
+            <DismissRegular className="h-3.5 w-3.5" />
+          </Button>
+        )}
+
+        {/* Retry */}
+        {(item.status === 'Error' || item.status === 'Cancelled') && (
+          <Button
+            isIconOnly
+            size="sm"
+            variant="light"
+            onClick={() => retryUpload(item.packageName)}
+            title={t('retryUpload')}
+            className="h-7 w-7 text-default-400"
+          >
+            <ArrowCounterclockwiseRegular className="h-3.5 w-3.5" />
+          </Button>
+        )}
+
+        {/* Remove */}
+        {(item.status === 'Completed' ||
+          item.status === 'Error' ||
+          item.status === 'Cancelled' ||
+          item.status === 'Queued') && (
+          <Button
+            isIconOnly
+            size="sm"
+            variant="light"
+            onClick={() => removeFromQueue(item.packageName)}
+            title={
+              item.status === 'Completed' ? t('removeFromHistory') : t('removeFromQueue')
+            }
+            className="h-7 w-7 text-default-400"
+          >
+            <DeleteRegular className="h-3.5 w-3.5" />
+          </Button>
+        )}
+      </div>
+    </div>
   )
 }
 
+// ---------------------------------------------------------------------------
+// UploadsView
+// ---------------------------------------------------------------------------
+
 const UploadsView: React.FC = () => {
-  const styles = useStyles()
   const { queue, clearCompleted } = useUpload()
   const { t } = useLanguage()
 
-  const hasClearable = queue.some((i) => i.status === 'Completed' || i.status === 'Cancelled')
+  const hasClearable = queue.some(
+    (i) => i.status === 'Completed' || i.status === 'Cancelled'
+  )
+
+  if (queue.length === 0) {
+    return (
+      <div className="flex flex-col gap-4 pb-8">
+        <div className="flex items-center gap-2 mb-2">
+          <Button
+            size="sm"
+            variant="light"
+            startContent={<DismissCircleRegular className="h-3.5 w-3.5" />}
+            isDisabled
+            className="h-8 text-xs text-default-500"
+          >
+            Clear completed
+          </Button>
+        </div>
+        <div className="flex flex-col items-center justify-center gap-3 py-20 text-default-400">
+          <ArrowUploadRegular className="h-10 w-10 opacity-30" />
+          <span className="text-sm font-medium">No active transfers.</span>
+          <span className="text-xs text-default-300">
+            {t('noUploadsInQueue')}
+          </span>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className={styles.wrapper}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+    <div className="flex flex-col gap-2 pb-8">
+      {/* Header actions */}
+      <div className="flex items-center gap-2 mb-2">
         <Button
-          size="small"
-          appearance="subtle"
-          icon={<DismissCircleRegular />}
+          size="sm"
+          variant="light"
+          startContent={<DismissCircleRegular className="h-3.5 w-3.5" />}
+          isDisabled={!hasClearable}
           onClick={clearCompleted}
-          disabled={!hasClearable}
-          title="Remove all completed and cancelled entries from the list"
-          style={{ fontFamily: 'monospace', fontSize: '11px', color: 'rgba(var(--vrcd-neon-raw),0.8)', border: '1px solid rgba(var(--vrcd-neon-raw),0.3)' }}
+          className="h-8 text-xs text-default-500"
         >
-          Clear Completed
+          Clear completed
         </Button>
       </div>
-      {queue.length === 0 ? (
-        <div className={styles.emptyState}>
-          <Text size={200} weight="semibold">
-            {t('noUploadsInQueue')}
-          </Text>
-        </div>
-      ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHeaderCell>{t('game')}</TableHeaderCell>
-              <TableHeaderCell>{t('packageName')}</TableHeaderCell>
-              <TableHeaderCell>{t('version')}</TableHeaderCell>
-              <TableHeaderCell>{t('status')}</TableHeaderCell>
-              <TableHeaderCell>{t('actions')}</TableHeaderCell>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {queue.map((item) => (
-              <UploadRow key={item.packageName} item={item} />
-            ))}
-          </TableBody>
-        </Table>
-      )}
+
+      {/* Upload rows */}
+      <div className="flex flex-col divide-y divide-white/[0.04]">
+        {queue.map((item) => (
+          <UploadRow key={item.packageName} item={item} />
+        ))}
+      </div>
     </div>
   )
 }

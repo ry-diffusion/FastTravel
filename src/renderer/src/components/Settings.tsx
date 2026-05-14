@@ -1,39 +1,23 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import CreditsDialog from './CreditsDialog'
+import ServerConfigSettings from './ServerConfigSettings'
 import '../assets/credits-dialog.css'
 import {
-  Card,
-  CardHeader,
-  Text,
+  Accordion,
+  AccordionItem,
   Button,
+  Card,
+  CardBody,
+  Chip,
+  Divider,
   Input,
-  makeStyles,
-  tokens,
+  Select,
+  SelectItem,
+  Slider,
   Spinner,
   Switch,
-  Subtitle1,
-  Dropdown,
-  Option,
-  Table,
-  TableHeader,
-  TableRow,
-  TableHeaderCell,
-  TableBody,
-  TableCell,
-  TableCellLayout
-} from '@fluentui/react-components'
-import {
-  FolderOpenRegular,
-  CheckmarkCircleRegular,
-  InfoRegular,
-  DeleteRegular,
-  ShareRegular,
-  DocumentTextRegular,
-  CopyRegular,
-  EditRegular,
-  ChevronDownRegular,
-  ChevronUpRegular
-} from '@fluentui/react-icons'
+  cn
+} from '@heroui/react'
 import { useSettings } from '../hooks/useSettings'
 import { useGames } from '../hooks/useGames'
 import { useLogs } from '../hooks/useLogs'
@@ -48,141 +32,36 @@ const SPEED_UNITS = [
   { label: 'MB/s', value: 'mbps', factor: 1024 }
 ]
 
-const neonBtn = {
-  background: 'var(--vrcd-neon)',
-  border: '1px solid var(--vrcd-neon)',
-  color: '#ffffff',
-  fontFamily: 'var(--quest-font-sans)',
-  fontSize: '13px',
-  fontWeight: 600,
-  letterSpacing: '0',
-  textTransform: 'none' as const,
-  padding: '8px 16px',
-  borderRadius: '999px',
-  cursor: 'pointer'
-}
+// ─── Shared primitives ───────────────────────────────────────────────────────
 
-const useStyles = makeStyles({
-  root: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '16px',
-    position: 'relative',
-    width: '100%',
-    height: '100%',
-    overflowY: 'auto',
-    padding: '28px 36px 36px',
-    backgroundColor: 'var(--quest-bg)',
-    boxSizing: 'border-box',
-    color: 'var(--quest-text)'
-  },
-  contentContainer: {
-    width: '100%',
-    maxWidth: '880px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '14px'
-  },
-  headerTitle: {
-    marginBottom: '4px',
-    color: 'var(--quest-text)',
-    fontSize: '28px',
-    fontWeight: 700,
-    letterSpacing: '-0.015em'
-  },
-  headerSubtitle: {
-    color: 'var(--quest-text-muted)',
-    display: 'block',
-    marginBottom: '16px',
-    fontSize: '14px'
-  },
-  card: {
-    width: '100%',
-    background: 'var(--quest-bg-raised)',
-    border: '1px solid var(--quest-border)',
-    borderRadius: 'var(--quest-radius-lg)',
-    boxShadow: 'none'
-  },
-  cardContent: {
-    padding: tokens.spacingHorizontalL,
-    paddingBottom: tokens.spacingVerticalXL
-  },
-  formRow: {
-    display: 'flex',
-    alignItems: 'center',
-    marginTop: tokens.spacingVerticalM,
-    gap: tokens.spacingHorizontalM,
-    width: '100%',
-    maxWidth: '900px'
-  },
-  input: {
-    flexGrow: 1
-  },
-  error: {
-    color: tokens.colorPaletteRedForeground1,
-    marginTop: tokens.spacingVerticalXS
-  },
-  success: {
-    color: tokens.colorPaletteGreenForeground1,
-    display: 'flex',
-    alignItems: 'center',
-    gap: tokens.spacingHorizontalXS,
-    marginTop: tokens.spacingVerticalXS
-  },
-  hint: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: tokens.spacingHorizontalXS,
-    marginTop: tokens.spacingVerticalS,
-    color: tokens.colorNeutralForeground2
-  },
-  speedLimitSection: {
-    marginTop: tokens.spacingVerticalL
-  },
-  speedFormRow: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: tokens.spacingHorizontalM,
-    marginTop: tokens.spacingVerticalM,
-    width: '100%',
-    maxWidth: '900px'
-  },
-  speedControl: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: tokens.spacingVerticalS
-  },
-  speedInputGroup: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: tokens.spacingHorizontalS
-  },
-  speedInput: {
-    width: '140px',
-    flexGrow: 1
-  },
-  unitDropdown: {
-    width: '80px',
-    minWidth: '80px'
-  },
-  blacklistTable: {
-    marginTop: tokens.spacingVerticalM,
-    width: '100%',
-    maxWidth: '900px'
-  },
-  emptyState: {
-    marginTop: tokens.spacingVerticalL,
-    color: tokens.colorNeutralForeground2,
-    textAlign: 'center',
-    padding: tokens.spacingVerticalL
-  },
-  actionButton: {
-    minWidth: 'auto'
-  }
-})
+/** A labelled Switch row used in every section. */
+const SwitchRow: React.FC<{
+  label: string
+  description: string
+  checked: boolean
+  onChange: (v: boolean) => void
+  isDisabled?: boolean
+}> = ({ label, description, checked, onChange, isDisabled }) => (
+  <div className="flex items-start justify-between gap-4 py-3">
+    <div className="flex flex-col gap-0.5">
+      <span className="text-sm font-medium text-default-900">{label}</span>
+      <span className="text-xs text-default-500 leading-relaxed">{description}</span>
+    </div>
+    <Switch
+      isSelected={checked}
+      onValueChange={onChange}
+      isDisabled={isDisabled}
+      size="sm"
+      color="primary"
+      className="shrink-0 mt-0.5"
+    />
+  </div>
+)
 
+const RowDivider = (): React.JSX.Element => <Divider className="opacity-40" />
+
+// ─── BlacklistSettings ────────────────────────────────────────────────────────
 const BlacklistSettings: React.FC = () => {
-  const styles = useStyles()
   const { t } = useLanguage()
   const { getBlacklistGames, removeGameFromBlacklist } = useGames()
   const [blacklistGames, setBlacklistGames] = useState<
@@ -224,75 +103,61 @@ const BlacklistSettings: React.FC = () => {
     }
   }
 
-  return (
-    <Card className={styles.card}>
-      <CardHeader description={<Subtitle1>{t('blacklistedGames')}</Subtitle1>} />
-      <div className={styles.cardContent}>
-        <Text>{t('blacklistedGamesDesc')}</Text>
-
-        {isLoading ? (
-          <div
-            style={{ display: 'flex', justifyContent: 'center', padding: tokens.spacingVerticalL }}
-          >
-            <Spinner size="small" label={t('loadingBlacklist')} />
-          </div>
-        ) : (
-          <>
-            {blacklistGames.length === 0 ? (
-              <div className={styles.emptyState}>
-                <Text>{t('noBlacklistedGames')}</Text>
-              </div>
-            ) : (
-              <Table className={styles.blacklistTable}>
-                <TableHeader>
-                  <TableRow>
-                    <TableHeaderCell>{t('packageName')}</TableHeaderCell>
-                    <TableHeaderCell>{t('version')}</TableHeaderCell>
-                    <TableHeaderCell style={{ width: '100px' }}>{t('actions')}</TableHeaderCell>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {blacklistGames.map((game) => (
-                    <TableRow key={`${game.packageName}-${game.version}`}>
-                      <TableCell>
-                        <TableCellLayout>{game.packageName}</TableCellLayout>
-                      </TableCell>
-                      <TableCell>
-                        <TableCellLayout>
-                          {game.version === 'any' ? t('allVersions') : game.version}
-                        </TableCellLayout>
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          icon={<DeleteRegular />}
-                          appearance="subtle"
-                          className={styles.actionButton}
-                          onClick={() => handleRemoveFromBlacklist(game.packageName)}
-                          aria-label={t('remove')}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-
-            {error && <Text className={styles.error}>{error}</Text>}
-            {removeSuccess && (
-              <Text className={styles.success}>
-                <CheckmarkCircleRegular />
-                {t('blacklistRemoveSuccess')}
-              </Text>
-            )}
-          </>
-        )}
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-8">
+        <Spinner size="sm" label={t('loadingBlacklist')} />
       </div>
-    </Card>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-sm text-default-500">{t('blacklistedGamesDesc')}</p>
+
+      {blacklistGames.length === 0 ? (
+        <div className="flex justify-center items-center py-8 text-default-400 text-sm">
+          {t('noBlacklistedGames')}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {blacklistGames.map((game) => (
+            <div
+              key={`${game.packageName}-${game.version}`}
+              className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-large bg-content2"
+            >
+              <div className="flex flex-col gap-0.5 min-w-0">
+                <span className="text-sm font-medium text-default-800 truncate">
+                  {game.packageName}
+                </span>
+                <span className="text-xs text-default-400">
+                  {game.version === 'any' ? t('allVersions') : `v${game.version}`}
+                </span>
+              </div>
+              <Button
+                variant="light"
+                color="danger"
+                size="sm"
+                onPress={() => handleRemoveFromBlacklist(game.packageName)}
+                aria-label={t('remove')}
+              >
+                {t('remove')}
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {error && <p className="text-danger text-sm">{error}</p>}
+      {removeSuccess && (
+        <p className="text-success text-sm">{t('blacklistRemoveSuccess')}</p>
+      )}
+    </div>
   )
 }
 
+// ─── LogUploadSettings ────────────────────────────────────────────────────────
 const LogUploadSettings: React.FC = () => {
-  const styles = useStyles()
   const { t } = useLanguage()
   const {
     isUploading,
@@ -320,146 +185,85 @@ const LogUploadSettings: React.FC = () => {
   }
 
   return (
-    <Card className={styles.card}>
-      <CardHeader description={<Subtitle1>{t('logUpload')}</Subtitle1>} />
-      <div className={styles.cardContent}>
-        <Text>{t('logUploadDesc')}</Text>
+    <div className="flex flex-col gap-4">
+      <p className="text-sm text-default-500">{t('logUploadDesc')}</p>
 
-        <div className={styles.formRow} style={{ gap: tokens.spacingHorizontalS, flexWrap: 'wrap' }}>
-          <Button
-            onClick={() => openLogFolder()}
-            appearance="secondary"
-            size="medium"
-            icon={<FolderOpenRegular />}
-          >
-            {t('openLogFolder')}
-          </Button>
-          <Button
-            onClick={() => openLogFile()}
-            appearance="secondary"
-            size="medium"
-            icon={<DocumentTextRegular />}
-          >
-            {t('openLogFile')}
-          </Button>
-          <Button
-            onClick={handleUploadLog}
-            appearance="primary"
-            size="medium"
-            disabled={isUploading}
-            icon={<ShareRegular />}
-          >
-            {isUploading ? t('uploading_log') : t('uploadCurrentLog')}
-          </Button>
-        </div>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant="flat"
+          color="default"
+          size="sm"
+          onPress={() => openLogFolder()}
+        >
+          Open log folder
+        </Button>
+        <Button
+          variant="flat"
+          color="default"
+          size="sm"
+          onPress={() => openLogFile()}
+        >
+          Open log file
+        </Button>
+        <Button
+          color="primary"
+          size="sm"
+          isDisabled={isUploading}
+          onPress={handleUploadLog}
+        >
+          {isUploading ? t('uploading_log') : t('uploadCurrentLog')}
+        </Button>
+      </div>
 
-        {uploadError && <Text className={styles.error}>{uploadError}</Text>}
+      {uploadError && <p className="text-danger text-sm">{uploadError}</p>}
 
-        {uploadSuccess && shareableUrl && (
-          <div className={styles.success}>
-            <CheckmarkCircleRegular />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS }}>
-              <Text>{t('logUploadSuccess')}</Text>
+      {uploadSuccess && shareableUrl && (
+        <div className="flex flex-col gap-3 p-3 rounded-large bg-success/10 border border-success/20">
+          <p className="text-success text-sm font-medium">{t('logUploadSuccess')}</p>
 
-              {/* Rentry share code — prominently displayed, auto-copied on upload */}
-              {slug && (
-                <div
-                  style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalXS }}
-                >
-                  <Text weight="semibold">{t('rentryCode')}</Text>
-                  <div
-                    style={{ display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalS }}
-                  >
-                    <Input
-                      value={slug}
-                      readOnly
-                      style={{
-                        width: '220px',
-                        fontFamily: 'monospace',
-                        fontSize: '16px',
-                        fontWeight: 'bold'
-                      }}
-                    />
-                    <Button onClick={handleCopySlug} size="small" appearance="primary" icon={<CopyRegular />}>
-                      {t('copyCode')}
-                    </Button>
-                  </div>
-                  <Text size={200} style={{ color: tokens.colorNeutralForeground3 }}>
-                    {t('rentryCodeHint')}
-                  </Text>
-                </div>
-              )}
-
-              <div
-                style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalXS }}
-              >
-                <Text weight="semibold">{t('url')}</Text>
-                <div
-                  style={{ display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalS }}
-                >
-                  <Input
-                    value={shareableUrl}
-                    readOnly
-                    style={{ flexGrow: 1, fontFamily: 'monospace', fontSize: '12px' }}
-                  />
-                  <Button onClick={handleCopyUrl} size="small" appearance="secondary" icon={<CopyRegular />}>
-                    {t('copyUrl')}
-                  </Button>
-                </div>
+          {slug && (
+            <div className="flex flex-col gap-1.5">
+              <span className="text-xs font-semibold text-default-600">{t('rentryCode')}</span>
+              <div className="flex items-center gap-2">
+                <Input
+                  value={slug}
+                  isReadOnly
+                  size="sm"
+                  classNames={{ input: 'font-mono text-base font-bold' }}
+                  className="max-w-[220px]"
+                />
+                <Button size="sm" color="primary" onPress={handleCopySlug}>
+                  {t('copyCode')}
+                </Button>
               </div>
+              <p className="text-xs text-default-400">{t('rentryCodeHint')}</p>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs font-semibold text-default-600">{t('url')}</span>
+            <div className="flex items-center gap-2">
+              <Input
+                value={shareableUrl}
+                isReadOnly
+                size="sm"
+                classNames={{ input: 'font-mono text-xs' }}
+                className="flex-1"
+              />
+              <Button size="sm" variant="flat" onPress={handleCopyUrl}>
+                {t('copyUrl')}
+              </Button>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        <Text className={styles.hint}>
-          <InfoRegular />
-          {t('logUploadHint')}
-        </Text>
-      </div>
-    </Card>
+      <p className="text-xs text-default-400">{t('logUploadHint')}</p>
+    </div>
   )
 }
 
-// ─── Extra Systems (consolidated) ────────────────────────────────────────────
-const switchVars = {
-  '--colorBrandBackground': 'var(--vrcd-neon)',
-  '--colorBrandBackgroundHover': 'rgba(var(--vrcd-neon-raw),0.8)',
-  '--colorBrandBackgroundPressed': 'rgba(var(--vrcd-neon-raw),0.6)',
-  '--colorCompoundBrandBackground': 'var(--vrcd-neon)',
-  '--colorCompoundBrandBackgroundHover': 'rgba(var(--vrcd-neon-raw),0.8)'
-} as React.CSSProperties
-
-const switchVarsPurple = {
-  '--colorBrandBackground': 'var(--vrcd-purple)',
-  '--colorBrandBackgroundHover': 'rgba(var(--vrcd-purple-raw),0.8)',
-  '--colorBrandBackgroundPressed': 'rgba(var(--vrcd-purple-raw),0.6)',
-  '--colorCompoundBrandBackground': 'var(--vrcd-purple)',
-  '--colorCompoundBrandBackgroundHover': 'rgba(var(--vrcd-purple-raw),0.8)'
-} as React.CSSProperties
-
-interface ToggleRowProps {
-  label: string
-  description: string
-  checked: boolean
-  onChange: (v: boolean) => void
-  danger?: boolean
-  purple?: boolean
-}
-
-const ToggleRow: React.FC<ToggleRowProps> = ({ label, description, checked, onChange, purple }) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', padding: '8px 0', borderBottom: '1px solid rgba(var(--vrcd-neon-raw),0.06)' }}>
-    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-      <div style={purple ? switchVarsPurple : switchVars}>
-        <Switch checked={checked} onChange={(_, d) => onChange(d.checked)} />
-      </div>
-      <span style={{ color: purple ? 'var(--vrcd-purple)' : 'var(--vrcd-neon)', fontFamily: 'monospace', fontSize: '12px', letterSpacing: '0.04em' }}>{label}</span>
-    </div>
-    <span style={{ color: 'rgba(var(--vrcd-neon-raw),0.38)', fontFamily: 'monospace', fontSize: '11px', lineHeight: 1.5, paddingLeft: '52px' }}>
-      {description}
-    </span>
-  </div>
-)
-
+// ─── ExtraSystemsSettings ─────────────────────────────────────────────────────
 const ExtraSystemsSettings: React.FC = () => {
   const {
     disableAutoUpdate, setDisableAutoUpdate,
@@ -471,339 +275,355 @@ const ExtraSystemsSettings: React.FC = () => {
     fontFamily, setFontFamily
   } = useExtrasSettings()
 
-  const { enabled: soundEnabled, volume: soundVolume, loaded: soundLoaded, perName: soundPerName, setEnabled: setSoundEnabled, setVolume: setSoundVolume, setPerName: setSoundPerName, play: playSfx } = useSoundEffects()
+  const {
+    enabled: soundEnabled,
+    volume: soundVolume,
+    loaded: soundLoaded,
+    perName: soundPerName,
+    setEnabled: setSoundEnabled,
+    setVolume: setSoundVolume,
+    setPerName: setSoundPerName,
+    play: playSfx
+  } = useSoundEffects()
+
   const anySoundLoaded = SOUND_NAMES.some((n) => soundLoaded[n])
 
   const [maxConcurrent, setMaxConcurrentState] = useState<number>(3)
   const [existingDlAction, setExistingDlActionState] = useState<'ask' | 'reinstall' | 'redownload'>('ask')
   const [limitExtractionThreads, setLimitExtractionThreadsState] = useState<boolean>(true)
+
   useEffect(() => {
     window.api.settings.getExistingDownloadAction().then(setExistingDlActionState).catch(() => {/* ignore */})
   }, [])
+
   const handleSetExistingDlAction = (v: 'ask' | 'reinstall' | 'redownload'): void => {
     setExistingDlActionState(v)
     window.api.settings.setExistingDownloadAction(v).catch(() => {/* ignore */})
   }
+
   useEffect(() => {
     window.api.settings.getMaxConcurrentDownloads().then(setMaxConcurrentState).catch(() => {/* ignore */})
   }, [])
+
   const handleSetMaxConcurrent = (n: number): void => {
     setMaxConcurrentState(n)
     window.api.settings.setMaxConcurrentDownloads(n).catch(() => {/* ignore */})
   }
+
   useEffect(() => {
     window.api.settings.getLimitExtractionThreads().then(setLimitExtractionThreadsState).catch(() => {/* ignore */})
   }, [])
+
   const handleSetLimitExtractionThreads = (v: boolean): void => {
     setLimitExtractionThreadsState(v)
     window.api.settings.setLimitExtractionThreads(v).catch(() => {/* ignore */})
   }
-  // Display the actual thread count so users see what "1/3 of system" resolves to.
+
   const totalCpuThreads = typeof navigator !== 'undefined' ? (navigator.hardwareConcurrency || 0) : 0
   const limitedThreadCount = Math.max(1, Math.floor(totalCpuThreads / 3))
 
-  const neonOptionBtn = (active: boolean) => ({
-    background: active ? 'rgba(var(--vrcd-neon-raw),0.12)' : 'transparent',
-    border: `1px solid ${active ? 'var(--vrcd-neon)' : 'rgba(var(--vrcd-neon-raw),0.25)'}`,
-    color: active ? 'var(--vrcd-neon)' : 'rgba(var(--vrcd-neon-raw),0.5)',
-    fontFamily: 'monospace', fontSize: '11px', padding: '4px 10px',
-    borderRadius: '4px', cursor: 'pointer', letterSpacing: '0.06em',
-    boxShadow: active ? '0 0 8px rgba(var(--vrcd-neon-raw),0.2)' : 'none'
-  })
+  const fontFamilyKeys = Object.keys(FONT_FAMILY_OPTIONS) as FontFamilyChoice[]
+  const selectedFontOpt = FONT_FAMILY_OPTIONS[fontFamily]
 
   return (
-    <div style={{ padding: '4px 4px 8px', display: 'flex', flexDirection: 'column', gap: '0' }}>
+    <div className="flex flex-col gap-0">
 
       {/* Auto-update */}
-      <ToggleRow
-        purple
+      <SwitchRow
         label="Disable auto-update check on launch"
         description="Prevents the app from checking GitHub for updates when it starts. You can still update manually."
         checked={disableAutoUpdate}
         onChange={setDisableAutoUpdate}
       />
+      <RowDivider />
 
       {/* Sideloading */}
-      <ToggleRow
-        purple
-        label="Disable Sideloading"
-        description="Hides all Install/Uninstall/Reinstall/Update buttons. Downloads still work. Useful for sharing the app without install access."
+      <SwitchRow
+        label="Disable sideloading"
+        description="Hides all Install / Uninstall / Reinstall / Update buttons. Downloads still work. Useful for sharing the app without install access."
         checked={disableSideloading}
         onChange={setDisableSideloading}
       />
+      <RowDivider />
 
       {/* Colorblind mode */}
-      <ToggleRow
-        purple
-        label="Colorblind Mode"
-        description="Swaps neon green → white and purple → dark. Improves contrast for red-green color vision deficiency. Takes effect immediately."
+      <SwitchRow
+        label="Colorblind mode"
+        description="Improves contrast for red-green color vision deficiency. Takes effect immediately."
         checked={colorblindMode}
         onChange={setColorblindMode}
       />
+      <RowDivider />
 
       {/* Accent color */}
-      <div style={{ padding: '10px 0 4px', display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid rgba(var(--vrcd-neon-raw),0.1)', marginTop: '6px' }}>
-        <span style={{ color: 'var(--vrcd-neon)', fontFamily: 'monospace', fontSize: '12px', letterSpacing: '0.04em' }}>
-          Accent Color
-        </span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <input
+      <div className="flex flex-col gap-2 py-3">
+        <span className="text-sm font-medium text-default-900">Accent color</span>
+        <div className="flex items-center gap-3 flex-wrap">
+          <Input
             type="color"
-            value={accentColor ?? '#39ff14'}
+            value={accentColor ?? '#3D7DFF'}
             onChange={(e) => setAccentColor(e.target.value)}
-            style={{ width: '36px', height: '28px', padding: '2px', border: '1px solid rgba(var(--vrcd-neon-raw),0.4)', borderRadius: '4px', background: 'transparent', cursor: 'pointer' }}
+            size="sm"
+            className="w-16"
+            classNames={{ input: 'h-8 p-0.5 cursor-pointer' }}
+            aria-label="Pick accent color"
           />
-          <span style={{ color: 'rgba(var(--vrcd-neon-raw),0.7)', fontFamily: 'monospace', fontSize: '11px' }}>
-            {accentColor ?? '#39ff14 (default)'}
-          </span>
+          <Chip variant="flat" color="default" size="sm" className="font-mono text-xs">
+            {accentColor ?? '#3D7DFF'}
+          </Chip>
           {accentColor && (
-            <button
-              onClick={() => setAccentColor(null)}
-              style={{ background: 'transparent', border: '1px solid rgba(var(--vrcd-neon-raw),0.3)', color: 'rgba(var(--vrcd-neon-raw),0.6)', fontFamily: 'monospace', fontSize: '10px', padding: '2px 8px', borderRadius: '4px', cursor: 'pointer', letterSpacing: '0.06em' }}
+            <Button
+              variant="light"
+              color="default"
+              size="sm"
+              onPress={() => setAccentColor(null)}
             >
-              reset
-            </button>
+              Reset to default
+            </Button>
           )}
         </div>
-        <span style={{ color: 'rgba(var(--vrcd-neon-raw),0.35)', fontFamily: 'monospace', fontSize: '11px' }}>
-          Changes the neon accent color across the whole UI. Takes effect immediately.
-        </span>
+        <p className="text-xs text-default-400">
+          Changes the accent color across the whole UI. Takes effect immediately.
+        </p>
       </div>
+      <RowDivider />
 
       {/* Font family */}
-      <div style={{ padding: '10px 0 4px', display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid rgba(var(--vrcd-neon-raw),0.1)', marginTop: '6px' }}>
-        <span style={{ color: 'var(--vrcd-neon)', fontFamily: 'var(--vrcd-font-mono)', fontSize: '12px', letterSpacing: '0.04em' }}>
-          Font
-        </span>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-          {(Object.keys(FONT_FAMILY_OPTIONS) as FontFamilyChoice[]).map((key) => {
-            const opt = FONT_FAMILY_OPTIONS[key]
-            const active = fontFamily === key
-            return (
-              <button
-                key={key}
-                onClick={() => setFontFamily(key)}
-                title={opt.hint}
-                style={{
-                  background: active ? 'rgba(var(--vrcd-neon-raw),0.12)' : 'transparent',
-                  border: `1px solid ${active ? 'var(--vrcd-neon)' : 'rgba(var(--vrcd-neon-raw),0.25)'}`,
-                  color: active ? 'var(--vrcd-neon)' : 'rgba(var(--vrcd-neon-raw),0.7)',
-                  fontFamily: opt.stack,
-                  fontSize: '12px',
-                  padding: '8px 14px',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  letterSpacing: '0.04em',
-                  boxShadow: active ? '0 0 8px rgba(var(--vrcd-neon-raw),0.2)' : 'none',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-start',
-                  gap: '2px',
-                  minWidth: '140px',
-                  textAlign: 'left'
-                }}
-              >
-                <span style={{ fontWeight: 700, letterSpacing: '0.06em' }}>{opt.label}</span>
-                <span style={{ fontSize: '10px', opacity: 0.7 }}>The quick brown fox</span>
-              </button>
-            )
-          })}
-        </div>
-        <span style={{ color: 'rgba(var(--vrcd-neon-raw),0.35)', fontFamily: 'monospace', fontSize: '11px' }}>
-          Switch the monospace font used across the app. Pick something easier to read if Courier New is hard on your eyes.
-        </span>
+      <div className="flex flex-col gap-2 py-3">
+        <span className="text-sm font-medium text-default-900">Interface font</span>
+        <Select
+          selectedKeys={[fontFamily]}
+          onSelectionChange={(keys) => {
+            const k = Array.from(keys)[0] as FontFamilyChoice
+            if (k) setFontFamily(k)
+          }}
+          size="sm"
+          className="max-w-[260px]"
+          aria-label="Select font family"
+        >
+          {fontFamilyKeys.map((key) => (
+            <SelectItem key={key} textValue={FONT_FAMILY_OPTIONS[key].label}>
+              {FONT_FAMILY_OPTIONS[key].label}
+            </SelectItem>
+          ))}
+        </Select>
+        {selectedFontOpt && (
+          <p
+            className="text-sm text-default-500"
+            style={{ fontFamily: selectedFontOpt.stack }}
+          >
+            The quick brown fox — {selectedFontOpt.hint}
+          </p>
+        )}
       </div>
+      <RowDivider />
 
       {/* Sound effects */}
-      <div style={{ padding: '10px 0 4px', display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid rgba(var(--vrcd-neon-raw),0.1)', marginTop: '6px' }}>
-        <span style={{ color: 'var(--vrcd-neon)', fontFamily: 'var(--vrcd-font-mono)', fontSize: '12px', letterSpacing: '0.04em' }}>
-          Sound Effects
-        </span>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
-          <Switch checked={soundEnabled} onChange={(_, d) => setSoundEnabled(!!d.checked)} label={soundEnabled ? 'ON' : 'OFF'} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: '200px' }}>
-            <span style={{ color: 'rgba(var(--vrcd-neon-raw),0.6)', fontFamily: 'monospace', fontSize: '11px', minWidth: '50px' }}>VOLUME</span>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              step={1}
-              value={Math.round(soundVolume * 100)}
-              onChange={(e) => setSoundVolume(parseInt(e.target.value, 10) / 100)}
-              disabled={!soundEnabled}
-              style={{ flex: 1, accentColor: 'var(--vrcd-neon)' }}
-            />
-            <span style={{ color: 'rgba(var(--vrcd-neon-raw),0.7)', fontFamily: 'monospace', fontSize: '11px', minWidth: '36px', textAlign: 'right' }}>
-              {Math.round(soundVolume * 100)}%
-            </span>
-          </div>
-          <button
-            onClick={() => playSfx('click')}
-            disabled={!soundEnabled || !soundLoaded.click}
-            style={{ background: 'transparent', border: '1px solid rgba(var(--vrcd-neon-raw),0.4)', color: 'var(--vrcd-neon)', fontFamily: 'var(--vrcd-font-mono)', fontSize: '11px', padding: '4px 12px', borderRadius: '4px', cursor: !soundEnabled || !soundLoaded.click ? 'not-allowed' : 'pointer', opacity: !soundEnabled || !soundLoaded.click ? 0.4 : 1, letterSpacing: '0.06em' }}
-          >
-            TEST
-          </button>
+      <div className="flex flex-col gap-3 py-3">
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-sm font-medium text-default-900">Sound effects</span>
+          <Switch
+            isSelected={soundEnabled}
+            onValueChange={setSoundEnabled}
+            size="sm"
+            color="primary"
+          />
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px', padding: '8px 12px', background: 'rgba(var(--vrcd-neon-raw),0.04)', border: '1px solid rgba(var(--vrcd-neon-raw),0.15)', borderRadius: '4px', fontFamily: 'monospace', fontSize: '11px' }}>
-          <div style={{ color: 'var(--quest-text-muted)', fontSize: 12, fontWeight: 600, marginBottom: '4px' }}>Loaded files</div>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-default-500 w-14 shrink-0">Volume</span>
+          <Slider
+            size="sm"
+            step={1}
+            minValue={0}
+            maxValue={100}
+            value={Math.round(soundVolume * 100)}
+            onChange={(v) => setSoundVolume((typeof v === 'number' ? v : (v as number[])[0]) / 100)}
+            isDisabled={!soundEnabled}
+            className="flex-1"
+            color="primary"
+          />
+          <span className="text-xs text-default-500 w-9 text-right shrink-0">
+            {Math.round(soundVolume * 100)}%
+          </span>
+          <Button
+            variant="flat"
+            size="sm"
+            isDisabled={!soundEnabled || !soundLoaded.click}
+            onPress={() => playSfx('click')}
+          >
+            Test
+          </Button>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <p className="text-xs font-medium text-default-500">Available sounds</p>
           {SOUND_NAMES.map((name) => {
             const isLoaded = !!soundLoaded[name]
             const isEnabled = soundPerName[name] !== false
             return (
-              <div key={name} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <button
-                  disabled={!soundEnabled || !isLoaded}
-                  onClick={() => setSoundPerName(name, !isEnabled)}
-                  title={isEnabled ? `Disable ${name}` : `Enable ${name}`}
-                  style={{
-                    width: '32px', height: '16px', borderRadius: '8px', border: 'none', cursor: !soundEnabled || !isLoaded ? 'not-allowed' : 'pointer',
-                    background: isEnabled && soundEnabled && isLoaded ? 'var(--vrcd-neon)' : 'rgba(var(--vrcd-neon-raw),0.2)',
-                    opacity: !soundEnabled ? 0.4 : 1,
-                    flexShrink: 0, transition: 'background 0.2s',
-                    position: 'relative'
-                  }}
+              <div key={name} className="flex items-center gap-3">
+                <Switch
+                  isSelected={isEnabled && soundEnabled && isLoaded}
+                  onValueChange={(v) => setSoundPerName(name, v)}
+                  isDisabled={!soundEnabled || !isLoaded}
+                  size="sm"
+                  color="primary"
+                />
+                <span className={cn(
+                  'text-xs flex-1',
+                  isLoaded
+                    ? isEnabled ? 'text-default-700' : 'text-default-400'
+                    : 'text-danger-400'
+                )}>
+                  {name}
+                </span>
+                <Chip
+                  size="sm"
+                  variant="flat"
+                  color={isLoaded ? (isEnabled && soundEnabled ? 'success' : 'default') : 'danger'}
+                  className="text-xs"
                 >
-                  <span style={{
-                    position: 'absolute', top: '2px',
-                    left: isEnabled && soundEnabled && isLoaded ? '18px' : '2px',
-                    width: '12px', height: '12px', borderRadius: '50%',
-                    background: '#000', transition: 'left 0.2s', display: 'block'
-                  }} />
-                </button>
-                <span style={{ flex: 1, color: isLoaded ? (isEnabled ? 'var(--vrcd-neon)' : 'rgba(var(--vrcd-neon-raw),0.4)') : 'rgba(255,68,68,0.7)' }}>
-                  {name}.{`{wav,mp3,ogg}`}
-                </span>
-                <span style={{ color: isLoaded ? (isEnabled ? 'rgba(var(--vrcd-neon-raw),0.6)' : 'rgba(var(--vrcd-neon-raw),0.3)') : 'rgba(255,68,68,0.5)', minWidth: '70px', textAlign: 'right' }}>
-                  {isLoaded ? (isEnabled ? '✓ enabled' : '— disabled') : '— missing'}
-                </span>
+                  {isLoaded ? (isEnabled ? 'enabled' : 'disabled') : 'missing'}
+                </Chip>
               </div>
             )
           })}
         </div>
 
-        <span style={{ color: 'rgba(var(--vrcd-neon-raw),0.45)', fontFamily: 'monospace', fontSize: '11px', lineHeight: 1.5 }}>
+        <p className="text-xs text-default-400 leading-relaxed">
           {anySoundLoaded
             ? 'Sounds play on button clicks (click), the boot intro typing (type), and the ADB shell matrix load (matrix).'
-            : 'No sound files loaded. Drop click.wav, type.wav, or matrix.wav into one of these folders to enable:'}
-        </span>
-        <ul style={{ margin: 0, paddingLeft: '20px', color: 'rgba(var(--vrcd-neon-raw),0.55)', fontFamily: 'monospace', fontSize: '11px', lineHeight: 1.6 }}>
-          <li>your user-data folder → <code style={{ color: 'var(--vrcd-neon)' }}>sounds/</code> (no rebuild needed)</li>
-          <li>repo → <code style={{ color: 'var(--vrcd-neon)' }}>resources/sounds/</code> (bundled into the build)</li>
-        </ul>
+            : 'No sound files found. Drop click.wav, type.wav, or matrix.wav into your user-data sounds/ folder or the repo resources/sounds/ folder.'}
+        </p>
       </div>
+      <RowDivider />
 
-      {/* Deletion behavior */}
-      <div style={{ padding: '10px 0 4px', display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid rgba(var(--vrcd-neon-raw),0.1)', marginTop: '6px' }}>
-        <span style={{ color: 'var(--vrcd-neon)', fontFamily: 'monospace', fontSize: '12px', letterSpacing: '0.04em' }}>
-          Transfer List — Remove Behavior
-        </span>
-        <div style={{ display: 'flex', gap: '6px' }}>
-          {(['ask', 'keep', 'delete'] as const).map((v) => (
-            <button key={v} onClick={() => setDeleteOnRemove(v)} style={neonOptionBtn(deleteOnRemove === v)}>
-              {v === 'ask' ? 'Ask each time' : v === 'keep' ? 'Keep files' : 'Delete files'}
-            </button>
-          ))}
-        </div>
-        <span style={{ color: 'rgba(var(--vrcd-neon-raw),0.35)', fontFamily: 'monospace', fontSize: '11px' }}>
-          When removing a completed/errored item from the transfer list.
-        </span>
+      {/* Transfer list removal behavior */}
+      <div className="flex flex-col gap-2 py-3">
+        <span className="text-sm font-medium text-default-900">Transfer list — remove behavior</span>
+        <p className="text-xs text-default-400">
+          When removing a completed or errored item from the transfer list.
+        </p>
+        <Select
+          selectedKeys={[deleteOnRemove]}
+          onSelectionChange={(keys) => {
+            const k = Array.from(keys)[0] as 'ask' | 'keep' | 'delete'
+            if (k) setDeleteOnRemove(k)
+          }}
+          size="sm"
+          className="max-w-[220px]"
+          aria-label="Remove behavior"
+        >
+          <SelectItem key="ask">Ask each time</SelectItem>
+          <SelectItem key="keep">Keep files</SelectItem>
+          <SelectItem key="delete">Delete files</SelectItem>
+        </Select>
       </div>
+      <RowDivider />
 
       {/* Concurrent downloads */}
-      <div style={{ padding: '10px 0 4px', display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid rgba(var(--vrcd-neon-raw),0.1)', marginTop: '6px' }}>
-        <span style={{ color: 'var(--vrcd-neon)', fontFamily: 'monospace', fontSize: '12px', letterSpacing: '0.04em' }}>
-          Concurrent Downloads — {maxConcurrent} at a time
-        </span>
-        <div style={{ display: 'flex', gap: '6px' }}>
+      <div className="flex flex-col gap-2 py-3">
+        <span className="text-sm font-medium text-default-900">Concurrent downloads</span>
+        <p className="text-xs text-default-400">
+          Number of games that download simultaneously. Takes effect on the next queue item.
+        </p>
+        <Select
+          selectedKeys={[String(maxConcurrent)]}
+          onSelectionChange={(keys) => {
+            const k = Number(Array.from(keys)[0])
+            if (k) handleSetMaxConcurrent(k)
+          }}
+          size="sm"
+          className="max-w-[120px]"
+          aria-label="Concurrent downloads"
+        >
           {[1, 2, 3, 4, 5, 6].map((n) => (
-            <button key={n} onClick={() => handleSetMaxConcurrent(n)} style={neonOptionBtn(maxConcurrent === n)}>
-              {n}
-            </button>
+            <SelectItem key={String(n)}>{String(n)}</SelectItem>
           ))}
-        </div>
-        <span style={{ color: 'rgba(var(--vrcd-neon-raw),0.35)', fontFamily: 'monospace', fontSize: '11px' }}>
-          Number of games that download simultaneously. Takes effect on next queue item.
-        </span>
+        </Select>
       </div>
+      <RowDivider />
 
-      {/* 7-zip extraction thread cap */}
-      <ToggleRow
-        label={`Limit extraction threads${totalCpuThreads ? ` (~${limitedThreadCount}/${totalCpuThreads})` : ''}`}
-        description="Caps 7-zip to ~1/3 of your CPU threads so archive extraction doesn't pin every core and stall the rest of the UI. Disable to let 7-zip use all available threads."
+      {/* Extraction thread limit */}
+      <SwitchRow
+        label={`Limit extraction threads${totalCpuThreads ? ` (~${limitedThreadCount} of ${totalCpuThreads})` : ''}`}
+        description="Caps 7-zip to ~1/3 of your CPU threads so archive extraction doesn't pin every core and stall the UI. Disable to let 7-zip use all available threads."
         checked={limitExtractionThreads}
         onChange={handleSetLimitExtractionThreads}
       />
+      <RowDivider />
 
-      {/* When download already exists on disk */}
-      <div style={{ padding: '10px 0 4px', display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid rgba(var(--vrcd-neon-raw),0.1)', marginTop: '6px' }}>
-        <span style={{ color: 'var(--vrcd-neon)', fontFamily: 'var(--vrcd-font-mono)', fontSize: '12px', letterSpacing: '0.04em' }}>
-          When download already exists on disk
-        </span>
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-          {([
-            { v: 'ask', label: 'ASK ME' },
-            { v: 'reinstall', label: 'INSTALL FROM EXISTING' },
-            { v: 'redownload', label: 'RE-DOWNLOAD' }
-          ] as const).map((opt) => (
-            <button
-              key={opt.v}
-              onClick={() => handleSetExistingDlAction(opt.v)}
-              style={neonOptionBtn(existingDlAction === opt.v)}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-        <span style={{ color: 'rgba(var(--vrcd-neon-raw),0.35)', fontFamily: 'monospace', fontSize: '11px', lineHeight: 1.5 }}>
+      {/* Existing download action */}
+      <div className="flex flex-col gap-2 py-3">
+        <span className="text-sm font-medium text-default-900">When download already exists on disk</span>
+        <p className="text-xs text-default-400 leading-relaxed">
           When you click Download for a game whose folder already exists in your downloads path
-          (from a previous run, another tool, or a cleared queue): <strong>Ask me</strong> shows
-          a prompt; <strong>Install from existing</strong> imports the folder as Completed and
-          skips straight to install; <strong>Re-download</strong> wipes the folder first and
-          fetches a fresh copy.
-        </span>
+          — from a previous run, another tool, or a cleared queue.
+        </p>
+        <Select
+          selectedKeys={[existingDlAction]}
+          onSelectionChange={(keys) => {
+            const k = Array.from(keys)[0] as 'ask' | 'reinstall' | 'redownload'
+            if (k) handleSetExistingDlAction(k)
+          }}
+          size="sm"
+          className="max-w-[280px]"
+          aria-label="Existing download action"
+        >
+          <SelectItem key="ask">Ask me each time</SelectItem>
+          <SelectItem key="reinstall">Install from existing</SelectItem>
+          <SelectItem key="redownload">Re-download</SelectItem>
+        </Select>
       </div>
+      <RowDivider />
 
       {/* UI Zoom / Font Scale */}
-      <div style={{ padding: '10px 0 4px', display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid rgba(var(--vrcd-neon-raw),0.1)', marginTop: '6px' }}>
-        <span style={{ color: 'var(--vrcd-neon)', fontFamily: 'monospace', fontSize: '12px', letterSpacing: '0.04em' }}>
-          UI Zoom — {Math.round(fontScale * 100)}%
-        </span>
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-          {([0.75, 0.875, 1, 1.25, 1.5, 2] as const).map((v) => (
-            <button key={v} onClick={() => setFontScale(v)} style={neonOptionBtn(Math.abs(fontScale - v) < 0.01)}>
-              {v === 0.75 ? '75%' : v === 0.875 ? '87.5%' : v === 1 ? '100% — default' : v === 1.25 ? '125%' : v === 1.5 ? '150%' : '200%'}
-            </button>
-          ))}
+      <div className="flex flex-col gap-3 py-3">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium text-default-900">UI zoom</span>
+          <Chip variant="flat" color="default" size="sm">
+            {Math.round(fontScale * 100)}%
+          </Chip>
         </div>
-        <span style={{ color: 'rgba(var(--vrcd-neon-raw),0.35)', fontFamily: 'monospace', fontSize: '11px' }}>
+        <Slider
+          size="sm"
+          step={0.125}
+          minValue={0.75}
+          maxValue={2.0}
+          value={fontScale}
+          onChange={(v) => setFontScale(typeof v === 'number' ? v : (v as number[])[0])}
+          marks={[
+            { value: 0.75, label: '75%' },
+            { value: 1.0, label: '100%' },
+            { value: 1.5, label: '150%' },
+            { value: 2.0, label: '200%' }
+          ]}
+          color="primary"
+          className="max-w-md"
+        />
+        <p className="text-xs text-default-400">
           Scales the entire UI via Electron zoom. Takes effect immediately.
-        </span>
+        </p>
       </div>
-
     </div>
   )
 }
 
+// ─── MpUsernameSettings ───────────────────────────────────────────────────────
 const MpUsernameSettings: React.FC = () => {
-  const styles = useStyles()
   const { userName, loadingUserName, setUserName, isConnected } = useAdb()
-  const [isEditing, setIsEditing] = useState(false)
   const [editValue, setEditValue] = useState('')
   const [saved, setSaved] = useState(false)
 
-  const handleEdit = (): void => {
+  useEffect(() => {
     setEditValue(userName)
-    setIsEditing(true)
-  }
+  }, [userName])
 
   const handleSave = async (): Promise<void> => {
     if (!editValue.trim()) return
     try {
       await setUserName(editValue.trim())
-      setIsEditing(false)
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
     } catch (e) {
@@ -812,78 +632,43 @@ const MpUsernameSettings: React.FC = () => {
   }
 
   return (
-    <Card className={styles.card}>
-      <CardHeader description={<Subtitle1>Multiplayer Username</Subtitle1>} />
-      <div className={styles.cardContent}>
-        <Text>Your display name in VR multiplayer games.</Text>
-        {!isConnected && (
-          <Text size={200} style={{ color: tokens.colorNeutralForeground3, display: 'block', marginTop: tokens.spacingVerticalXS }}>
-            Connect a device to change your username.
-          </Text>
-        )}
-        <div className={styles.formRow}>
-          {isEditing ? (
-            <>
-              <Input
-                className={styles.input}
-                value={editValue}
-                onChange={(_, data) => setEditValue(data.value)}
-                placeholder="Enter VR display name"
-                autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleSave()
-                  if (e.key === 'Escape') setIsEditing(false)
-                }}
-              />
-              <Button appearance="primary" size="medium" onClick={handleSave} disabled={loadingUserName || !editValue.trim()}>
-                {loadingUserName ? <Spinner size="tiny" /> : 'Save'}
-              </Button>
-              <Button appearance="subtle" size="medium" onClick={() => setIsEditing(false)} disabled={loadingUserName}>Cancel</Button>
-            </>
-          ) : (
-            <Button appearance="outline" size="medium" icon={<EditRegular />} onClick={handleEdit} disabled={!isConnected}>
-              {userName || 'Click to set username'}
-            </Button>
-          )}
-        </div>
-        {saved && (
-          <Text className={styles.success}>
-            <CheckmarkCircleRegular />
-            Username saved!
-          </Text>
-        )}
+    <div className="flex flex-col gap-4">
+      <p className="text-sm text-default-500">Your display name in VR multiplayer games.</p>
+      {!isConnected && (
+        <Chip variant="flat" color="warning" size="sm">
+          Connect a device to change your username
+        </Chip>
+      )}
+      <div className="flex items-center gap-2 max-w-sm">
+        <Input
+          value={editValue}
+          onValueChange={setEditValue}
+          placeholder="Enter VR display name"
+          isDisabled={!isConnected}
+          size="sm"
+          className="flex-1"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleSave()
+          }}
+        />
+        <Button
+          color="primary"
+          size="sm"
+          onPress={handleSave}
+          isDisabled={loadingUserName || !editValue.trim() || !isConnected}
+        >
+          {loadingUserName ? <Spinner size="sm" /> : 'Save'}
+        </Button>
       </div>
-    </Card>
+      {saved && (
+        <p className="text-success text-sm">Username saved.</p>
+      )}
+    </div>
   )
 }
 
-interface SectionHeaderProps {
-  label: string
-  sectionKey: string
-  openSections: Record<string, boolean>
-  onToggle: (key: string) => void
-}
-
-const SectionHeader: React.FC<SectionHeaderProps> = ({ label, sectionKey, openSections, onToggle }) => (
-  <button
-    onClick={() => onToggle(sectionKey)}
-    style={{
-      width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      background: 'transparent', border: 'none',
-      padding: '14px 16px', cursor: 'pointer',
-      color: 'var(--quest-text)',
-      fontFamily: 'var(--quest-font-sans)', fontSize: '15px', fontWeight: 600, letterSpacing: '-0.005em',
-      borderRadius: 'var(--quest-radius-md)',
-      backgroundColor: openSections[sectionKey] ? 'rgba(255,255,255,0.03)' : 'transparent'
-    }}
-  >
-    <span>{label}</span>
-    {openSections[sectionKey] ? <ChevronUpRegular style={{ fontSize: '16px', color: 'var(--quest-text-muted)' }} /> : <ChevronDownRegular style={{ fontSize: '16px', color: 'var(--quest-text-muted)' }} />}
-  </button>
-)
-
+// ─── Settings (main) ─────────────────────────────────────────────────────────
 const Settings: React.FC = () => {
-  const styles = useStyles()
   const {
     downloadPath,
     downloadSpeedLimit,
@@ -894,24 +679,14 @@ const Settings: React.FC = () => {
     setDownloadSpeedLimit,
     setUploadSpeedLimit
   } = useSettings()
+
   const [editedDownloadPath, setEditedDownloadPath] = useState(downloadPath)
   const [isCreditsOpen, setIsCreditsOpen] = useState(false)
   const [hideAdultContent, setHideAdultContentLocal] = useState<boolean>(() => {
     try { return localStorage.getItem('vrcyberdeck:hideAdult') !== 'false' } catch { return true }
   })
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-    intro: true,
-    username: false,
-    logs: false,
-    download: false,
-    blacklist: false,
-    content: false
-  })
-  const toggleSection = useCallback((key: string): void =>
-    setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }))
-  , [])
 
-  // New state for speed input values
+  // Speed limit state
   const [downloadSpeedInput, setDownloadSpeedInput] = useState(
     downloadSpeedLimit > 0 ? String(downloadSpeedLimit) : ''
   )
@@ -920,8 +695,6 @@ const Settings: React.FC = () => {
   )
   const [downloadSpeedUnit, setDownloadSpeedUnit] = useState(SPEED_UNITS[0].value)
   const [uploadSpeedUnit, setUploadSpeedUnit] = useState(SPEED_UNITS[0].value)
-
-  // Add refs to store original values in KB/s
   const originalDownloadKbps = useRef<number | null>(null)
   const originalUploadKbps = useRef<number | null>(null)
 
@@ -936,48 +709,39 @@ const Settings: React.FC = () => {
     return () => { mounted = false }
   }, [])
 
-  // Update local state when the context values change
   useEffect(() => {
     setEditedDownloadPath(downloadPath)
-
-    // Handle new download/upload speed state
     if (downloadSpeedLimit === 0) {
       setDownloadSpeedInput('')
       originalDownloadKbps.current = null
     } else {
       setDownloadSpeedInput(String(downloadSpeedLimit))
-      setDownloadSpeedUnit('kbps') // Always reset to KB/s when loading from settings
+      setDownloadSpeedUnit('kbps')
       originalDownloadKbps.current = downloadSpeedLimit
     }
-
     if (uploadSpeedLimit === 0) {
       setUploadSpeedInput('')
       originalUploadKbps.current = null
     } else {
       setUploadSpeedInput(String(uploadSpeedLimit))
-      setUploadSpeedUnit('kbps') // Always reset to KB/s when loading from settings
+      setUploadSpeedUnit('kbps')
       originalUploadKbps.current = uploadSpeedLimit
     }
   }, [downloadPath, downloadSpeedLimit, uploadSpeedLimit])
+
+  const { t } = useLanguage()
 
   const handleSaveDownloadPath = async (): Promise<void> => {
     if (!editedDownloadPath) {
       setLocalError(t('downloadPathEmpty'))
       return
     }
-
     try {
       setLocalError(null)
       setSaveSuccess(false)
       await setDownloadPath(editedDownloadPath)
-
-      // Show success message
       setSaveSuccess(true)
-
-      // Reset success message after 3 seconds
-      setTimeout(() => {
-        setSaveSuccess(false)
-      }, 3000)
+      setTimeout(() => setSaveSuccess(false), 3000)
     } catch (err) {
       console.error('Error saving download path:', err)
       setLocalError(t('failedToSavePath'))
@@ -989,7 +753,6 @@ const Settings: React.FC = () => {
       setLocalError(null)
       setSaveSuccess(false)
 
-      // Use the stored original KB/s values if available, otherwise calculate
       let downloadLimit: number
       let uploadLimit: number
 
@@ -999,10 +762,7 @@ const Settings: React.FC = () => {
         downloadLimit = originalDownloadKbps.current
       } else {
         const inputValue = parseFloat(downloadSpeedInput)
-        if (isNaN(inputValue)) {
-          setLocalError(t('invalidNumbers'))
-          return
-        }
+        if (isNaN(inputValue)) { setLocalError(t('invalidNumbers')); return }
         const factor = SPEED_UNITS.find((u) => u.value === downloadSpeedUnit)?.factor || 1
         downloadLimit = inputValue * factor
       }
@@ -1013,32 +773,19 @@ const Settings: React.FC = () => {
         uploadLimit = originalUploadKbps.current
       } else {
         const inputValue = parseFloat(uploadSpeedInput)
-        if (isNaN(inputValue)) {
-          setLocalError(t('invalidNumbers'))
-          return
-        }
+        if (isNaN(inputValue)) { setLocalError(t('invalidNumbers')); return }
         const factor = SPEED_UNITS.find((u) => u.value === uploadSpeedUnit)?.factor || 1
         uploadLimit = inputValue * factor
       }
 
-      // Ensure values are non-negative
-      downloadLimit = Math.max(0, downloadLimit)
-      uploadLimit = Math.max(0, uploadLimit)
+      downloadLimit = Math.max(0, Math.round(downloadLimit))
+      uploadLimit = Math.max(0, Math.round(uploadLimit))
 
-      // Round to integer for storage (as the API expects integers)
-      const roundedDownloadLimit = Math.round(downloadLimit)
-      const roundedUploadLimit = Math.round(uploadLimit)
+      await setDownloadSpeedLimit(downloadLimit)
+      await setUploadSpeedLimit(uploadLimit)
 
-      await setDownloadSpeedLimit(roundedDownloadLimit)
-      await setUploadSpeedLimit(roundedUploadLimit)
-
-      // Show success message
       setSaveSuccess(true)
-
-      // Reset success message after 3 seconds
-      setTimeout(() => {
-        setSaveSuccess(false)
-      }, 3000)
+      setTimeout(() => setSaveSuccess(false), 3000)
     } catch (err) {
       console.error('Error saving speed limits:', err)
       setLocalError(t('failedToSaveSpeed'))
@@ -1048,135 +795,63 @@ const Settings: React.FC = () => {
   const handleSelectFolder = async (): Promise<void> => {
     try {
       const selectedPath = await window.api.dialog.showDirectoryPicker()
-      if (selectedPath) {
-        setEditedDownloadPath(selectedPath)
-      }
+      if (selectedPath) setEditedDownloadPath(selectedPath)
     } catch (err) {
       console.error('Error selecting folder:', err)
       setLocalError('Failed to select folder')
     }
   }
 
-  // Handle unit conversion when dropdown changes
   const handleDownloadUnitChange = (newUnit: string): void => {
-    if (!downloadSpeedInput.trim()) {
-      // If input is empty, just change the unit
-      setDownloadSpeedUnit(newUnit)
-      return
-    }
-
+    if (!downloadSpeedInput.trim()) { setDownloadSpeedUnit(newUnit); return }
     const currentValue = parseFloat(downloadSpeedInput)
-    if (isNaN(currentValue)) {
-      // If current input is not a valid number, just change the unit
-      setDownloadSpeedUnit(newUnit)
-      return
-    }
-
+    if (isNaN(currentValue)) { setDownloadSpeedUnit(newUnit); return }
     const currentUnitValue = SPEED_UNITS.find((u) => u.value === downloadSpeedUnit)
     const newUnitValue = SPEED_UNITS.find((u) => u.value === newUnit)
-
-    if (!currentUnitValue || !newUnitValue) {
-      setDownloadSpeedUnit(newUnit)
-      return
-    }
-
-    // If this is the first unit change, store the original KB/s value
+    if (!currentUnitValue || !newUnitValue) { setDownloadSpeedUnit(newUnit); return }
     if (originalDownloadKbps.current === null) {
-      if (downloadSpeedUnit === 'kbps') {
-        originalDownloadKbps.current = currentValue
-      } else {
-        // Convert from current unit to KB/s
-        originalDownloadKbps.current = currentValue * currentUnitValue.factor
-      }
+      originalDownloadKbps.current = downloadSpeedUnit === 'kbps'
+        ? currentValue
+        : currentValue * currentUnitValue.factor
     }
-
-    // Use the original KB/s value for conversions to prevent rounding errors
     if (originalDownloadKbps.current !== null) {
       const valueInNewUnit = originalDownloadKbps.current / newUnitValue.factor
-
-      // Format based on the unit
-      let formattedValue: string
-      if (newUnit === 'mbps') {
-        // For MB/s, show up to 2 decimal places, but trim trailing zeros
-        formattedValue = valueInNewUnit.toFixed(2).replace(/\.?0+$/, '')
-        if (formattedValue.endsWith('.')) formattedValue = formattedValue.slice(0, -1)
-      } else {
-        // For KB/s, show as integer
-        formattedValue = Math.round(valueInNewUnit).toString()
-      }
-
-      setDownloadSpeedInput(formattedValue)
+      let formatted = newUnit === 'mbps'
+        ? valueInNewUnit.toFixed(2).replace(/\.?0+$/, '').replace(/\.$/, '')
+        : Math.round(valueInNewUnit).toString()
+      setDownloadSpeedInput(formatted)
     }
-
     setDownloadSpeedUnit(newUnit)
   }
 
   const handleUploadUnitChange = (newUnit: string): void => {
-    if (!uploadSpeedInput.trim()) {
-      // If input is empty, just change the unit
-      setUploadSpeedUnit(newUnit)
-      return
-    }
-
+    if (!uploadSpeedInput.trim()) { setUploadSpeedUnit(newUnit); return }
     const currentValue = parseFloat(uploadSpeedInput)
-    if (isNaN(currentValue)) {
-      // If current input is not a valid number, just change the unit
-      setUploadSpeedUnit(newUnit)
-      return
-    }
-
+    if (isNaN(currentValue)) { setUploadSpeedUnit(newUnit); return }
     const currentUnitValue = SPEED_UNITS.find((u) => u.value === uploadSpeedUnit)
     const newUnitValue = SPEED_UNITS.find((u) => u.value === newUnit)
-
-    if (!currentUnitValue || !newUnitValue) {
-      setUploadSpeedUnit(newUnit)
-      return
-    }
-
-    // If this is the first unit change, store the original KB/s value
+    if (!currentUnitValue || !newUnitValue) { setUploadSpeedUnit(newUnit); return }
     if (originalUploadKbps.current === null) {
-      if (uploadSpeedUnit === 'kbps') {
-        originalUploadKbps.current = currentValue
-      } else {
-        // Convert from current unit to KB/s
-        originalUploadKbps.current = currentValue * currentUnitValue.factor
-      }
+      originalUploadKbps.current = uploadSpeedUnit === 'kbps'
+        ? currentValue
+        : currentValue * currentUnitValue.factor
     }
-
-    // Use the original KB/s value for conversions to prevent rounding errors
     if (originalUploadKbps.current !== null) {
       const valueInNewUnit = originalUploadKbps.current / newUnitValue.factor
-
-      // Format based on the unit
-      let formattedValue: string
-      if (newUnit === 'mbps') {
-        // For MB/s, show up to 2 decimal places, but trim trailing zeros
-        formattedValue = valueInNewUnit.toFixed(2).replace(/\.?0+$/, '')
-        if (formattedValue.endsWith('.')) formattedValue = formattedValue.slice(0, -1)
-      } else {
-        // For KB/s, show as integer
-        formattedValue = Math.round(valueInNewUnit).toString()
-      }
-
-      setUploadSpeedInput(formattedValue)
+      let formatted = newUnit === 'mbps'
+        ? valueInNewUnit.toFixed(2).replace(/\.?0+$/, '').replace(/\.$/, '')
+        : Math.round(valueInNewUnit).toString()
+      setUploadSpeedInput(formatted)
     }
-
     setUploadSpeedUnit(newUnit)
   }
 
-  // Update stored KB/s value when input changes
   const handleDownloadInputChange = (value: string): void => {
     setDownloadSpeedInput(value.replace(/[^0-9.]/g, ''))
-
-    // If the input is valid, update the original KB/s value
     const numValue = parseFloat(value)
     if (!isNaN(numValue)) {
-      if (downloadSpeedUnit === 'kbps') {
-        originalDownloadKbps.current = numValue
-      } else {
-        const factor = SPEED_UNITS.find((u) => u.value === downloadSpeedUnit)?.factor || 1
-        originalDownloadKbps.current = numValue * factor
-      }
+      const factor = SPEED_UNITS.find((u) => u.value === downloadSpeedUnit)?.factor || 1
+      originalDownloadKbps.current = downloadSpeedUnit === 'kbps' ? numValue : numValue * factor
     } else if (value.trim() === '') {
       originalDownloadKbps.current = null
     }
@@ -1184,195 +859,258 @@ const Settings: React.FC = () => {
 
   const handleUploadInputChange = (value: string): void => {
     setUploadSpeedInput(value.replace(/[^0-9.]/g, ''))
-
-    // If the input is valid, update the original KB/s value
     const numValue = parseFloat(value)
     if (!isNaN(numValue)) {
-      if (uploadSpeedUnit === 'kbps') {
-        originalUploadKbps.current = numValue
-      } else {
-        const factor = SPEED_UNITS.find((u) => u.value === uploadSpeedUnit)?.factor || 1
-        originalUploadKbps.current = numValue * factor
-      }
+      const factor = SPEED_UNITS.find((u) => u.value === uploadSpeedUnit)?.factor || 1
+      originalUploadKbps.current = uploadSpeedUnit === 'kbps' ? numValue : numValue * factor
     } else if (value.trim() === '') {
       originalUploadKbps.current = null
     }
   }
 
-  const { t } = useLanguage()
+  const sectionClasses = {
+    base: 'w-full',
+    heading: 'px-0 py-0',
+    trigger: 'px-4 py-3 rounded-large data-[hover=true]:bg-default-100 transition-colors',
+    title: 'text-sm font-semibold text-default-800',
+    content: 'px-4 pb-4 pt-1'
+  }
 
   return (
-    <div className={styles.root}>
-      <div className={styles.contentContainer}>
-        <div>
-          <h1 className={styles.headerTitle}>Settings</h1>
-          <span className={styles.headerSubtitle}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px',
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+        overflowY: 'auto',
+        padding: '28px 36px 36px',
+        backgroundColor: 'var(--quest-bg)',
+        boxSizing: 'border-box',
+        color: 'var(--quest-text)'
+      }}
+    >
+      <div style={{ width: '100%', maxWidth: '880px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+
+        {/* Page header */}
+        <div style={{ marginBottom: '8px' }}>
+          <h1 style={{ fontSize: '28px', fontWeight: 700, letterSpacing: '-0.015em', color: 'var(--quest-text)', marginBottom: '4px' }}>
+            Settings
+          </h1>
+          <p style={{ fontSize: '14px', color: 'var(--quest-text-muted)' }}>
             Configure preferences and manage your downloads.{appVersion && ` · v${appVersion}`}
-          </span>
+          </p>
         </div>
+
         {isLoading && (
-          <span style={{ fontSize: 13, color: 'var(--quest-text-muted)' }}>
+          <p style={{ fontSize: '13px', color: 'var(--quest-text-muted)' }}>
             {t('loadingSettings')}
-          </span>
+          </p>
         )}
 
-        <div>
-          <SectionHeader label="Appearance & extras" sectionKey="intro" openSections={openSections} onToggle={toggleSection} />
-          {openSections.intro && <ExtraSystemsSettings />}
-        </div>
+        {/* Collapsible sections */}
+        <Accordion
+          selectionMode="multiple"
+          defaultExpandedKeys={['appearance']}
+          className="gap-2 flex flex-col"
+          itemClasses={sectionClasses}
+        >
 
-        <div>
-          <SectionHeader label="Multiplayer identity" sectionKey="username" openSections={openSections} onToggle={toggleSection} />
-          {openSections.username && <MpUsernameSettings />}
-        </div>
+          {/* 1. Appearance & extras */}
+          <AccordionItem key="appearance" title="Appearance & extras">
+            <Card shadow="none" className="border border-default-100 bg-content1">
+              <CardBody className="p-4">
+                <ExtraSystemsSettings />
+              </CardBody>
+            </Card>
+          </AccordionItem>
 
-        <div>
-          <SectionHeader label="Log upload" sectionKey="logs" openSections={openSections} onToggle={toggleSection} />
-          {openSections.logs && <LogUploadSettings />}
-        </div>
+          {/* 2. Multiplayer identity */}
+          <AccordionItem key="identity" title="Multiplayer identity">
+            <Card shadow="none" className="border border-default-100 bg-content1">
+              <CardBody className="p-4">
+                <MpUsernameSettings />
+              </CardBody>
+            </Card>
+          </AccordionItem>
 
-        <SectionHeader label="Downloads & speed" sectionKey="download" openSections={openSections} onToggle={toggleSection} />
-        {openSections.download && <Card className={styles.card}>
-          <CardHeader description={<Subtitle1>{t('downloadSettings')}</Subtitle1>} />
-          <div className={styles.cardContent}>
-            <Text>{t('downloadSettingsDesc')}</Text>
+          {/* 3. Log upload */}
+          <AccordionItem key="logs" title="Log upload">
+            <Card shadow="none" className="border border-default-100 bg-content1">
+              <CardBody className="p-4">
+                <LogUploadSettings />
+              </CardBody>
+            </Card>
+          </AccordionItem>
 
-            <div className={styles.formRow}>
-              <Input
-                className={styles.input}
-                value={editedDownloadPath}
-                onChange={(_, data) => setEditedDownloadPath(data.value)}
-                placeholder={t('downloadPath')}
-                contentAfter={
-                  <Button
-                    icon={<FolderOpenRegular />}
-                    onClick={handleSelectFolder}
-                    aria-label={t('browseFolders')}
-                  />
-                }
-                size="large"
-              />
-              <button onClick={handleSaveDownloadPath} style={neonBtn}>{t('savePath')}</button>
-            </div>
+          {/* 4. Downloads & speed */}
+          <AccordionItem key="downloads" title="Downloads & speed">
+            <Card shadow="none" className="border border-default-100 bg-content1">
+              <CardBody className="p-4">
+                <div className="flex flex-col gap-5">
+                  <p className="text-sm text-default-500">{t('downloadSettingsDesc')}</p>
 
-            <div className={styles.speedLimitSection}>
-              <Text>{t('unlimitedHint')}</Text>
-
-              <div className={styles.speedFormRow}>
-                <div className={styles.speedControl}>
-                  <Text>{t('downloadSpeedLimit')}</Text>
-                  <div className={styles.speedInputGroup}>
-                    <Input
-                      className={styles.speedInput}
-                      value={downloadSpeedInput}
-                      onChange={(_, data) => handleDownloadInputChange(data.value)}
-                      placeholder={t('unlimited')}
-                    />
-                    <Dropdown
-                      className={styles.unitDropdown}
-                      value={SPEED_UNITS.find((u) => u.value === downloadSpeedUnit)?.label}
-                      aria-label="Download Speed Limit Unit"
-                      selectedOptions={[downloadSpeedUnit]}
-                      onOptionSelect={(_, data) => {
-                        if (data.optionValue) {
-                          handleDownloadUnitChange(data.optionValue)
+                  {/* Download path */}
+                  <div className="flex flex-col gap-2">
+                    <span className="text-sm font-medium text-default-800">Download path</span>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={editedDownloadPath}
+                        onValueChange={setEditedDownloadPath}
+                        placeholder={t('downloadPath')}
+                        size="sm"
+                        className="flex-1"
+                        endContent={
+                          <Button
+                            isIconOnly
+                            variant="light"
+                            size="sm"
+                            onPress={handleSelectFolder}
+                            aria-label={t('browseFolders')}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                              <path d="M.54 3.87.5 3a2 2 0 0 1 2-2h3.19a2 2 0 0 1 1.345.513l.905.838A1 1 0 0 0 8.5 2.5h4a2 2 0 0 1 2 2V8a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1V3.87z"/>
+                              <path d="M14.5 10h-13a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5z"/>
+                            </svg>
+                          </Button>
                         }
-                      }}
-                      mountNode={document.getElementById('portal')}
-                    >
-                      {SPEED_UNITS.map((unit) => (
-                        <Option key={unit.value} value={unit.value} text={unit.label}>
-                          {unit.label}
-                        </Option>
-                      ))}
-                    </Dropdown>
+                      />
+                      <Button color="primary" size="sm" onPress={handleSaveDownloadPath}>
+                        {t('savePath')}
+                      </Button>
+                    </div>
                   </div>
-                  <Text className={styles.hint}>
-                    <InfoRegular />
-                    {t('unlimitedHint')}
-                  </Text>
-                </div>
 
-                <div className={styles.speedControl}>
-                  <Text>{t('uploadSpeedLimit')}</Text>
-                  <div className={styles.speedInputGroup}>
-                    <Input
-                      className={styles.speedInput}
-                      value={uploadSpeedInput}
-                      onChange={(_, data) => handleUploadInputChange(data.value)}
-                      placeholder={t('unlimited')}
-                    />
-                    <Dropdown
-                      className={styles.unitDropdown}
-                      value={SPEED_UNITS.find((u) => u.value === uploadSpeedUnit)?.label}
-                      selectedOptions={[uploadSpeedUnit]}
-                      onOptionSelect={(_, data) => {
-                        if (data.optionValue) {
-                          handleUploadUnitChange(data.optionValue)
-                        }
-                      }}
-                      mountNode={document.getElementById('portal')}
-                    >
-                      {SPEED_UNITS.map((unit) => (
-                        <Option key={unit.value} value={unit.value} text={unit.label}>
-                          {unit.label}
-                        </Option>
-                      ))}
-                    </Dropdown>
+                  <Divider className="opacity-40" />
+
+                  {/* Speed limits */}
+                  <div className="flex flex-col gap-3">
+                    <span className="text-sm font-medium text-default-800">Speed limits</span>
+                    <p className="text-xs text-default-400">{t('unlimitedHint')}</p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Download speed */}
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-xs text-default-500 font-medium">Download</span>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={downloadSpeedInput}
+                            onValueChange={handleDownloadInputChange}
+                            placeholder={t('unlimited')}
+                            size="sm"
+                            className="flex-1"
+                            endContent={
+                              downloadSpeedInput.trim() === '' ? (
+                                <Chip size="sm" variant="flat" color="default" className="text-xs shrink-0">∞</Chip>
+                              ) : null
+                            }
+                          />
+                          <Select
+                            selectedKeys={[downloadSpeedUnit]}
+                            onSelectionChange={(keys) => {
+                              const k = Array.from(keys)[0] as string
+                              if (k) handleDownloadUnitChange(k)
+                            }}
+                            size="sm"
+                            className="w-24 shrink-0"
+                            aria-label="Download speed unit"
+                          >
+                            {SPEED_UNITS.map((u) => (
+                              <SelectItem key={u.value}>{u.label}</SelectItem>
+                            ))}
+                          </Select>
+                        </div>
+                      </div>
+
+                      {/* Upload speed */}
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-xs text-default-500 font-medium">Upload</span>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={uploadSpeedInput}
+                            onValueChange={handleUploadInputChange}
+                            placeholder={t('unlimited')}
+                            size="sm"
+                            className="flex-1"
+                            endContent={
+                              uploadSpeedInput.trim() === '' ? (
+                                <Chip size="sm" variant="flat" color="default" className="text-xs shrink-0">∞</Chip>
+                              ) : null
+                            }
+                          />
+                          <Select
+                            selectedKeys={[uploadSpeedUnit]}
+                            onSelectionChange={(keys) => {
+                              const k = Array.from(keys)[0] as string
+                              if (k) handleUploadUnitChange(k)
+                            }}
+                            size="sm"
+                            className="w-24 shrink-0"
+                            aria-label="Upload speed unit"
+                          >
+                            {SPEED_UNITS.map((u) => (
+                              <SelectItem key={u.value}>{u.label}</SelectItem>
+                            ))}
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end">
+                      <Button color="primary" size="sm" onPress={handleSaveSpeedLimits}>
+                        {t('saveSpeedLimits')}
+                      </Button>
+                    </div>
                   </div>
-                  <Text className={styles.hint}>
-                    <InfoRegular />
-                    {t('unlimitedHint')}
-                  </Text>
+
+                  {(error || localError) && (
+                    <p className="text-danger text-sm">{error || localError}</p>
+                  )}
+                  {saveSuccess && (
+                    <p className="text-success text-sm">{t('settingsSaved')}</p>
+                  )}
+
+                  <Divider className="opacity-40" />
+
+                  {/* Server config */}
+                  <div className="flex flex-col gap-2">
+                    <span className="text-sm font-medium text-default-800">Server configuration</span>
+                    <ServerConfigSettings />
+                  </div>
                 </div>
-              </div>
+              </CardBody>
+            </Card>
+          </AccordionItem>
 
-              <div
-                className={styles.formRow}
-                style={{ justifyContent: 'flex-end', marginTop: tokens.spacingVerticalM }}
-              >
-                <button onClick={handleSaveSpeedLimits} style={neonBtn}>{t('saveSpeedLimits')}</button>
-              </div>
-            </div>
+          {/* 5. Game blacklist */}
+          <AccordionItem key="blacklist" title="Game blacklist">
+            <Card shadow="none" className="border border-default-100 bg-content1">
+              <CardBody className="p-4">
+                <BlacklistSettings />
+              </CardBody>
+            </Card>
+          </AccordionItem>
 
-            {(error || localError) && <Text className={styles.error}>{error || localError}</Text>}
+          {/* 6. Content filter */}
+          <AccordionItem key="content" title="Content filter">
+            <Card shadow="none" className="border border-default-100 bg-content1">
+              <CardBody className="p-4">
+                <SwitchRow
+                  label="Hide adult content"
+                  description="Filters explicit-tagged titles from the library. Requires a game refresh to take effect."
+                  checked={hideAdultContent}
+                  onChange={(v) => {
+                    setHideAdultContentLocal(v)
+                    try { localStorage.setItem('vrcyberdeck:hideAdult', String(v)) } catch { }
+                  }}
+                />
+              </CardBody>
+            </Card>
+          </AccordionItem>
 
-            {saveSuccess && (
-              <Text className={styles.success}>
-                <CheckmarkCircleRegular />
-                {t('settingsSaved')}
-              </Text>
-            )}
-          </div>
-        </Card>}
-
-        <div>
-          <SectionHeader label="Game blacklist" sectionKey="blacklist" openSections={openSections} onToggle={toggleSection} />
-          {openSections.blacklist && <BlacklistSettings />}
-        </div>
-
-        <div>
-          <SectionHeader label="Content filter" sectionKey="content" openSections={openSections} onToggle={toggleSection} />
-          {openSections.content && (
-            <div style={{ padding: '12px 4px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{ '--colorBrandBackground': 'var(--vrcd-neon)', '--colorBrandBackgroundHover': 'rgba(var(--vrcd-neon-raw),0.8)', '--colorBrandBackgroundPressed': 'rgba(var(--vrcd-neon-raw),0.6)', '--colorCompoundBrandBackground': 'var(--vrcd-neon)', '--colorCompoundBrandBackgroundHover': 'rgba(var(--vrcd-neon-raw),0.8)' } as React.CSSProperties}>
-                  <Switch
-                    checked={hideAdultContent}
-                    onChange={(_, d) => {
-                      setHideAdultContentLocal(d.checked)
-                      try { localStorage.setItem('vrcyberdeck:hideAdult', String(d.checked)) } catch { }
-                    }}
-                  />
-                </div>
-                <span style={{ color: 'var(--vrcd-neon)', fontFamily: 'monospace', fontSize: '12px' }}>Hide adult / explicit content</span>
-              </div>
-              <span style={{ color: 'rgba(var(--vrcd-neon-raw),0.45)', fontFamily: 'monospace', fontSize: '11px', lineHeight: 1.5 }}>
-                Filters explicit-tagged titles from the library. Requires a game refresh to take effect.
-              </span>
-            </div>
-          )}
-        </div>
+        </Accordion>
 
         {/* Credits footer */}
         <div className="credits-settings-footer">
@@ -1388,6 +1126,7 @@ const Settings: React.FC = () => {
             </button>
           </div>
         </div>
+
       </div>
 
       <CreditsDialog

@@ -1,11 +1,12 @@
 import React, { useState } from 'react'
+import { Tabs, Tab, Chip } from '@heroui/react'
 import { useUpload } from '@renderer/hooks/useUpload'
 import DownloadsView from './DownloadsView'
 import UploadsView from './UploadsView'
 
-type Tab = 'downloads' | 'uploads'
-
 const TAB_STORAGE_KEY = 'vrcyberdeck:transfersTab'
+
+type Tab = 'downloads' | 'uploads'
 
 const TransfersPage: React.FC = () => {
   const [tab, setTab] = useState<Tab>(() => {
@@ -22,9 +23,14 @@ const TransfersPage: React.FC = () => {
     (i) => i.status === 'Queued' || i.status === 'Preparing' || i.status === 'Uploading'
   ).length
 
-  const switchTab = (next: Tab): void => {
+  const handleTabChange = (key: React.Key): void => {
+    const next = key as Tab
     setTab(next)
-    try { localStorage.setItem(TAB_STORAGE_KEY, next) } catch { /* ignore */ }
+    try {
+      localStorage.setItem(TAB_STORAGE_KEY, next)
+    } catch {
+      /* ignore */
+    }
   }
 
   return (
@@ -36,26 +42,33 @@ const TransfersPage: React.FC = () => {
         </div>
       </header>
 
-      <div className="quest-tabs" role="tablist">
-        <button
-          role="tab"
-          aria-selected={tab === 'downloads'}
-          className={`quest-tabs__tab${tab === 'downloads' ? ' is-active' : ''}`}
-          onClick={() => switchTab('downloads')}
-          type="button"
+      <div className="px-9 border-b border-white/8">
+        <Tabs
+          selectedKey={tab}
+          onSelectionChange={handleTabChange}
+          variant="underlined"
+          color="primary"
+          classNames={{
+            tabList: 'gap-6 p-0 border-none',
+            tab: 'h-10 px-0 text-sm',
+            cursor: 'hidden'
+          }}
         >
-          Downloads
-        </button>
-        <button
-          role="tab"
-          aria-selected={tab === 'uploads'}
-          className={`quest-tabs__tab${tab === 'uploads' ? ' is-active' : ''}`}
-          onClick={() => switchTab('uploads')}
-          type="button"
-        >
-          Uploads
-          {activeUploads > 0 && <span className="quest-tabs__badge">{activeUploads}</span>}
-        </button>
+          <Tab key="downloads" title="Downloads" />
+          <Tab
+            key="uploads"
+            title={
+              <div className="flex items-center gap-2">
+                <span>Uploads</span>
+                {activeUploads > 0 && (
+                  <Chip size="sm" color="primary" variant="flat" className="h-4 min-w-4 text-xs">
+                    {activeUploads}
+                  </Chip>
+                )}
+              </div>
+            }
+          />
+        </Tabs>
       </div>
 
       <div className="quest-page__body">
