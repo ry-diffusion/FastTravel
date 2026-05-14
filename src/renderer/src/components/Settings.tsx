@@ -49,56 +49,58 @@ const SPEED_UNITS = [
 ]
 
 const neonBtn = {
-  background: 'transparent',
-  border: '1px solid rgba(var(--vrcd-neon-raw),0.5)',
-  color: 'var(--vrcd-neon)',
-  fontFamily: 'var(--vrcd-font-mono)',
-  fontSize: '11px',
-  letterSpacing: '0.12em',
-  textTransform: 'uppercase' as const,
-  padding: '8px 20px',
-  borderRadius: '4px',
-  cursor: 'pointer',
-  boxShadow: '0 0 8px rgba(var(--vrcd-neon-raw),0.12)'
+  background: 'var(--vrcd-neon)',
+  border: '1px solid var(--vrcd-neon)',
+  color: '#ffffff',
+  fontFamily: 'var(--quest-font-sans)',
+  fontSize: '13px',
+  fontWeight: 600,
+  letterSpacing: '0',
+  textTransform: 'none' as const,
+  padding: '8px 16px',
+  borderRadius: '999px',
+  cursor: 'pointer'
 }
 
 const useStyles = makeStyles({
   root: {
     display: 'flex',
     flexDirection: 'column',
-    gap: tokens.spacingVerticalL,
+    gap: '16px',
     position: 'relative',
     width: '100%',
-    height: 'calc(92vh - 48px)',
+    height: '100%',
     overflowY: 'auto',
-    padding: '24px 32px',
-    backgroundColor: '#050514',
-    boxSizing: 'border-box'
+    padding: '28px 36px 36px',
+    backgroundColor: 'var(--quest-bg)',
+    boxSizing: 'border-box',
+    color: 'var(--quest-text)'
   },
   contentContainer: {
     width: '100%',
+    maxWidth: '880px',
     display: 'flex',
     flexDirection: 'column',
-    gap: tokens.spacingVerticalL
+    gap: '14px'
   },
   headerTitle: {
-    marginBottom: tokens.spacingVerticalXS,
-    color: 'var(--vrcd-neon)',
-    fontFamily: 'var(--vrcd-font-mono)',
-    letterSpacing: '0.04em'
+    marginBottom: '4px',
+    color: 'var(--quest-text)',
+    fontSize: '28px',
+    fontWeight: 700,
+    letterSpacing: '-0.015em'
   },
   headerSubtitle: {
-    color: 'rgba(var(--vrcd-neon-raw),0.55)',
+    color: 'var(--quest-text-muted)',
     display: 'block',
-    marginBottom: tokens.spacingVerticalL,
-    fontFamily: 'monospace',
-    fontSize: '12px'
+    marginBottom: '16px',
+    fontSize: '14px'
   },
   card: {
     width: '100%',
-    background: 'rgba(var(--vrcd-neon-raw),0.03)',
-    border: '1px solid rgba(var(--vrcd-neon-raw),0.18)',
-    borderRadius: '6px',
+    background: 'var(--quest-bg-raised)',
+    border: '1px solid var(--quest-border)',
+    borderRadius: 'var(--quest-radius-lg)',
     boxShadow: 'none'
   },
   cardContent: {
@@ -646,7 +648,7 @@ const ExtraSystemsSettings: React.FC = () => {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px', padding: '8px 12px', background: 'rgba(var(--vrcd-neon-raw),0.04)', border: '1px solid rgba(var(--vrcd-neon-raw),0.15)', borderRadius: '4px', fontFamily: 'monospace', fontSize: '11px' }}>
-          <div style={{ color: 'rgba(var(--vrcd-neon-raw),0.55)', letterSpacing: '0.1em', marginBottom: '4px' }}>// LOADED FILES</div>
+          <div style={{ color: 'var(--quest-text-muted)', fontSize: 12, fontWeight: 600, marginBottom: '4px' }}>Loaded files</div>
           {SOUND_NAMES.map((name) => {
             const isLoaded = !!soundLoaded[name]
             const isEnabled = soundPerName[name] !== false
@@ -867,14 +869,16 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({ label, sectionKey, openSe
     onClick={() => onToggle(sectionKey)}
     style={{
       width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      background: 'transparent', border: 'none', borderBottom: '1px solid rgba(var(--vrcd-neon-raw),0.15)',
-      padding: '8px 4px', cursor: 'pointer', color: 'rgba(var(--vrcd-neon-raw),0.8)',
-      fontFamily: 'monospace', fontSize: '11px', letterSpacing: '0.14em', textTransform: 'uppercase',
-      marginBottom: openSections[sectionKey] ? '8px' : '0'
+      background: 'transparent', border: 'none',
+      padding: '14px 16px', cursor: 'pointer',
+      color: 'var(--quest-text)',
+      fontFamily: 'var(--quest-font-sans)', fontSize: '15px', fontWeight: 600, letterSpacing: '-0.005em',
+      borderRadius: 'var(--quest-radius-md)',
+      backgroundColor: openSections[sectionKey] ? 'rgba(255,255,255,0.03)' : 'transparent'
     }}
   >
     <span>{label}</span>
-    {openSections[sectionKey] ? <ChevronUpRegular style={{ fontSize: '14px' }} /> : <ChevronDownRegular style={{ fontSize: '14px' }} />}
+    {openSections[sectionKey] ? <ChevronUpRegular style={{ fontSize: '16px', color: 'var(--quest-text-muted)' }} /> : <ChevronDownRegular style={{ fontSize: '16px', color: 'var(--quest-text-muted)' }} />}
   </button>
 )
 
@@ -1198,60 +1202,36 @@ const Settings: React.FC = () => {
   const { t } = useLanguage()
 
   return (
-    <div className={styles.root} style={{
-      '--colorNeutralForeground1': 'var(--vrcd-neon)',
-      '--colorNeutralForeground2': 'rgba(var(--vrcd-neon-raw),0.7)',
-      '--colorNeutralForeground3': 'rgba(var(--vrcd-neon-raw),0.45)',
-      '--colorNeutralForeground4': 'rgba(var(--vrcd-neon-raw),0.3)',
-      '--colorNeutralBackground1': '#050514',
-      '--colorNeutralBackground1Hover': 'rgba(var(--vrcd-neon-raw),0.06)',
-      '--colorNeutralBackground2': 'rgba(var(--vrcd-neon-raw),0.04)',
-      '--colorNeutralBackground3': 'rgba(var(--vrcd-neon-raw),0.08)',
-      '--colorNeutralStroke1': 'rgba(var(--vrcd-neon-raw),0.25)',
-      '--colorNeutralStroke2': 'rgba(var(--vrcd-neon-raw),0.15)',
-      '--colorNeutralStrokeAccessible': 'rgba(var(--vrcd-neon-raw),0.5)',
-      '--colorBrandBackground': 'var(--vrcd-neon)',
-      '--colorBrandBackgroundHover': 'rgba(var(--vrcd-neon-raw),0.8)',
-      '--colorBrandBackgroundPressed': 'rgba(var(--vrcd-neon-raw),0.6)',
-      '--colorCompoundBrandBackground': 'var(--vrcd-neon)',
-      '--colorCompoundBrandBackgroundHover': 'rgba(var(--vrcd-neon-raw),0.8)',
-      '--colorBrandForeground1': 'var(--vrcd-neon)',
-      '--colorBrandStroke1': 'var(--vrcd-neon)',
-      '--colorBrandStroke2': 'rgba(var(--vrcd-neon-raw),0.5)',
-      '--colorNeutralForegroundOnBrand': '#050514',
-    } as React.CSSProperties}>
+    <div className={styles.root}>
       <div className={styles.contentContainer}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalM }}>
-          <span style={{ fontSize: '28px', fontWeight: 800, fontFamily: 'var(--vrcd-font-mono)', letterSpacing: '0.04em' }}>
-            <span style={{ color: 'var(--vrcd-purple)', textShadow: '0 0 12px rgba(var(--vrcd-purple-raw),0.6)' }}>VR</span>
-            {' '}
-            <span style={{ color: 'var(--vrcd-neon)', textShadow: '0 0 12px rgba(var(--vrcd-neon-raw),0.5)' }}>CyberDeck</span>
-            {' '}
-            <span style={{ color: 'var(--vrcd-purple)', textShadow: '0 0 12px rgba(var(--vrcd-purple-raw),0.6)' }}>Hacks</span>
+        <div>
+          <h1 className={styles.headerTitle}>Settings</h1>
+          <span className={styles.headerSubtitle}>
+            Configure preferences and manage your downloads.{appVersion && ` · v${appVersion}`}
           </span>
-          {isLoading && <Spinner size="large" label={t('loadingSettings')} />}
         </div>
-        <span style={{ color: 'rgba(var(--vrcd-neon-raw),0.55)', fontFamily: 'monospace', fontSize: '12px', marginBottom: '8px', display: 'block' }}>
-          {t('configurePreferences')}
-          {appVersion && ` • Version ${appVersion}`}
-        </span>
+        {isLoading && (
+          <span style={{ fontSize: 13, color: 'var(--quest-text-muted)' }}>
+            {t('loadingSettings')}
+          </span>
+        )}
 
         <div>
-          <SectionHeader label="// EXTRA SYSTEMS" sectionKey="intro" openSections={openSections} onToggle={toggleSection} />
+          <SectionHeader label="Appearance & extras" sectionKey="intro" openSections={openSections} onToggle={toggleSection} />
           {openSections.intro && <ExtraSystemsSettings />}
         </div>
 
         <div>
-          <SectionHeader label="// MP USERNAME" sectionKey="username" openSections={openSections} onToggle={toggleSection} />
+          <SectionHeader label="Multiplayer identity" sectionKey="username" openSections={openSections} onToggle={toggleSection} />
           {openSections.username && <MpUsernameSettings />}
         </div>
 
         <div>
-          <SectionHeader label="// LOG UPLOAD" sectionKey="logs" openSections={openSections} onToggle={toggleSection} />
+          <SectionHeader label="Log upload" sectionKey="logs" openSections={openSections} onToggle={toggleSection} />
           {openSections.logs && <LogUploadSettings />}
         </div>
 
-        <SectionHeader label="// DOWNLOAD + SPEED" sectionKey="download" openSections={openSections} onToggle={toggleSection} />
+        <SectionHeader label="Downloads & speed" sectionKey="download" openSections={openSections} onToggle={toggleSection} />
         {openSections.download && <Card className={styles.card}>
           <CardHeader description={<Subtitle1>{t('downloadSettings')}</Subtitle1>} />
           <div className={styles.cardContent}>
@@ -1367,12 +1347,12 @@ const Settings: React.FC = () => {
         </Card>}
 
         <div>
-          <SectionHeader label="// BLACKLIST" sectionKey="blacklist" openSections={openSections} onToggle={toggleSection} />
+          <SectionHeader label="Game blacklist" sectionKey="blacklist" openSections={openSections} onToggle={toggleSection} />
           {openSections.blacklist && <BlacklistSettings />}
         </div>
 
         <div>
-          <SectionHeader label="// CONTENT FILTER" sectionKey="content" openSections={openSections} onToggle={toggleSection} />
+          <SectionHeader label="Content filter" sectionKey="content" openSections={openSections} onToggle={toggleSection} />
           {openSections.content && (
             <div style={{ padding: '12px 4px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -1396,9 +1376,9 @@ const Settings: React.FC = () => {
 
         {/* Credits footer */}
         <div className="credits-settings-footer">
-          <div className="credits-settings-label">crafted with passion for the VR community</div>
+          <div className="credits-settings-label">For the VR community</div>
           <div>
-            <span className="credits-settings-main">MADE WITH ♥ BY DMP OF ARMGDDN GAMES</span>
+            <span className="credits-settings-main">Made with ♥ by DMP of Armgddn Games</span>
             <button
               className="credits-settings-question-btn"
               onClick={() => setIsCreditsOpen(true)}
