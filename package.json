@@ -43,6 +43,7 @@
     "execa": "^9.6.0",
     "framer-motion": "^11.18.2",
     "ini": "^5.0.0",
+    "lucide-react": "^1.16.0",
     "marked": "^18.0.2",
     "node-7z": "^3.0.0",
     "pingman": "^2.0.0",

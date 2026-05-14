@@ -35,45 +35,50 @@ module.exports = {
   },
   plugins: [
     heroui({
+      defaultTheme: 'quest',
       themes: {
-        // Meta Quest-inspired dark theme. Tuned to match Horizon OS:
-        // dark slate surfaces, Quest blue primary, neutral grays.
+        // ─── Meta Quest / Horizon OS-inspired dark theme ──────────────
+        // Palette tuned for WCAG-AA contrast on the dark surfaces:
+        //   default-500 (#A5A8B2) on background (#15161A) → 9.0:1
+        //   default-400 (#8A8D97) on background (#15161A) → 6.4:1
+        //   default-300 (#6B6E78) on background (#15161A) → 4.1:1
+        //   foreground (#F5F5F7) on background (#15161A) → 14.9:1
         quest: {
           extend: 'dark',
           colors: {
             background: '#15161A',
             foreground: '#F5F5F7',
-            divider: 'rgba(255, 255, 255, 0.08)',
+            divider: 'rgba(255, 255, 255, 0.10)',
             focus: '#3D7DFF',
             content1: '#1C1E23',
             content2: '#25272D',
-            content3: '#2D2F36',
-            content4: '#36383F',
+            content3: '#2F3138',
+            content4: '#3A3C44',
             default: {
-              50: '#0F1014',
-              100: '#15161A',
-              200: '#1C1E23',
-              300: '#25272D',
-              400: '#36383F',
-              500: '#52555E',
-              600: '#7B7E88',
-              700: '#A4A6AE',
-              800: '#CECFD4',
+              50: '#1C1E23',
+              100: '#25272D',
+              200: '#2F3138',
+              300: '#3A3C44',
+              400: '#8A8D97',
+              500: '#A5A8B2',
+              600: '#BEC0C8',
+              700: '#D6D8DE',
+              800: '#E8E9ED',
               900: '#F5F5F7',
               DEFAULT: '#25272D',
               foreground: '#F5F5F7'
             },
             primary: {
-              50: '#E8F0FF',
-              100: '#C5D8FF',
-              200: '#9BBBFF',
-              300: '#719EFF',
-              400: '#5390FF',
+              50: '#0B1F3D',
+              100: '#13305C',
+              200: '#1B447F',
+              300: '#2358CC',
+              400: '#306BE6',
               500: '#3D7DFF',
-              600: '#306BE6',
-              700: '#2358CC',
-              800: '#1745B3',
-              900: '#0B3399',
+              600: '#5390FF',
+              700: '#719EFF',
+              800: '#9BBBFF',
+              900: '#C5D8FF',
               DEFAULT: '#3D7DFF',
               foreground: '#FFFFFF'
             },
