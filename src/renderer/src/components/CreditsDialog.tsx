@@ -1,5 +1,4 @@
 import React from 'react'
-import '../assets/credits-dialog.css'
 
 interface CreditsDialogProps {
   open: boolean
