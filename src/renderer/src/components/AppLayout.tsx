@@ -25,7 +25,7 @@ import {
   CounterBadge
 } from '@fluentui/react-components'
 import QuestLoader from './QuestLoader'
-import electronLogo from '../assets/icon.svg'
+import Sidebar from './Sidebar'
 import { useDependency } from '../hooks/useDependency'
 import { DependencyProvider } from '../context/DependencyProvider'
 import { DownloadProvider } from '../context/DownloadProvider'
@@ -43,7 +43,6 @@ import { useSettings } from '@renderer/hooks/useSettings'
 import { LanguageProvider } from '@renderer/context/LanguageProvider'
 import { useLanguage } from '@renderer/hooks/useLanguage'
 import CreditsDialog from './CreditsDialog'
-import HackerConsole from './HackerConsole'
 import TransferStrip from './TransferStrip'
 import { ErrorBoundary } from './ErrorBoundary'
 import { playSound } from '../hooks/useSoundEffects'
@@ -57,40 +56,16 @@ enum AppView {
 const useStyles = makeStyles({
   root: {
     display: 'flex',
-    flexDirection: 'column',
+    flexDirection: 'row',
     height: '100vh',
     overflow: 'hidden'
   },
-  header: {
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'stretch',
-    borderBottom: '1px solid var(--quest-border)',
-    backgroundColor: 'var(--quest-bg-raised)',
-    height: '72px',
-    flexShrink: 0
-  },
-  headerCenter: {
+  quest_main: {
     flex: 1,
+    minWidth: 0,
     display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    gap: '14px',
-    padding: '0 20px'
-  },
-  headerRight: {
-    minWidth: '120px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    padding: '0 16px',
-    flexShrink: 0
-  },
-  logo: {
-    height: '36px',
-    width: '36px',
-    borderRadius: '50%'
+    flexDirection: 'column',
+    overflow: 'hidden'
   },
   transferStrip: {
     minHeight: '0px',
@@ -100,47 +75,6 @@ const useStyles = makeStyles({
     padding: '0 20px',
     background: 'transparent',
     overflow: 'hidden'
-  },
-  headerContent: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    gap: '14px'
-  },
-  titleSection: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    gap: '2px'
-  },
-  titleMain: {
-    fontSize: '20px',
-    fontWeight: 700,
-    letterSpacing: '-0.015em',
-    lineHeight: '1.1',
-    display: 'flex',
-    alignItems: 'baseline',
-    gap: '6px'
-  },
-  titleVR: {
-    color: 'var(--quest-text)'
-  },
-  titleCyberdeck: {
-    color: 'var(--vrcd-neon)'
-  },
-  titleSub: {
-    fontSize: '12px',
-    color: 'var(--quest-text-muted)',
-    lineHeight: '1.3'
-  },
-  titleCredit: {
-    fontSize: '11px',
-    color: 'var(--quest-text-dim)',
-    lineHeight: '1.2',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    marginLeft: 'auto'
   },
   mainContent: {
     flex: 1,
@@ -423,81 +357,32 @@ const AppLayout: React.FC = () => {
         <GamesProvider>
           <GameDialogProvider>
             <div className={styles.root}>
-              <div className={styles.header}>
-                {/* Left: Status panel */}
-                <HackerConsole />
+              <Sidebar
+                currentView={currentView === AppView.DEVICE_LIST ? 'devices' : 'library'}
+                onSelectView={(v) =>
+                  setCurrentView(v === 'devices' ? AppView.DEVICE_LIST : AppView.GAMES)
+                }
+                onOpenTransfers={() => setIsTransfersOpen(true)}
+                onOpenSettings={() => setIsSettingsOpen(true)}
+                onOpenCredits={() => setIsCreditsOpen(true)}
+                appVersion={appVersion}
+              />
 
-                {/* Center: Logo + title */}
-                <div className={styles.headerCenter}>
-                  <div className={styles.headerContent}>
-                    <img alt="logo" className={styles.logo} src={electronLogo} />
-                    <div className={styles.titleSection}>
-                      <span className={styles.titleMain}>
-                        <span className={styles.titleVR}>Fast</span>
-                        <span className={styles.titleCyberdeck}>Travel</span>
-                      </span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <span className={styles.titleSub}>Sideload manager for Meta Quest</span>
-                        {appVersion && (
-                          <span style={{ fontSize: 11, color: 'var(--quest-text-dim)' }}>
-                            v{appVersion}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <span className={styles.titleCredit}>
-                    Made with ♥ by DMP
-                    <button
-                      className="credits-question-btn"
-                      onClick={() => setIsCreditsOpen(true)}
-                      title="Credits"
-                      style={{ marginLeft: '4px' }}
-                    >
-                      ?
-                    </button>
-                  </span>
+              <div className={styles.quest_main}>
+                <div className={styles.transferStrip}>
+                  <TransferStrip />
                 </div>
 
-                {/* Right: theme toggle */}
-                <div className={styles.headerRight}>
-                  <button
-                    onClick={() => setColorScheme(colorScheme === 'dark' ? 'light' : 'dark')}
-                    title={colorScheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      padding: '6px 14px',
-                      background: 'var(--quest-surface)',
-                      color: 'var(--quest-text)',
-                      border: '1px solid var(--quest-border-strong)',
-                      borderRadius: 'var(--quest-radius-pill)',
-                      cursor: 'pointer',
-                      fontSize: 13,
-                      fontWeight: 500
-                    }}
-                  >
-                    <span style={{ fontSize: 14, lineHeight: 1 }}>{colorScheme === 'dark' ? '🌙' : '☀️'}</span>
-                    {colorScheme === 'dark' ? 'Dark' : 'Light'}
-                  </button>
+                <div className={styles.mainContent} id="mainContent">
+                  <MainContent
+                    currentView={currentView}
+                    onDeviceConnected={handleDeviceConnected}
+                    onSkipConnection={handleSkipConnection}
+                    onBackToDeviceList={handleBackToDeviceList}
+                    onTransfers={() => setIsTransfersOpen(true)}
+                    onSettings={() => setIsSettingsOpen(true)}
+                  />
                 </div>
-
-              </div>
-
-              <div className={styles.transferStrip}>
-                <TransferStrip />
-              </div>
-
-              <div className={styles.mainContent} id="mainContent">
-                <MainContent
-                  currentView={currentView}
-                  onDeviceConnected={handleDeviceConnected}
-                  onSkipConnection={handleSkipConnection}
-                  onBackToDeviceList={handleBackToDeviceList}
-                  onTransfers={() => setIsTransfersOpen(true)}
-                  onSettings={() => setIsSettingsOpen(true)}
-                />
               </div>
 
               {/* Add UpdateNotification component here - it manages its own visibility */}

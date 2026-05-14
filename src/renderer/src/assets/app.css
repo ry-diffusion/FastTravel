@@ -63,12 +63,245 @@
 /* ── App shell ───────────────────────────────────────────────── */
 .app-container {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   height: 100vh;
   max-height: 100vh;
   overflow: hidden;
   background: var(--quest-bg);
   color: var(--quest-text);
+}
+
+/* ── Meta Business Manager-style sidebar ────────────────────────── */
+.quest-sidebar {
+  width: 248px;
+  min-width: 248px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--quest-bg-raised);
+  border-right: 1px solid var(--quest-border);
+  padding: 14px 12px 10px;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.quest-sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px 12px;
+}
+
+.quest-sidebar__brand-mark {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.quest-sidebar__brand-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.quest-sidebar__brand-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--quest-text);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.quest-sidebar__brand-sub {
+  font-size: 11px;
+  color: var(--quest-text-dim);
+  line-height: 1.2;
+}
+
+.quest-sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.quest-sidebar__nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  background: transparent;
+  border-radius: 10px;
+  color: var(--quest-text-muted);
+  font-family: var(--quest-font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.12s, color 0.12s;
+}
+
+.quest-sidebar__nav-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--quest-text);
+}
+
+.quest-sidebar__nav-item.is-active {
+  background-color: rgba(61, 125, 255, 0.16);
+  color: var(--vrcd-neon);
+}
+
+.quest-sidebar__nav-item.is-active .quest-sidebar__nav-icon {
+  color: var(--vrcd-neon);
+}
+
+.quest-sidebar__nav-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  color: var(--quest-text-muted);
+  flex-shrink: 0;
+}
+
+.quest-sidebar__nav-item:hover .quest-sidebar__nav-icon {
+  color: var(--quest-text);
+}
+
+.quest-sidebar__nav-label {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.quest-sidebar__nav-badge {
+  min-width: 20px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--vrcd-neon);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.quest-sidebar__divider {
+  height: 1px;
+  margin: 8px 6px;
+  background: var(--quest-border);
+}
+
+.quest-sidebar__footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--quest-border);
+}
+
+.quest-sidebar__status {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 4px 10px;
+}
+
+.quest-sidebar__status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.quest-sidebar__status-row dt {
+  color: var(--quest-text-dim);
+  font-weight: 500;
+}
+
+.quest-sidebar__status-row dd {
+  margin: 0;
+  color: var(--quest-text);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 140px;
+}
+
+.quest-sidebar__status-row dd.is-good { color: var(--quest-success); }
+.quest-sidebar__status-row dd.is-warn { color: var(--quest-warn); }
+.quest-sidebar__status-row dd.is-dim  { color: var(--quest-text-dim); }
+
+.quest-sidebar__theme {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  background: transparent;
+  border: 1px solid var(--quest-border);
+  border-radius: 10px;
+  color: var(--quest-text);
+  font-family: var(--quest-font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.12s, border-color 0.12s;
+}
+
+.quest-sidebar__theme:hover {
+  background-color: rgba(255, 255, 255, 0.04);
+  border-color: var(--quest-border-strong);
+}
+
+.quest-sidebar__credits {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 0 10px;
+  font-size: 10px;
+  color: var(--quest-text-dim);
+  letter-spacing: 0;
+}
+
+.quest-sidebar__credits-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  background: transparent;
+  border: 0;
+  color: var(--quest-text-dim);
+  cursor: pointer;
+  border-radius: 50%;
+  transition: background-color 0.12s, color 0.12s;
+}
+
+.quest-sidebar__credits-btn:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: var(--quest-text);
+}
+
+/* The main pane sits next to the sidebar */
+.quest-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 /* The title wrapper was previously a glitching cyberpunk element.
