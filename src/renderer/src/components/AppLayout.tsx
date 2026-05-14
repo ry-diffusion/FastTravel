@@ -6,14 +6,8 @@ import GamesView from './GamesView'
 import Settings from './Settings'
 import { UpdateNotification } from './UpdateNotification'
 import UploadGamesDialog from './UploadGamesDialog'
-import {
-  FluentProvider,
-  makeStyles,
-  tokens,
-  Text,
-  teamsDarkTheme,
-  teamsLightTheme
-} from '@fluentui/react-components'
+import { Button } from '@heroui/react'
+import { FluentProvider, teamsDarkTheme, teamsLightTheme } from '@fluentui/react-components'
 import QuestLoader from './QuestLoader'
 import Sidebar, { SidebarView } from './Sidebar'
 import TransfersPage from './TransfersPage'
@@ -33,62 +27,12 @@ import { ErrorBoundary } from './ErrorBoundary'
 import { playSound } from '../hooks/useSoundEffects'
 import '../assets/credits-dialog.css'
 
-enum AppView {
+export enum AppView {
   DEVICE_LIST,
   GAMES,
   TRANSFERS,
   SETTINGS
 }
-
-const useStyles = makeStyles({
-  root: {
-    display: 'flex',
-    flexDirection: 'row',
-    height: '100vh',
-    overflow: 'hidden'
-  },
-  quest_main: {
-    flex: 1,
-    minWidth: 0,
-    display: 'flex',
-    flexDirection: 'column',
-    overflow: 'hidden'
-  },
-  transferStrip: {
-    minHeight: '0px',
-    flexShrink: 0,
-    display: 'flex',
-    alignItems: 'center',
-    padding: '0 20px',
-    background: 'transparent',
-    overflow: 'hidden'
-  },
-  mainContent: {
-    flex: 1,
-    minHeight: 0,
-    display: 'flex',
-    flexDirection: 'column',
-    overflow: 'hidden',
-    position: 'relative'
-  },
-  loadingOrErrorContainer: {
-    flexGrow: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: tokens.spacingVerticalL
-  },
-  headerActions: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: tokens.spacingHorizontalM
-  },
-  tabs: {
-    marginLeft: tokens.spacingHorizontalM,
-    marginRight: tokens.spacingHorizontalM
-  }
-})
 
 interface MainContentProps {
   currentView: AppView
@@ -107,7 +51,6 @@ const MainContent: React.FC<MainContentProps> = ({
   onTransfers,
   onSettings
 }) => {
-  const styles = useStyles()
   const {
     isReady: dependenciesReady,
     error: dependencyError,
@@ -125,74 +68,75 @@ const MainContent: React.FC<MainContentProps> = ({
     if (currentView === AppView.SETTINGS) {
       return <Settings />
     }
-    return <GamesView onBackToDevices={onBackToDeviceList} onTransfers={onTransfers} onSettings={onSettings} />
+    return (
+      <GamesView
+        onBackToDevices={onBackToDeviceList}
+        onTransfers={onTransfers}
+        onSettings={onSettings}
+      />
+    )
   }
 
   if (!dependenciesReady) {
     if (dependencyError) {
-      // Check if this is a connectivity error
+      // Connectivity error: list failed URLs
       if (dependencyError.startsWith('CONNECTIVITY_ERROR|')) {
         const failedUrls = dependencyError.replace('CONNECTIVITY_ERROR|', '').split('|')
 
         return (
-          <div className={styles.loadingOrErrorContainer}>
-            <Text weight="semibold" style={{ color: tokens.colorPaletteRedForeground1 }}>
-              Network Connectivity Issues
-            </Text>
-            <Text>Cannot reach the following services:</Text>
-            <ul style={{ textAlign: 'left', marginTop: tokens.spacingVerticalS }}>
-              {failedUrls.map((url, index) => (
-                <li key={index} style={{ marginBottom: tokens.spacingVerticalXS }}>
-                  <Text style={{ fontFamily: 'monospace', fontSize: '12px' }}>{url}</Text>
+          <div className="flex-1 flex flex-col items-center justify-center gap-4 p-8 text-center">
+            <p className="text-medium font-semibold text-danger">Network Connectivity Issues</p>
+            <p className="text-small text-default-500">Cannot reach the following services:</p>
+            <ul className="text-left mt-2 flex flex-col gap-1">
+              {failedUrls.map((url, i) => (
+                <li key={i} className="text-tiny font-mono text-default-600">
+                  {url}
                 </li>
               ))}
             </ul>
-            <Text style={{ marginTop: tokens.spacingVerticalM }}>
+            <p className="text-small text-default-500 mt-2">
               This is likely due to DNS or firewall restrictions. Please try:
-            </Text>
-            <ol style={{ textAlign: 'left', marginTop: tokens.spacingVerticalS }}>
-              <li style={{ marginBottom: tokens.spacingVerticalXS }}>
-                <Text>Change your DNS to Cloudflare (1.1.1.1) or Google (8.8.8.8)</Text>
+            </p>
+            <ol className="text-left flex flex-col gap-1 mt-1">
+              <li className="text-small text-default-600">
+                Change your DNS to Cloudflare (1.1.1.1) or Google (8.8.8.8)
               </li>
-              <li style={{ marginBottom: tokens.spacingVerticalXS }}>
-                <Text>Use a VPN like ProtonVPN or 1.1.1.1 VPN</Text>
-              </li>
-              <li style={{ marginBottom: tokens.spacingVerticalXS }}>
-                <Text>Check your router/firewall settings</Text>
-              </li>
+              <li className="text-small text-default-600">Use a VPN like ProtonVPN or 1.1.1.1 VPN</li>
+              <li className="text-small text-default-600">Check your router/firewall settings</li>
             </ol>
-            <Text style={{ marginTop: tokens.spacingVerticalM }}>
+            <p className="text-small text-default-500 mt-2">
               For detailed troubleshooting, see:{' '}
               <a
                 href="https://github.com/jimzrt/apprenticeVr#troubleshooting-guide"
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ color: tokens.colorBrandForeground1 }}
+                className="text-primary underline"
               >
                 Troubleshooting Guide
               </a>
-            </Text>
+            </p>
           </div>
         )
       }
 
-      // Handle other dependency errors
+      // Other dependency errors
       const errorDetails: string[] = []
       if (!dependencyStatus?.sevenZip.ready) errorDetails.push('7zip')
       if (!dependencyStatus?.rclone.ready) errorDetails.push('rclone')
       if (!dependencyStatus?.adb.ready) errorDetails.push('adb')
-
       const failedDeps = errorDetails.length > 0 ? ` (${errorDetails.join(', ')})` : ''
 
       return (
-        <div className={styles.loadingOrErrorContainer}>
-          <Text weight="semibold" style={{ color: tokens.colorPaletteRedForeground1 }}>
-            Dependency Error {failedDeps}
-          </Text>
-          <Text>{dependencyError}</Text>
+        <div className="flex-1 flex flex-col items-center justify-center gap-3">
+          <p className="text-medium font-semibold text-danger">
+            Dependency Error{failedDeps}
+          </p>
+          <p className="text-small text-default-500">{dependencyError}</p>
         </div>
       )
     }
+
+    // Loading / progress state
     let title = 'Getting things ready'
     let subtitle: string | undefined = 'This only takes a moment.'
     let progress: number | null = null
@@ -230,7 +174,7 @@ const MainContent: React.FC<MainContentProps> = ({
     }
 
     return (
-      <div className={styles.loadingOrErrorContainer}>
+      <div className="flex-1 flex flex-col items-center justify-center">
         <QuestLoader title={title} subtitle={subtitle} progress={progress} />
       </div>
     )
@@ -251,7 +195,6 @@ const AppLayout: React.FC = () => {
   const [isCreditsOpen, setIsCreditsOpen] = useState(false)
   const [isCloseConfirmOpen, setIsCloseConfirmOpen] = useState(false)
   const mountNodeRef = useRef<HTMLDivElement>(null)
-  const styles = useStyles()
   const { queue: downloadQueue } = useDownload()
   const { queue: uploadQueue } = useUpload()
 
@@ -259,11 +202,7 @@ const AppLayout: React.FC = () => {
     window.api.app.getVersion().then(setAppVersion).catch(() => {})
   }, [])
 
-  // Global "click sound" — fires whenever the user clicks any button-like
-  // control. Uses capture so disabled buttons (which swallow click events)
-  // and Fluent UI components are still covered. The sound itself is a no-op
-  // unless the user dropped a click.{wav,mp3,ogg} into resources/sounds/ or
-  // <userData>/sounds/.
+  // Global click sound — fires on any button-like control.
   useEffect(() => {
     const handler = (e: MouseEvent): void => {
       const target = e.target as HTMLElement | null
@@ -289,8 +228,7 @@ const AppLayout: React.FC = () => {
     return activeDownload || activeUpload
   }, [downloadQueue, uploadQueue])
 
-  // Keep a ref so the close-requested listener always sees the latest value
-  // without needing to resubscribe (which would race with main-process events).
+  // Ref so the close-requested listener always sees the latest value.
   const hasActiveTransfersRef = useRef(hasActiveTransfers)
   useEffect(() => {
     hasActiveTransfersRef.current = hasActiveTransfers
@@ -306,30 +244,31 @@ const AppLayout: React.FC = () => {
     })
   }, [])
 
-  const handleDeviceConnected = (): void => {
-    setCurrentView(AppView.GAMES)
-  }
+  const handleDeviceConnected = (): void => setCurrentView(AppView.GAMES)
+  const handleSkipConnection = (): void => setCurrentView(AppView.GAMES)
+  const handleBackToDeviceList = (): void => setCurrentView(AppView.DEVICE_LIST)
 
-  const handleSkipConnection = (): void => {
-    setCurrentView(AppView.GAMES)
-  }
-
-  const handleBackToDeviceList = (): void => {
-    setCurrentView(AppView.DEVICE_LIST)
-  }
-
+  // Sync color scheme with OS preference changes
   useEffect(() => {
-    const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
     const handleChange = (e: MediaQueryListEvent): void => {
       setColorScheme(e.matches ? 'dark' : 'light')
     }
-
-    darkModeMediaQuery.addEventListener('change', handleChange)
-
-    return () => {
-      darkModeMediaQuery.removeEventListener('change', handleChange)
-    }
+    mq.addEventListener('change', handleChange)
+    return () => mq.removeEventListener('change', handleChange)
   }, [setColorScheme])
+
+  // Keep the document class in sync with the setting
+  useEffect(() => {
+    const root = document.documentElement
+    if (colorScheme === 'light') {
+      root.classList.remove('dark')
+      root.classList.add('light')
+    } else {
+      root.classList.remove('light')
+      root.classList.add('dark')
+    }
+  }, [colorScheme])
 
   const currentTheme = colorScheme === 'dark' ? teamsDarkTheme : teamsLightTheme
 
@@ -338,32 +277,45 @@ const AppLayout: React.FC = () => {
       <AdbProvider>
         <GamesProvider>
           <GameDialogProvider>
-            <div className={styles.root}>
+            {/* App shell */}
+            <div className="flex flex-row h-screen overflow-hidden bg-background text-foreground">
               <Sidebar
                 currentView={
-                  currentView === AppView.DEVICE_LIST ? 'devices'
-                  : currentView === AppView.TRANSFERS ? 'transfers'
-                  : currentView === AppView.SETTINGS ? 'settings'
-                  : 'library'
+                  currentView === AppView.DEVICE_LIST
+                    ? 'devices'
+                    : currentView === AppView.TRANSFERS
+                      ? 'transfers'
+                      : currentView === AppView.SETTINGS
+                        ? 'settings'
+                        : 'library'
                 }
                 onSelectView={(v: SidebarView) => {
                   setCurrentView(
-                    v === 'devices' ? AppView.DEVICE_LIST
-                    : v === 'transfers' ? AppView.TRANSFERS
-                    : v === 'settings' ? AppView.SETTINGS
-                    : AppView.GAMES
+                    v === 'devices'
+                      ? AppView.DEVICE_LIST
+                      : v === 'transfers'
+                        ? AppView.TRANSFERS
+                        : v === 'settings'
+                          ? AppView.SETTINGS
+                          : AppView.GAMES
                   )
                 }}
                 onOpenCredits={() => setIsCreditsOpen(true)}
                 appVersion={appVersion}
               />
 
-              <div className={styles.quest_main}>
-                <div className={styles.transferStrip}>
+              {/* Main column */}
+              <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+                {/* Transfer strip — collapses to nothing when idle */}
+                <div className="shrink-0 px-5 overflow-hidden">
                   <TransferStrip />
                 </div>
 
-                <div className={styles.mainContent} id="mainContent">
+                {/* Routed page */}
+                <div
+                  className="flex-1 min-h-0 flex flex-col overflow-hidden relative"
+                  id="mainContent"
+                >
                   <MainContent
                     currentView={currentView}
                     onDeviceConnected={handleDeviceConnected}
@@ -375,48 +327,50 @@ const AppLayout: React.FC = () => {
                 </div>
               </div>
 
-              {/* Add UpdateNotification component here - it manages its own visibility */}
+              {/* Update notification — manages its own visibility */}
               <UpdateNotification />
-
 
               {/* Close confirmation when transfers are still in progress */}
               {isCloseConfirmOpen && (
                 <div
-                  className="quest-modal-backdrop"
+                  className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/60 backdrop-blur-sm"
                   onClick={(e) => {
                     if (e.target === e.currentTarget) setIsCloseConfirmOpen(false)
                   }}
                 >
-                  <div className="quest-modal">
-                    <h2 className="quest-modal__title">Transfers still in progress</h2>
-                    <p className="quest-modal__body">
+                  <div className="w-[min(440px,90vw)] bg-content1 border border-divider rounded-large p-6 flex flex-col gap-3 shadow-2xl">
+                    <h2 className="m-0 text-large font-semibold text-foreground tracking-tight">
+                      Transfers still in progress
+                    </h2>
+                    <p className="m-0 text-small text-default-500 leading-relaxed">
                       Closing now will stop any active downloads, uploads, and installs.
                       You can resume them later from the Transfers page.
                     </p>
-                    <div className="quest-modal__actions">
-                      <button
-                        type="button"
-                        className="quest-btn quest-btn--ghost"
-                        onClick={() => setIsCloseConfirmOpen(false)}
+                    <div className="flex gap-2 justify-end mt-2">
+                      <Button
+                        variant="bordered"
+                        size="sm"
+                        onPress={() => setIsCloseConfirmOpen(false)}
                       >
                         Stay
-                      </button>
-                      <button
-                        type="button"
-                        className="quest-btn quest-btn--primary"
-                        onClick={() => {
+                      </Button>
+                      <Button
+                        color="primary"
+                        size="sm"
+                        onPress={() => {
                           setIsCloseConfirmOpen(false)
                           window.api.app.confirmClose()
                         }}
                       >
                         Quit anyway
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </div>
               )}
-
             </div>
+
+            {/* Portal mount node — pointer-events passthrough */}
             <div
               id="portal-parent"
               style={{
@@ -429,7 +383,7 @@ const AppLayout: React.FC = () => {
                 pointerEvents: 'none'
               }}
             >
-              <div ref={mountNodeRef} id="portal" style={{ pointerEvents: 'auto' }}></div>
+              <div ref={mountNodeRef} id="portal" style={{ pointerEvents: 'auto' }} />
             </div>
           </GameDialogProvider>
         </GamesProvider>

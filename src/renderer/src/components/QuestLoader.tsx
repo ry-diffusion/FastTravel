@@ -1,4 +1,5 @@
 import React from 'react'
+import { Progress } from '@heroui/react'
 
 interface QuestLoaderProps {
   /** Big bold heading line (e.g. "Checking network connectivity"). */
@@ -6,34 +7,41 @@ interface QuestLoaderProps {
   /** Optional secondary line under the title. */
   subtitle?: string
   /**
-   * 0–100 if the work is determinate. When omitted, the bar animates
+   * 0–100 if the work is determinate. When omitted or null, the bar animates
    * indeterminately like the Meta Quest "cast is loading" indicator.
    */
   progress?: number | null
 }
 
 /**
- * Meta Quest cast-loading-style indicator: a thin horizontal track with a
- * short Quest-blue segment, a large title, and an optional subtitle. Used
- * in place of the old circular Fluent spinner for any long-running setup
- * or system-busy state.
+ * Meta Quest cast-loading-style indicator: a thin HeroUI progress bar,
+ * a large title, and an optional subtitle. Replaces the old CSS-only version.
  */
 const QuestLoader: React.FC<QuestLoaderProps> = ({ title, subtitle, progress }) => {
   const determinate = typeof progress === 'number' && Number.isFinite(progress)
-  const pct = determinate ? Math.max(0, Math.min(100, progress as number)) : 0
+  const pct = determinate ? Math.max(0, Math.min(100, progress as number)) : undefined
 
   return (
-    <div className="quest-loader">
-      <div className="quest-loader__track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={determinate ? pct : undefined}>
-        {determinate ? (
-          <div className="quest-loader__fill" style={{ width: `${pct}%` }} />
-        ) : (
-          <div className="quest-loader__indeterminate" />
+    <div className="flex flex-col gap-7 items-start w-full max-w-[560px]">
+      <Progress
+        aria-label={title}
+        value={pct}
+        isIndeterminate={!determinate}
+        color="primary"
+        size="sm"
+        className="w-full"
+        classNames={{
+          track: 'bg-default-100',
+          indicator: 'bg-primary'
+        }}
+      />
+      <div className="flex flex-col gap-1.5">
+        <h2 className="m-0 text-3xl font-bold text-foreground leading-tight tracking-tight">
+          {title}
+        </h2>
+        {subtitle && (
+          <p className="m-0 text-medium text-default-500 leading-relaxed">{subtitle}</p>
         )}
-      </div>
-      <div className="quest-loader__text">
-        <h2 className="quest-loader__title">{title}</h2>
-        {subtitle && <p className="quest-loader__subtitle">{subtitle}</p>}
       </div>
     </div>
   )
