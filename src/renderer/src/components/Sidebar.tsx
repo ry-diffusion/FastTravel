@@ -15,13 +15,11 @@ import { useDownload } from '../hooks/useDownload'
 import { useUpload } from '@renderer/hooks/useUpload'
 import electronLogo from '../assets/icon.svg'
 
-export type SidebarView = 'devices' | 'library'
+export type SidebarView = 'devices' | 'library' | 'transfers' | 'settings'
 
 interface SidebarProps {
   currentView: SidebarView
   onSelectView: (v: SidebarView) => void
-  onOpenTransfers: () => void
-  onOpenSettings: () => void
   onOpenCredits: () => void
   appVersion: string
 }
@@ -31,8 +29,6 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({
   currentView,
   onSelectView,
-  onOpenTransfers,
-  onOpenSettings,
   onOpenCredits,
   appVersion
 }) => {
@@ -114,13 +110,15 @@ const Sidebar: React.FC<SidebarProps> = ({
         <NavItem
           icon={<ArrowDownloadRegular fontSize={20} />}
           label="Transfers"
-          onClick={onOpenTransfers}
+          active={currentView === 'transfers'}
+          onClick={() => onSelectView('transfers')}
           badge={activeTransfers || undefined}
         />
         <NavItem
           icon={<SettingsRegular fontSize={20} />}
           label="Settings"
-          onClick={onOpenSettings}
+          active={currentView === 'settings'}
+          onClick={() => onSelectView('settings')}
         />
       </nav>
 

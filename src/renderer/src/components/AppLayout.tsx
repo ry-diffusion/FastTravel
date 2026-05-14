@@ -3,8 +3,6 @@ import { AdbProvider } from '../context/AdbProvider'
 import { GamesProvider } from '../context/GamesProvider'
 import DeviceList from './DeviceList'
 import GamesView from './GamesView'
-import DownloadsView from './DownloadsView'
-import UploadsView from './UploadsView'
 import Settings from './Settings'
 import { UpdateNotification } from './UpdateNotification'
 import UploadGamesDialog from './UploadGamesDialog'
@@ -14,34 +12,21 @@ import {
   tokens,
   Text,
   teamsDarkTheme,
-  teamsLightTheme,
-  Button,
-  Drawer,
-  DrawerHeader,
-  DrawerHeaderTitle,
-  DrawerBody,
-  TabList,
-  Tab,
-  CounterBadge
+  teamsLightTheme
 } from '@fluentui/react-components'
 import QuestLoader from './QuestLoader'
-import Sidebar from './Sidebar'
+import Sidebar, { SidebarView } from './Sidebar'
+import TransfersPage from './TransfersPage'
 import { useDependency } from '../hooks/useDependency'
 import { DependencyProvider } from '../context/DependencyProvider'
 import { DownloadProvider } from '../context/DownloadProvider'
 import { SettingsProvider } from '../context/SettingsProvider'
 import { useDownload } from '../hooks/useDownload'
-import {
-  ArrowDownloadRegular as DownloadIcon,
-  DismissRegular as CloseIcon,
-  ArrowUploadRegular as UploadIcon
-} from '@fluentui/react-icons'
 import { UploadProvider } from '@renderer/context/UploadProvider'
 import { useUpload } from '@renderer/hooks/useUpload'
 import { GameDialogProvider } from '@renderer/context/GameDialogProvider'
 import { useSettings } from '@renderer/hooks/useSettings'
 import { LanguageProvider } from '@renderer/context/LanguageProvider'
-import { useLanguage } from '@renderer/hooks/useLanguage'
 import CreditsDialog from './CreditsDialog'
 import TransferStrip from './TransferStrip'
 import { ErrorBoundary } from './ErrorBoundary'
@@ -50,7 +35,9 @@ import '../assets/credits-dialog.css'
 
 enum AppView {
   DEVICE_LIST,
-  GAMES
+  GAMES,
+  TRANSFERS,
+  SETTINGS
 }
 
 const useStyles = makeStyles({
@@ -131,6 +118,12 @@ const MainContent: React.FC<MainContentProps> = ({
   const renderCurrentView = (): React.ReactNode => {
     if (currentView === AppView.DEVICE_LIST) {
       return <DeviceList onConnected={onDeviceConnected} onSkip={onSkipConnection} />
+    }
+    if (currentView === AppView.TRANSFERS) {
+      return <TransfersPage />
+    }
+    if (currentView === AppView.SETTINGS) {
+      return <Settings />
     }
     return <GamesView onBackToDevices={onBackToDeviceList} onTransfers={onTransfers} onSettings={onSettings} />
   }
@@ -255,23 +248,12 @@ const AppLayout: React.FC = () => {
   const [currentView, setCurrentView] = useState<AppView>(AppView.DEVICE_LIST)
   const [appVersion, setAppVersion] = useState<string>('')
   const { colorScheme, setColorScheme } = useSettings()
-  const [isTransfersOpen, setIsTransfersOpen] = useState(false)
-  const [transfersTab, setTransfersTab] = useState<'downloads' | 'uploads'>(() => {
-    try {
-      const v = localStorage.getItem('vrcyberdeck:transfersTab')
-      return v === 'uploads' ? 'uploads' : 'downloads'
-    } catch {
-      return 'downloads'
-    }
-  })
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isCreditsOpen, setIsCreditsOpen] = useState(false)
   const [isCloseConfirmOpen, setIsCloseConfirmOpen] = useState(false)
   const mountNodeRef = useRef<HTMLDivElement>(null)
   const styles = useStyles()
   const { queue: downloadQueue } = useDownload()
   const { queue: uploadQueue } = useUpload()
-  const { t } = useLanguage()
 
   useEffect(() => {
     window.api.app.getVersion().then(setAppVersion).catch(() => {})
@@ -358,12 +340,20 @@ const AppLayout: React.FC = () => {
           <GameDialogProvider>
             <div className={styles.root}>
               <Sidebar
-                currentView={currentView === AppView.DEVICE_LIST ? 'devices' : 'library'}
-                onSelectView={(v) =>
-                  setCurrentView(v === 'devices' ? AppView.DEVICE_LIST : AppView.GAMES)
+                currentView={
+                  currentView === AppView.DEVICE_LIST ? 'devices'
+                  : currentView === AppView.TRANSFERS ? 'transfers'
+                  : currentView === AppView.SETTINGS ? 'settings'
+                  : 'library'
                 }
-                onOpenTransfers={() => setIsTransfersOpen(true)}
-                onOpenSettings={() => setIsSettingsOpen(true)}
+                onSelectView={(v: SidebarView) => {
+                  setCurrentView(
+                    v === 'devices' ? AppView.DEVICE_LIST
+                    : v === 'transfers' ? AppView.TRANSFERS
+                    : v === 'settings' ? AppView.SETTINGS
+                    : AppView.GAMES
+                  )
+                }}
                 onOpenCredits={() => setIsCreditsOpen(true)}
                 appVersion={appVersion}
               />
@@ -379,8 +369,8 @@ const AppLayout: React.FC = () => {
                     onDeviceConnected={handleDeviceConnected}
                     onSkipConnection={handleSkipConnection}
                     onBackToDeviceList={handleBackToDeviceList}
-                    onTransfers={() => setIsTransfersOpen(true)}
-                    onSettings={() => setIsSettingsOpen(true)}
+                    onTransfers={() => setCurrentView(AppView.TRANSFERS)}
+                    onSettings={() => setCurrentView(AppView.SETTINGS)}
                   />
                 </div>
               </div>
@@ -388,219 +378,44 @@ const AppLayout: React.FC = () => {
               {/* Add UpdateNotification component here - it manages its own visibility */}
               <UpdateNotification />
 
-              {/* Transfers drawer (Downloads + Uploads combined) */}
-              <Drawer
-                type="overlay"
-                separator
-                open={isTransfersOpen}
-                onOpenChange={(_, { open }) => setIsTransfersOpen(open)}
-                position="end"
-                style={{ width: '700px', background: '#050514', borderLeft: '1px solid rgba(var(--vrcd-neon-raw),0.25)', ['--colorNeutralBackground1' as string]: '#050514', ['--colorNeutralForeground1' as string]: 'var(--vrcd-neon)', ['--colorNeutralForeground2' as string]: 'rgba(var(--vrcd-neon-raw),0.75)', ['--colorNeutralStroke1' as string]: 'rgba(var(--vrcd-neon-raw),0.2)', ['--colorBrandBackground' as string]: 'var(--vrcd-neon)', ['--colorNeutralForegroundOnBrand' as string]: '#050514' } as React.CSSProperties}
-                mountNode={mountNodeRef.current}
-              >
-                <DrawerHeader style={{ background: '#050514', borderBottom: '1px solid rgba(var(--vrcd-neon-raw),0.15)', padding: '12px 20px' }}>
-                  <DrawerHeaderTitle
-                    action={
-                      <Button
-                        appearance="subtle"
-                        aria-label={t('close')}
-                        icon={<CloseIcon />}
-                        onClick={() => setIsTransfersOpen(false)}
-                        style={{ color: 'var(--vrcd-neon)' }}
-                      />
-                    }
-                    style={{ color: 'var(--vrcd-neon)', fontFamily: 'monospace', letterSpacing: '0.08em' }}
-                  >
-                    Transfers
-                  </DrawerHeaderTitle>
-                </DrawerHeader>
-                <DrawerBody style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0, background: '#050514' }}>
-                  <TabList
-                    selectedValue={transfersTab}
-                    onTabSelect={(_, d) => {
-                      const tab = d.value as 'downloads' | 'uploads'
-                      setTransfersTab(tab)
-                      try { localStorage.setItem('vrcyberdeck:transfersTab', tab) } catch { /* ignore */ }
-                    }}
-                    style={{ padding: '0 16px', borderBottom: '1px solid rgba(var(--vrcd-neon-raw),0.15)', flexShrink: 0 }}
-                  >
-                    <Tab value="downloads" icon={<DownloadIcon />}>{t('downloads')}</Tab>
-                    <Tab value="uploads" icon={<UploadIcon />}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        {t('uploads')}
-                        {uploadQueue.filter((i) => i.status === 'Queued' || i.status === 'Preparing' || i.status === 'Uploading').length > 0 && (
-                          <CounterBadge
-                            count={uploadQueue.filter((i) => i.status === 'Queued' || i.status === 'Preparing' || i.status === 'Uploading').length}
-                            size="small"
-                            color="brand"
-                          />
-                        )}
-                      </span>
-                    </Tab>
-                  </TabList>
-                  <div style={{ flex: 1, overflow: 'auto' }}>
-                    {transfersTab === 'downloads' ? (
-                      <DownloadsView onClose={() => setIsTransfersOpen(false)} />
-                    ) : (
-                      <UploadsView />
-                    )}
-                  </div>
-                </DrawerBody>
-              </Drawer>
 
               {/* Close confirmation when transfers are still in progress */}
               {isCloseConfirmOpen && (
                 <div
-                  style={{
-                    position: 'fixed',
-                    inset: 0,
-                    zIndex: 1200,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: 'rgba(0,0,0,0.78)',
-                    backdropFilter: 'blur(2px)'
-                  }}
+                  className="quest-modal-backdrop"
                   onClick={(e) => {
                     if (e.target === e.currentTarget) setIsCloseConfirmOpen(false)
                   }}
                 >
-                  <div
-                    style={{
-                      background: '#030310',
-                      border: '1px solid rgba(var(--vrcd-neon-raw),0.45)',
-                      maxWidth: '520px',
-                      width: '90vw',
-                      fontFamily: 'var(--vrcd-font-mono)',
-                      borderRadius: '8px',
-                      padding: '28px 32px',
-                      boxShadow:
-                        '0 0 50px rgba(var(--vrcd-neon-raw),0.10), 0 0 80px rgba(var(--vrcd-purple-raw),0.08)'
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: '20px',
-                        color: 'var(--vrcd-purple)',
-                        letterSpacing: '0.1em',
-                        fontWeight: 700,
-                        textAlign: 'center',
-                        textShadow:
-                          '0 0 10px rgba(var(--vrcd-purple-raw),0.7), 0 0 24px rgba(var(--vrcd-purple-raw),0.3)',
-                        marginBottom: '14px',
-                        textTransform: 'uppercase'
-                      }}
-                    >
-                      [ TRANSFERS IN PROGRESS ]
-                    </div>
-                    <div
-                      style={{
-                        fontSize: '14px',
-                        color: 'var(--vrcd-neon)',
-                        lineHeight: 1.7,
-                        textAlign: 'center',
-                        textShadow: '0 0 6px rgba(var(--vrcd-neon-raw),0.35)',
-                        marginBottom: '24px'
-                      }}
-                    >
-                      Are you sure you want to leave the CyberDeck?
-                      <br />
-                      Transfers are still happening. Leaving will stop these
-                      <br />
-                      and make you restart them.
-                    </div>
-                    <div style={{ display: 'flex', gap: '12px' }}>
+                  <div className="quest-modal">
+                    <h2 className="quest-modal__title">Transfers still in progress</h2>
+                    <p className="quest-modal__body">
+                      Closing now will stop any active downloads, uploads, and installs.
+                      You can resume them later from the Transfers page.
+                    </p>
+                    <div className="quest-modal__actions">
                       <button
+                        type="button"
+                        className="quest-btn quest-btn--ghost"
                         onClick={() => setIsCloseConfirmOpen(false)}
-                        style={{
-                          flex: 1,
-                          background: 'transparent',
-                          border: '2px solid rgba(var(--vrcd-neon-raw),0.65)',
-                          color: 'var(--vrcd-neon)',
-                          fontFamily: 'var(--vrcd-font-mono)',
-                          fontSize: '13px',
-                          letterSpacing: '0.1em',
-                          padding: '12px 0',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          textTransform: 'uppercase',
-                          boxShadow:
-                            '0 0 14px rgba(var(--vrcd-neon-raw),0.15), inset 0 0 14px rgba(var(--vrcd-neon-raw),0.04)'
-                        }}
                       >
-                        Stay Jacked In
+                        Stay
                       </button>
                       <button
+                        type="button"
+                        className="quest-btn quest-btn--primary"
                         onClick={() => {
                           setIsCloseConfirmOpen(false)
                           window.api.app.confirmClose()
                         }}
-                        style={{
-                          flex: 1,
-                          background: 'transparent',
-                          border: '2px solid rgba(var(--vrcd-purple-raw),0.7)',
-                          color: 'var(--vrcd-purple)',
-                          fontFamily: 'var(--vrcd-font-mono)',
-                          fontSize: '13px',
-                          letterSpacing: '0.1em',
-                          padding: '12px 0',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          textTransform: 'uppercase',
-                          boxShadow:
-                            '0 0 14px rgba(var(--vrcd-purple-raw),0.18), inset 0 0 14px rgba(var(--vrcd-purple-raw),0.05)'
-                        }}
                       >
-                        Leave Anyway
+                        Quit anyway
                       </button>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Settings modal — custom overlay bypasses Fluent Dialog width constraints */}
-              {isSettingsOpen && (
-                <div
-                  style={{
-                    position: 'fixed',
-                    inset: 0,
-                    zIndex: 1000,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: 'rgba(0,0,0,0.75)',
-                    backdropFilter: 'blur(2px)'
-                  }}
-                  onClick={(e) => {
-                    if (e.target === e.currentTarget) setIsSettingsOpen(false)
-                  }}
-                >
-                  <div
-                    style={{
-                      width: '96vw',
-                      maxWidth: '1400px',
-                      maxHeight: '92vh',
-                      background: '#050514',
-                      border: '1px solid rgba(var(--vrcd-neon-raw),0.25)',
-                      borderRadius: '8px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      position: 'relative',
-                      overflow: 'hidden',
-                      boxShadow: '0 0 40px rgba(var(--vrcd-neon-raw),0.06)'
-                    }}
-                  >
-                    <Button
-                      appearance="subtle"
-                      icon={<CloseIcon />}
-                      aria-label={t('close')}
-                      onClick={() => setIsSettingsOpen(false)}
-                      style={{ position: 'absolute', top: 12, right: 12, zIndex: 10, color: 'var(--vrcd-neon)' }}
-                    />
-                    <Settings />
-                  </div>
-                </div>
-              )}
             </div>
             <div
               id="portal-parent"

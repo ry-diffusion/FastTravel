@@ -304,6 +304,190 @@
   overflow: hidden;
 }
 
+/* ── Generic routed page chrome ─────────────────────────────────── */
+.quest-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: var(--quest-bg);
+  color: var(--quest-text);
+  overflow: hidden;
+}
+
+.quest-page__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 28px 36px 16px;
+  flex-shrink: 0;
+}
+
+.quest-page__title {
+  margin: 0 0 4px;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--quest-text);
+}
+
+.quest-page__subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: var(--quest-text-muted);
+}
+
+.quest-page__body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 36px 36px;
+}
+
+/* Underlined Meta-style tabs */
+.quest-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 36px;
+  border-bottom: 1px solid var(--quest-border);
+  flex-shrink: 0;
+}
+
+.quest-tabs__tab {
+  position: relative;
+  padding: 12px 8px;
+  background: transparent;
+  border: 0;
+  color: var(--quest-text-muted);
+  font-family: var(--quest-font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-bottom: -1px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: color 0.12s;
+}
+
+.quest-tabs__tab:hover {
+  color: var(--quest-text);
+}
+
+.quest-tabs__tab.is-active {
+  color: var(--vrcd-neon);
+}
+
+.quest-tabs__tab.is-active::after {
+  content: '';
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 0;
+  height: 2px;
+  background: var(--vrcd-neon);
+  border-radius: 2px 2px 0 0;
+}
+
+/* ── Quest modal ─────────────────────────────────────────────── */
+.quest-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+.quest-modal {
+  width: min(440px, 90vw);
+  background: var(--quest-bg-raised);
+  border: 1px solid var(--quest-border);
+  border-radius: var(--quest-radius-lg);
+  padding: 24px 24px 20px;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.quest-modal__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--quest-text);
+  letter-spacing: -0.01em;
+}
+
+.quest-modal__body {
+  margin: 0;
+  font-size: 14px;
+  color: var(--quest-text-muted);
+  line-height: 1.5;
+}
+
+.quest-modal__actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+/* ── Quest buttons ───────────────────────────────────────────── */
+.quest-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: var(--quest-font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: var(--quest-radius-pill);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background-color 0.12s, border-color 0.12s, transform 0.06s;
+  white-space: nowrap;
+}
+
+.quest-btn:active:not(:disabled) { transform: translateY(1px); }
+.quest-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.quest-btn--primary {
+  background: var(--vrcd-neon);
+  color: #ffffff;
+  font-weight: 600;
+}
+.quest-btn--primary:hover:not(:disabled) {
+  background: #4d8aff;
+}
+
+.quest-btn--ghost {
+  background: transparent;
+  color: var(--quest-text);
+  border-color: var(--quest-border-strong);
+}
+.quest-btn--ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.quest-tabs__badge {
+  min-width: 18px;
+  height: 16px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--vrcd-neon);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* The title wrapper was previously a glitching cyberpunk element.
  * In the Quest aesthetic it's just a plain heading container —
  * we keep the class so existing JSX still works, but strip the
