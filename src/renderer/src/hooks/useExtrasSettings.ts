@@ -1,11 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 
 // ─── Storage keys ────────────────────────────────────────────────────────────
-// Existing key kept for backwards compatibility with App.tsx boot check
-export const INTRO_STORAGE_KEY = 'vrcyberdeck:showIntro'
-export const BREACH_STORAGE_KEY = 'vrcyberdeck:showBreach'
-export const MATRIX_SHELL_STORAGE_KEY = 'vrcyberdeck:showMatrixShell'
-export const DISABLE_ALL_EXTRAS_KEY = 'vrcyberdeck:disableAllExtras'
 export const DISABLE_AUTO_UPDATE_KEY = 'vrcyberdeck:disableAutoUpdate'
 export const FONT_SCALE_KEY = 'vrcyberdeck:fontScale'
 export const DELETE_ON_REMOVE_KEY = 'vrcyberdeck:deleteOnRemove'
@@ -17,35 +12,39 @@ export const FONT_FAMILY_KEY = 'vrcyberdeck:fontFamily'
 export type DeleteOnRemove = 'ask' | 'delete' | 'keep'
 
 // ─── Font family options ─────────────────────────────────────────────────────
-export type FontFamilyChoice = 'cyberpunk' | 'console' | 'terminal' | 'system'
+// Kept for backwards compatibility with the Settings UI — all four choices now
+// map to clean Inter/SF-style sans stacks. The "Cyberpunk" / "Terminal" labels
+// from the old theme are gone.
+export type FontFamilyChoice = 'system' | 'inter' | 'rounded' | 'mono'
 
 export const FONT_FAMILY_OPTIONS: Record<
   FontFamilyChoice,
   { label: string; stack: string; hint: string }
 > = {
-  cyberpunk: {
-    label: 'Cyberpunk',
-    stack: "'Courier New', Courier, monospace",
-    hint: 'Default — classic terminal feel'
-  },
-  console: {
-    label: 'Console',
-    stack: "Consolas, Monaco, 'DejaVu Sans Mono', monospace",
-    hint: 'Cleaner monospace, easier on the eyes'
-  },
-  terminal: {
-    label: 'Terminal',
-    stack: "'Lucida Console', 'SF Mono', Menlo, monospace",
-    hint: 'Wider letterforms — most readable'
-  },
   system: {
-    label: 'System Mono',
-    stack: "ui-monospace, 'SF Mono', Menlo, Consolas, monospace",
-    hint: 'Whatever your OS uses for code'
+    label: 'System',
+    stack:
+      "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+    hint: 'Native OS font — recommended.'
+  },
+  inter: {
+    label: 'Inter',
+    stack: "'Inter', -apple-system, 'Segoe UI', Roboto, sans-serif",
+    hint: 'The Inter family used across the Meta Quest UI.'
+  },
+  rounded: {
+    label: 'Rounded',
+    stack: "'SF Pro Rounded', 'Nunito', 'Inter', system-ui, sans-serif",
+    hint: 'Softer rounded letterforms.'
+  },
+  mono: {
+    label: 'Monospace',
+    stack: "ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace",
+    hint: 'Fixed-width — for command-line surfaces only.'
   }
 }
 
-const DEFAULT_FONT_FAMILY: FontFamilyChoice = 'cyberpunk'
+const DEFAULT_FONT_FAMILY: FontFamilyChoice = 'system'
 
 // ─── Readers (safe defaults) ────────────────────────────────────────────────
 function readBool(key: string, defaultTrue = true): boolean {
@@ -108,6 +107,7 @@ export function getFontFamilyChoice(): FontFamilyChoice {
 export function applyFontFamily(choice: FontFamilyChoice): void {
   try {
     const stack = FONT_FAMILY_OPTIONS[choice]?.stack ?? FONT_FAMILY_OPTIONS[DEFAULT_FONT_FAMILY].stack
+    document.documentElement.style.setProperty('--quest-font-sans', stack)
     document.documentElement.style.setProperty('--vrcd-font-mono', stack)
   } catch { /* ignore */ }
 }
@@ -135,23 +135,6 @@ export function applyAccentColor(hex: string | null): void {
   } catch { /* ignore */ }
 }
 
-// ─── Bootstrap helpers (called outside React, e.g. in App.tsx) ─────────────
-export function shouldShowIntro(): boolean {
-  // Master disable wins
-  if (readBool(DISABLE_ALL_EXTRAS_KEY, false)) return false
-  return readBool(INTRO_STORAGE_KEY, false)
-}
-
-export function shouldShowBreach(): boolean {
-  if (readBool(DISABLE_ALL_EXTRAS_KEY, false)) return false
-  return readBool(BREACH_STORAGE_KEY, false)
-}
-
-export function shouldShowMatrixShell(): boolean {
-  if (readBool(DISABLE_ALL_EXTRAS_KEY, false)) return false
-  return readBool(MATRIX_SHELL_STORAGE_KEY, false)
-}
-
 export function isAutoUpdateDisabled(): boolean {
   return readBool(DISABLE_AUTO_UPDATE_KEY, false)
 }
@@ -163,10 +146,6 @@ export function getFontScale(): number {
 
 // ─── React hook for Settings UI ─────────────────────────────────────────────
 export interface ExtrasSettings {
-  showIntro: boolean
-  showBreach: boolean
-  showMatrixShell: boolean
-  disableAllExtras: boolean
   disableAutoUpdate: boolean
   fontScale: number
   deleteOnRemove: DeleteOnRemove
@@ -174,10 +153,6 @@ export interface ExtrasSettings {
   colorblindMode: boolean
   accentColor: string | null
   fontFamily: FontFamilyChoice
-  setShowIntro: (v: boolean) => void
-  setShowBreach: (v: boolean) => void
-  setShowMatrixShell: (v: boolean) => void
-  setDisableAllExtras: (v: boolean) => void
   setDisableAutoUpdate: (v: boolean) => void
   setFontScale: (v: number) => void
   setDeleteOnRemove: (v: DeleteOnRemove) => void
@@ -188,10 +163,6 @@ export interface ExtrasSettings {
 }
 
 export function useExtrasSettings(): ExtrasSettings {
-  const [showIntro, setShowIntroState] = useState<boolean>(() => readBool(INTRO_STORAGE_KEY, false))
-  const [showBreach, setShowBreachState] = useState<boolean>(() => readBool(BREACH_STORAGE_KEY, false))
-  const [showMatrixShell, setShowMatrixShellState] = useState<boolean>(() => readBool(MATRIX_SHELL_STORAGE_KEY, false))
-  const [disableAllExtras, setDisableAllExtrasState] = useState<boolean>(() => readBool(DISABLE_ALL_EXTRAS_KEY, false))
   const [disableAutoUpdate, setDisableAutoUpdateState] = useState<boolean>(() => readBool(DISABLE_AUTO_UPDATE_KEY, false))
   const [fontScale, setFontScaleState] = useState<number>(() => getFontScale())
   const [deleteOnRemove, setDeleteOnRemoveState] = useState<DeleteOnRemove>(readDeleteOnRemove)
@@ -208,10 +179,6 @@ export function useExtrasSettings(): ExtrasSettings {
     try { localStorage.setItem(key, String(value)) } catch { /* ignore */ }
   }
 
-  const setShowIntro = useCallback((v: boolean) => { setShowIntroState(v); persistBool(INTRO_STORAGE_KEY, v) }, [])
-  const setShowBreach = useCallback((v: boolean) => { setShowBreachState(v); persistBool(BREACH_STORAGE_KEY, v) }, [])
-  const setShowMatrixShell = useCallback((v: boolean) => { setShowMatrixShellState(v); persistBool(MATRIX_SHELL_STORAGE_KEY, v) }, [])
-  const setDisableAllExtras = useCallback((v: boolean) => { setDisableAllExtrasState(v); persistBool(DISABLE_ALL_EXTRAS_KEY, v) }, [])
   const setDisableAutoUpdate = useCallback((v: boolean) => { setDisableAutoUpdateState(v); persistBool(DISABLE_AUTO_UPDATE_KEY, v) }, [])
   const setFontScale = useCallback((v: number) => {
     const clamped = Math.max(0.75, Math.min(2.0, v))
@@ -226,8 +193,6 @@ export function useExtrasSettings(): ExtrasSettings {
   const setDisableSideloading = useCallback((v: boolean) => {
     setDisableSideloadingState(v)
     persistBool(DISABLE_SIDELOADING_KEY, v)
-    // Mirror to the main process - the auto-install pipeline lives there
-    // and otherwise has no way to see this flag.
     try {
       window.api.downloads.setSideloadingDisabled(v)
     } catch { /* ignore */ }
@@ -254,40 +219,31 @@ export function useExtrasSettings(): ExtrasSettings {
     applyFontFamily(v)
   }, [])
 
-  // Live-apply font scale whenever it changes
   useEffect(() => {
     try {
       document.documentElement.style.setProperty('--vrcd-font-scale', String(fontScale))
     } catch { /* ignore */ }
   }, [fontScale])
 
-  // Keep html class in sync with state and override inline CSS vars so the
-  // colorblind palette wins over any accent-color inline styles.
   useEffect(() => {
     try {
       const root = document.documentElement
       if (colorblindMode) {
         root.classList.add('vrcd-colorblind')
-        root.style.setProperty('--vrcd-neon', '#f0f0f0')
-        root.style.setProperty('--vrcd-neon-raw', '240, 240, 240')
-        root.style.setProperty('--vrcd-purple', '#ff8c00')
-        root.style.setProperty('--vrcd-purple-raw', '255, 140, 0')
       } else {
         root.classList.remove('vrcd-colorblind')
-        root.style.removeProperty('--vrcd-purple')
-        root.style.removeProperty('--vrcd-purple-raw')
         applyAccentColor(accentColor)
       }
     } catch { /* ignore */ }
   }, [colorblindMode, accentColor])
 
   return {
-    showIntro, showBreach, showMatrixShell, disableAllExtras, disableAutoUpdate, fontScale, deleteOnRemove, disableSideloading, colorblindMode, accentColor, fontFamily,
-    setShowIntro, setShowBreach, setShowMatrixShell, setDisableAllExtras, setDisableAutoUpdate, setFontScale, setDeleteOnRemove, setDisableSideloading, setColorblindMode, setAccentColor, setFontFamily
+    disableAutoUpdate, fontScale, deleteOnRemove, disableSideloading, colorblindMode, accentColor, fontFamily,
+    setDisableAutoUpdate, setFontScale, setDeleteOnRemove, setDisableSideloading, setColorblindMode, setAccentColor, setFontFamily
   }
 }
 
-// Apply font scale and colorblind mode on initial module load
+// Apply font scale / accent / font on initial module load
 try {
   const initial = getFontScale()
   document.documentElement.style.setProperty('--vrcd-font-scale', String(initial))
@@ -296,12 +252,7 @@ try {
 
 try {
   if (getColorblindMode()) {
-    const root = document.documentElement
-    root.classList.add('vrcd-colorblind')
-    root.style.setProperty('--vrcd-neon', '#f0f0f0')
-    root.style.setProperty('--vrcd-neon-raw', '240, 240, 240')
-    root.style.setProperty('--vrcd-purple', '#ff8c00')
-    root.style.setProperty('--vrcd-purple-raw', '255, 140, 0')
+    document.documentElement.classList.add('vrcd-colorblind')
   }
 } catch { /* ignore */ }
 
@@ -313,8 +264,6 @@ try {
   applyAccentColor(getAccentColor())
 } catch { /* ignore */ }
 
-// Push the persisted sideloading-disabled flag to the main process at boot
-// so the auto-install pipeline honors it before the user touches Settings.
 try {
   window.api.downloads.setSideloadingDisabled(getSideloadingDisabled())
 } catch { /* ignore */ }

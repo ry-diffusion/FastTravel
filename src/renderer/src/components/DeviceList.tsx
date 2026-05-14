@@ -1,8 +1,7 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useAdb } from '../hooks/useAdb'
 import { ExtendedDeviceInfo, hasBookmarkData, isWiFiBookmark } from '@shared/types'
 import { AdbShellDialog } from './AdbShellDialog'
-import { shouldShowBreach } from '../hooks/useExtrasSettings'
 import '../assets/device-list-breach.css'
 
 interface DeviceListProps {
@@ -10,142 +9,23 @@ interface DeviceListProps {
   onConnected?: () => void
 }
 
-// ─── Radar SVG background ─────────────────────────────────────────────────────
-const RadarBg: React.FC<{ scanning: boolean }> = ({ scanning }) => (
-  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', overflow: 'hidden' }}>
-    <svg width="520" height="520" viewBox="0 0 520 520" style={{ opacity: 0.18 }}>
-      <circle cx="260" cy="260" r="240" fill="none" stroke="var(--vrcd-neon)" strokeWidth="1" className="breach-radar-ring" />
-      <circle cx="260" cy="260" r="180" fill="none" stroke="var(--vrcd-neon)" strokeWidth="0.8" className="breach-radar-ring-2" />
-      <circle cx="260" cy="260" r="120" fill="none" stroke="var(--vrcd-neon)" strokeWidth="0.6" className="breach-radar-ring" style={{ animationDelay: '0.8s' }} />
-      <circle cx="260" cy="260" r="60" fill="none" stroke="var(--vrcd-neon)" strokeWidth="0.5" className="breach-radar-ring-2" style={{ animationDelay: '1.2s' }} />
-      {/* Crosshairs */}
-      <line x1="260" y1="0" x2="260" y2="520" stroke="var(--vrcd-neon)" strokeWidth="0.4" />
-      <line x1="0" y1="260" x2="520" y2="260" stroke="var(--vrcd-neon)" strokeWidth="0.4" />
-      {/* Diagonal cross */}
-      <line x1="80" y1="80" x2="440" y2="440" stroke="var(--vrcd-neon)" strokeWidth="0.2" />
-      <line x1="440" y1="80" x2="80" y2="440" stroke="var(--vrcd-neon)" strokeWidth="0.2" />
-      {/* Radar sweep — only when actively scanning */}
-      {scanning && (
-        <g className="breach-radar-sweep">
-          <defs>
-            <radialGradient id="sweepGrad" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="var(--vrcd-neon)" stopOpacity="0" />
-              <stop offset="100%" stopColor="var(--vrcd-neon)" stopOpacity="0.5" />
-            </radialGradient>
-          </defs>
-          <path d="M260,260 L260,20 A240,240 0 0,1 456,130 Z" fill="url(#sweepGrad)" />
-        </g>
-      )}
-    </svg>
-    {/* Scanlines */}
-    <div className="breach-scanlines" style={{ position: 'absolute', inset: 0 }} />
-  </div>
+// ─── Quest-style scanning indicator ──────────────────────────────────────────
+// Replaces the old radar/scanline overlay with a calm pulsing dot used in the
+// header while the device scan is active.
+const ScanPulse: React.FC<{ scanning: boolean }> = ({ scanning }) => (
+  <span
+    aria-hidden
+    style={{
+      width: 8,
+      height: 8,
+      borderRadius: '50%',
+      background: scanning ? 'var(--vrcd-neon)' : 'rgba(255,255,255,0.18)',
+      boxShadow: scanning ? '0 0 0 0 rgba(61,125,255,0.5)' : 'none',
+      animation: scanning ? 'questScanPulse 1.8s ease-out infinite' : 'none',
+      display: 'inline-block'
+    }}
+  />
 )
-
-// ─── Breach sequence steps ────────────────────────────────────────────────────
-const BREACH_STEPS = [
-  { id: 'locate',    text: '> locating target device...',     ms: 320 },
-  { id: 'port',      text: '> opening port 5555...',          ms: 380 },
-  { id: 'handshake', text: '> negotiating handshake...',      ms: 520 },
-  { id: 'auth',      text: '> bypassing auth layer...',       ms: 450 },
-  { id: 'inject',    text: '> injecting ADB payload...',      ms: 380 },
-  { id: 'shell',     text: '> shell access granted.',         ms: 0   }
-]
-
-type StepState = 'pending' | 'active' | 'done' | 'error'
-
-interface BreachStep {
-  id: string
-  text: string
-  state: StepState
-}
-
-const BreachSequence: React.FC<{
-  deviceName: string
-  onComplete: () => void
-  onError: () => void
-  error: boolean
-}> = ({ deviceName, onComplete, onError, error }) => {
-  const [steps, setSteps] = useState<BreachStep[]>(
-    BREACH_STEPS.map((s) => ({ id: s.id, text: s.text, state: 'pending' as StepState }))
-  )
-  const [done, setDone] = useState(false)
-  const cancelRef = useRef(false)
-
-  useEffect(() => {
-    cancelRef.current = false
-    let delay = 0
-    BREACH_STEPS.forEach((step, i) => {
-      const startAt = delay
-      const isLast = i === BREACH_STEPS.length - 1
-
-      // Mark step as active
-      setTimeout(() => {
-        if (cancelRef.current) return
-        setSteps((prev) => prev.map((s, idx) => idx === i ? { ...s, state: 'active' } : s))
-      }, startAt)
-
-      // Mark step as done
-      setTimeout(() => {
-        if (cancelRef.current) return
-        setSteps((prev) => prev.map((s, idx) => idx === i ? { ...s, state: 'done' } : s))
-        if (isLast) {
-          setDone(true)
-          setTimeout(() => { if (!cancelRef.current) onComplete() }, 600)
-        }
-      }, startAt + step.ms + 120)
-
-      delay += step.ms + 120
-    })
-
-    return () => { cancelRef.current = true }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (error) {
-      cancelRef.current = true
-      setSteps((prev) => prev.map((s) => s.state === 'active' ? { ...s, state: 'error' } : s))
-    }
-  }, [error])
-
-  const S = { fontFamily: 'var(--vrcd-font-mono)', fontSize: '13px', letterSpacing: '0.04em' }
-
-  return (
-    <div style={{ padding: '20px 24px', minHeight: '200px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-      <div style={{ ...S, color: 'rgba(var(--vrcd-neon-raw),0.5)', fontSize: '10px', letterSpacing: '0.16em', marginBottom: '8px' }}>
-        TARGET: <span style={{ color: 'var(--vrcd-neon)' }}>{deviceName}</span>
-      </div>
-      {steps.map((step, i) => {
-        const color = step.state === 'done' ? 'var(--vrcd-neon)'
-          : step.state === 'active' ? 'rgba(var(--vrcd-neon-raw),0.7)'
-          : step.state === 'error' ? '#ff4444'
-          : 'rgba(var(--vrcd-neon-raw),0.25)'
-        const glow = step.state === 'done' ? '0 0 8px rgba(var(--vrcd-neon-raw),0.6)'
-          : step.state === 'error' ? '0 0 8px rgba(255,68,68,0.6)'
-          : 'none'
-        const prefix = step.state === 'done' ? '✓' : step.state === 'error' ? '✗' : step.state === 'active' ? '▶' : '·'
-        return (
-          <div key={step.id} className="breach-step" style={{ ...S, color, textShadow: glow, animationDelay: `${i * 0.05}s`, display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ width: '12px', flexShrink: 0, fontSize: '10px' }}>{prefix}</span>
-            <span>{step.text}</span>
-            {step.state === 'active' && <span className="breach-step-cursor" style={{ color: 'var(--vrcd-neon)' }}>█</span>}
-          </div>
-        )
-      })}
-      {error && (
-        <div style={{ ...S, color: '#ff4444', marginTop: '8px', textShadow: '0 0 8px rgba(255,68,68,0.5)' }}>
-          ✗ CONNECTION FAILED — retrying...
-          <button className="breach-btn" style={{ marginLeft: '12px', fontSize: '10px', padding: '3px 10px' }} onClick={onError}>ABORT</button>
-        </div>
-      )}
-      {done && !error && (
-        <div style={{ ...S, color: 'var(--vrcd-neon)', marginTop: '8px', fontWeight: 'bold', textShadow: '0 0 12px rgba(var(--vrcd-neon-raw),0.9), 0 0 24px rgba(var(--vrcd-neon-raw),0.5)', letterSpacing: '0.12em' }}>
-          ■■■ SHELL ACCESS GRANTED ■■■
-        </div>
-      )}
-    </div>
-  )
-}
 
 // ─── Signal bar widget ────────────────────────────────────────────────────────
 const SignalBars: React.FC<{ ms?: number | null }> = ({ ms }) => {
@@ -197,7 +77,7 @@ const TargetCard: React.FC<TargetCardProps> = ({
   const isWifi = isWifiBook || (hasBook && isTcp && isConnectable)
   const name = device.friendlyModelName || (device as any).model || device.id
   const statusBadgeColor = isConnected ? 'var(--vrcd-neon)' : connectionError ? '#ff4444' : isConnecting ? 'var(--vrcd-purple)' : isOffline ? '#666' : 'rgba(var(--vrcd-neon-raw),0.4)'
-  const statusText = isConnected ? 'LINKED' : connectionError ? 'FAILED' : isConnecting ? 'BREACHING...' : isUnauth ? 'UNAUTHORIZED' : isOffline ? 'OFFLINE' : isWifiBook ? 'STANDBY' : 'DETECTED'
+  const statusText = isConnected ? 'Connected' : connectionError ? 'Failed' : isConnecting ? 'Connecting…' : isUnauth ? 'Unauthorized' : isOffline ? 'Offline' : isWifiBook ? 'Saved' : 'Available'
 
   const S = { fontFamily: 'var(--vrcd-font-mono)' }
 
@@ -223,9 +103,10 @@ const TargetCard: React.FC<TargetCardProps> = ({
       {/* Connecting shimmer */}
       {isConnecting && (
         <div style={{
-          position: 'absolute', top: 0, left: '-100%', width: '100%', height: '100%',
-          background: 'linear-gradient(90deg, transparent 0%, rgba(var(--vrcd-purple-raw),0.08) 50%, transparent 100%)',
-          animation: 'radarSweep 1.5s linear infinite',
+          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.04) 50%, transparent 100%)',
+          backgroundSize: '200% 100%',
+          animation: 'questShimmer 1.6s linear infinite',
           pointerEvents: 'none'
         }} />
       )}
@@ -292,17 +173,17 @@ const TargetCard: React.FC<TargetCardProps> = ({
                   <SignalBars ms={(device as any).pingResponseTime ?? null} />
                 )}
                 {(device as any).pingStatus === 'unreachable' && (
-                  <span style={{ ...S, fontSize: '10px', color: '#ff4444' }}>OFFLINE</span>
+                  <span style={{ ...S, fontSize: 11, color: 'var(--quest-error)' }}>Offline</span>
                 )}
                 {(device as any).pingStatus === 'checking' && (
-                  <span style={{ ...S, fontSize: '10px', color: 'rgba(var(--vrcd-neon-raw),0.4)' }}>PINGING...</span>
+                  <span style={{ ...S, fontSize: 11, color: 'var(--quest-text-muted)' }}>Pinging…</span>
                 )}
               </span>
             )}
 
             {/* Non-Quest warning */}
             {isConnectable && !(device as any).isQuestDevice && !isWifi && (
-              <span style={{ ...S, fontSize: '10px', color: '#f5a623' }}>⚠ UNKNOWN DEVICE</span>
+              <span style={{ ...S, fontSize: 11, color: 'var(--quest-warn)' }}>Unknown device</span>
             )}
           </div>
 
@@ -319,50 +200,44 @@ const TargetCard: React.FC<TargetCardProps> = ({
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end', flexShrink: 0 }}>
         {isConnected ? (
           <>
-            <button className="breach-btn breach-btn-primary" onClick={onOpenShell}
-              style={{ fontSize: '10px', padding: '5px 12px' }}>
-              ⌨ SHELL
+            <button className="breach-btn breach-btn-primary" onClick={onOpenShell}>
+              Shell
             </button>
-            <button className="breach-btn breach-btn-purple" onClick={onDisconnect}
-              style={{ fontSize: '10px', padding: '5px 12px' }}>
-              ✗ SEVER LINK
+            <button className="breach-btn breach-btn-purple" onClick={onDisconnect}>
+              Disconnect
             </button>
           </>
         ) : isConnecting ? (
-          <button className="breach-btn" disabled style={{ fontSize: '10px', padding: '5px 14px', color: 'var(--vrcd-purple)', borderColor: 'rgba(var(--vrcd-purple-raw),0.5)' }}>
-            BREACHING...
+          <button className="breach-btn" disabled>
+            Connecting…
           </button>
         ) : isWifiBook ? (
           <>
             <button className="breach-btn breach-btn-primary" onClick={onConnect}
-              disabled={(device as any).pingStatus === 'unreachable'}
-              style={{ fontSize: '10px', padding: '5px 12px' }}>
-              ▶ BREACH
+              disabled={(device as any).pingStatus === 'unreachable'}>
+              Connect
             </button>
-            <button className="breach-btn breach-btn-purple" onClick={onDeleteBookmark}
-              style={{ fontSize: '10px', padding: '5px 12px' }}>
-              ✗ PURGE
+            <button className="breach-btn breach-btn-purple" onClick={onDeleteBookmark}>
+              Remove
             </button>
           </>
         ) : isConnectable ? (
           <>
-            <button className="breach-btn breach-btn-primary" onClick={onConnect}
-              style={{ fontSize: '10px', padding: '5px 12px' }}>
-              ▶ BREACH
+            <button className="breach-btn breach-btn-primary" onClick={onConnect}>
+              Connect
             </button>
             {(device as any).ipAddress && !isTcp && !isAlreadyBookmarked && (
-              <button className="breach-btn" onClick={onBookmark}
-                style={{ fontSize: '10px', padding: '4px 10px', borderColor: 'rgba(var(--vrcd-purple-raw),0.4)', color: 'var(--vrcd-purple)' }}>
-                ◈ SAVE TARGET
+              <button className="breach-btn" onClick={onBookmark}>
+                Save
               </button>
             )}
             {isAlreadyBookmarked && (
-              <span style={{ fontFamily: 'monospace', fontSize: '9px', color: 'rgba(var(--vrcd-purple-raw),0.5)', letterSpacing: '0.1em' }}>SAVED</span>
+              <span style={{ fontSize: 11, color: 'var(--quest-text-dim)' }}>Saved</span>
             )}
           </>
         ) : (
-          <button className="breach-btn" disabled style={{ fontSize: '10px', padding: '5px 12px' }}>
-            INACCESSIBLE
+          <button className="breach-btn" disabled>
+            Unavailable
           </button>
         )}
       </div>
@@ -378,7 +253,6 @@ const AddTargetForm: React.FC<{
   const [ip, setIp] = useState('')
   const [port, setPort] = useState('5555')
   const [loading, setLoading] = useState(false)
-  const S = { fontFamily: 'var(--vrcd-font-mono)', fontSize: '11px' }
 
   const handleAdd = async (): Promise<void> => {
     if (!ip.trim()) return
@@ -392,13 +266,13 @@ const AddTargetForm: React.FC<{
 
   return (
     <div style={{ padding: '12px 0 16px', borderBottom: '1px solid rgba(var(--vrcd-neon-raw),0.1)', marginBottom: '12px' }}>
-      <div style={{ ...S, color: 'rgba(var(--vrcd-neon-raw),0.5)', letterSpacing: '0.12em', marginBottom: '8px', fontSize: '9px' }}>
-        ◈ MANUAL TARGET ENTRY
+      <div style={{ color: 'var(--quest-text-muted)', marginBottom: '8px', fontSize: 12, fontWeight: 500 }}>
+        Add device by IP
       </div>
       <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
         <input
           className="breach-input"
-          placeholder="TARGET IP (192.168.x.x)"
+          placeholder="192.168.x.x"
           value={ip}
           onChange={(e) => setIp(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
@@ -419,7 +293,7 @@ const AddTargetForm: React.FC<{
         />
         <input
           className="breach-input"
-          placeholder="PORT"
+          placeholder="Port"
           value={port}
           onChange={(e) => setPort(e.target.value)}
           style={{
@@ -441,7 +315,7 @@ const AddTargetForm: React.FC<{
           disabled={!ip.trim() || loading || disabled}
           style={{ padding: '7px 14px' }}
         >
-          {loading ? 'ADDING...' : '◈ SAVE TARGET'}
+          {loading ? 'Adding…' : 'Add'}
         </button>
       </div>
     </div>
@@ -456,13 +330,9 @@ const DeviceList: React.FC<DeviceListProps> = ({ onSkip, onConnected }) => {
     refreshDevices, disconnectDevice
   } = useAdb()
 
-  const [tcpIpAddress] = useState('')
   const [connectingDeviceId, setConnectingDeviceId] = useState<string | null>(null)
   const [connectionErrorId, setConnectionErrorId] = useState<string | null>(null)
   const [shellDialogDeviceId, setShellDialogDeviceId] = useState<string | null>(null)
-  const [breachTargetId, setBreachTargetId] = useState<string | null>(null)
-  const [breachError, setBreachError] = useState(false)
-  const breachEnabled = useRef(shouldShowBreach()).current
 
   // Auto-connect: when a Quest appears and nothing connected yet
   const hasAutoConnected = React.useRef(false)
@@ -485,67 +355,42 @@ const DeviceList: React.FC<DeviceListProps> = ({ onSkip, onConnected }) => {
   const handleConnect = useCallback(async (serial: string): Promise<void> => {
     setConnectingDeviceId(serial)
     setConnectionErrorId(null)
-    setBreachError(false)
-
-    if (breachEnabled) setBreachTargetId(serial)
 
     try {
       const success = await connectToDevice(serial)
       if (success) {
         setConnectionErrorId(null)
-        if (!breachEnabled && onConnected) onConnected()
+        if (onConnected) onConnected()
       } else {
-        setBreachError(true)
         setConnectionErrorId(serial)
-        setBreachTargetId(null)
       }
     } catch {
-      setBreachError(true)
       setConnectionErrorId(serial)
-      setBreachTargetId(null)
     } finally {
       setConnectingDeviceId(null)
     }
-  }, [breachEnabled, connectToDevice, onConnected])
+  }, [connectToDevice, onConnected])
 
   const handleConnectBookmark = useCallback(async (device: ExtendedDeviceInfo): Promise<void> => {
     if (!hasBookmarkData(device)) return
     const { ipAddress, port, id } = device.bookmarkData
     setConnectingDeviceId(device.id)
     setConnectionErrorId(null)
-    setBreachError(false)
-
-    if (breachEnabled) setBreachTargetId(device.id)
 
     try {
       const success = await connectTcpDevice(ipAddress, port)
       if (success) {
         await window.api.wifiBookmarks.updateLastConnected(id)
-        if (!breachEnabled && onConnected) onConnected()
+        if (onConnected) onConnected()
       } else {
-        setBreachError(true)
         setConnectionErrorId(device.id)
-        setBreachTargetId(null)
       }
     } catch {
-      setBreachError(true)
       setConnectionErrorId(device.id)
-      setBreachTargetId(null)
     } finally {
       setConnectingDeviceId(null)
     }
-  }, [breachEnabled, connectTcpDevice, onConnected])
-
-  const handleBreachComplete = useCallback(() => {
-    setBreachTargetId(null)
-    if (onConnected) onConnected()
-  }, [onConnected])
-
-  const handleBreachAbort = useCallback(() => {
-    setBreachTargetId(null)
-    setBreachError(false)
-    setConnectingDeviceId(null)
-  }, [])
+  }, [connectTcpDevice, onConnected])
 
   const handleAddTcp = useCallback(async (ip: string, port: number): Promise<void> => {
     await window.api.wifiBookmarks.add(`${ip}:${port}`, ip, port)
@@ -576,96 +421,67 @@ const DeviceList: React.FC<DeviceListProps> = ({ onSkip, onConnected }) => {
     }
   }, [disconnectDevice, disconnectTcpDevice])
 
-  // ── rendering helpers ──
-  const S = { fontFamily: 'var(--vrcd-font-mono)' }
-
-  // The device currently in a breach animation
-  const breachDevice = breachTargetId ? devices.find((d) => d.id === breachTargetId) : null
-  const breachDeviceName = breachDevice
-    ? (breachDevice.friendlyModelName || (breachDevice as any).model || breachDevice.id).toUpperCase()
-    : tcpIpAddress || '...'
-
   return (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       minHeight: '100%', padding: '24px',
-      background: '#050514',
-      backgroundImage: 'linear-gradient(rgba(var(--vrcd-neon-raw),0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(var(--vrcd-neon-raw),0.025) 1px, transparent 1px)',
-      backgroundSize: '40px 40px',
+      background: 'var(--quest-bg)',
       position: 'relative', overflow: 'hidden'
     }}>
-      {/* Radar background */}
-      <RadarBg scanning={isLoading || connectingDeviceId !== null} />
-
       {/* Main panel */}
       <div style={{
         position: 'relative', zIndex: 2,
         width: '100%', maxWidth: '640px',
-        background: 'rgba(5,5,20,0.88)',
-        border: '1px solid rgba(var(--vrcd-neon-raw),0.28)',
-        borderRadius: '8px',
-        backdropFilter: 'blur(6px)',
-        boxShadow: '0 0 40px rgba(var(--vrcd-neon-raw),0.06), 0 0 80px rgba(var(--vrcd-purple-raw),0.04)',
+        background: 'var(--quest-bg-raised)',
+        border: '1px solid var(--quest-border)',
+        borderRadius: 'var(--quest-radius-lg)',
+        boxShadow: 'var(--quest-shadow-2)',
         overflow: 'hidden'
       }}>
         {/* Header bar */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '12px 20px',
-          borderBottom: '1px solid rgba(var(--vrcd-neon-raw),0.15)',
-          background: 'rgba(var(--vrcd-neon-raw),0.03)'
+          padding: '14px 20px',
+          borderBottom: '1px solid var(--quest-border)',
+          background: 'transparent'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ ...S, color: 'var(--vrcd-neon)', fontSize: '13px', letterSpacing: '0.16em', fontWeight: 'bold',
-              textShadow: '0 0 10px rgba(var(--vrcd-neon-raw),0.6)' }}>
-              TARGET ACQUISITION
+            <ScanPulse scanning={isLoading || connectingDeviceId !== null} />
+            <span style={{ color: 'var(--quest-text)', fontSize: 15, fontWeight: 600, letterSpacing: '-0.005em' }}>
+              Devices
             </span>
             {isLoading && (
-              <span style={{ ...S, fontSize: '10px', color: 'rgba(var(--vrcd-purple-raw),0.7)', letterSpacing: '0.12em',
-                animation: 'cursorBlink 1s step-end infinite' }}>
-                SCANNING...
+              <span style={{ fontSize: 12, color: 'var(--quest-text-muted)' }}>
+                Searching…
               </span>
             )}
           </div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <button className="breach-btn" onClick={() => refreshDevices()} disabled={isLoading}
-              style={{ fontSize: '10px', padding: '5px 12px' }}>
-              {isLoading ? '◉ SCANNING' : '↺ SCAN'}
+            <button className="breach-btn" onClick={() => refreshDevices()} disabled={isLoading}>
+              {isLoading ? 'Scanning…' : 'Scan'}
             </button>
             {onSkip && !isConnected && (
-              <button className="breach-btn breach-btn-purple" onClick={onSkip}
-                style={{ fontSize: '10px', padding: '5px 12px' }}>
-                ⟩ OFFLINE MODE
+              <button className="breach-btn breach-btn-purple" onClick={onSkip}>
+                Continue offline
               </button>
             )}
             {onSkip && isConnected && (
-              <button className="breach-btn breach-btn-primary" onClick={onSkip}
-                style={{ fontSize: '10px', padding: '5px 12px' }}>
-                ⟩ CONTINUE
+              <button className="breach-btn breach-btn-primary" onClick={onSkip}>
+                Continue
               </button>
             )}
           </div>
         </div>
 
-        {/* Breach sequence overlay */}
-        {breachEnabled && breachTargetId && (
-          <BreachSequence
-            deviceName={breachDeviceName}
-            onComplete={handleBreachComplete}
-            onError={handleBreachAbort}
-            error={breachError}
-          />
-        )}
-
-        {/* Normal content (hidden during breach) */}
-        {(!breachEnabled || !breachTargetId) && (
+        {/* Content */}
+        {true && (
           <div style={{ padding: '16px 20px' }}>
             {/* Error banner */}
             {error && (
-              <div style={{ ...S, fontSize: '12px', color: '#ff4444', padding: '10px 14px',
-                background: 'rgba(255,68,68,0.05)', border: '1px solid rgba(255,68,68,0.3)',
-                borderRadius: '4px', marginBottom: '12px' }}>
-                ✗ ERROR: {error}
+              <div style={{ fontSize: 13, color: 'var(--quest-error)', padding: '10px 14px',
+                background: 'rgba(255,107,107,0.08)', border: '1px solid rgba(255,107,107,0.32)',
+                borderRadius: 'var(--quest-radius-md)', marginBottom: '12px' }}>
+                {error}
               </div>
             )}
 
@@ -676,23 +492,20 @@ const DeviceList: React.FC<DeviceListProps> = ({ onSkip, onConnected }) => {
             <div style={{ minHeight: '140px' }}>
               {!error && isLoading && devices.length === 0 && (
                 <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-                  <div style={{ ...S, color: 'rgba(var(--vrcd-neon-raw),0.5)', fontSize: '12px', letterSpacing: '0.14em', marginBottom: '8px' }}>
-                    SCANNING NETWORK...
-                  </div>
-                  <div style={{ ...S, color: 'rgba(var(--vrcd-neon-raw),0.25)', fontSize: '10px', letterSpacing: '0.1em' }}>
-                    NO TARGETS FOUND
+                  <div style={{ color: 'var(--quest-text-muted)', fontSize: 14, marginBottom: '4px' }}>
+                    Searching for devices…
                   </div>
                 </div>
               )}
 
               {!error && !isLoading && devices.length === 0 && (
                 <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-                  <div style={{ ...S, color: 'rgba(var(--vrcd-neon-raw),0.35)', fontSize: '13px', letterSpacing: '0.1em', marginBottom: '6px' }}>
-                    NO TARGETS DETECTED
+                  <div style={{ color: 'var(--quest-text)', fontSize: 15, fontWeight: 500, marginBottom: '6px' }}>
+                    No devices found
                   </div>
-                  <div style={{ ...S, color: 'rgba(var(--vrcd-neon-raw),0.2)', fontSize: '11px', lineHeight: 1.7 }}>
-                    Connect device via USB or save a WiFi target above.<br />
-                    Ensure ADB debugging is enabled on the headset.
+                  <div style={{ color: 'var(--quest-text-muted)', fontSize: 13, lineHeight: 1.6 }}>
+                    Connect a headset over USB or add one by IP above.<br />
+                    Make sure developer mode is enabled on the device.
                   </div>
                 </div>
               )}
@@ -730,13 +543,12 @@ const DeviceList: React.FC<DeviceListProps> = ({ onSkip, onConnected }) => {
             {isConnected && (
               <div style={{
                 marginTop: '12px', paddingTop: '12px',
-                borderTop: '1px solid rgba(var(--vrcd-neon-raw),0.1)',
+                borderTop: '1px solid var(--quest-border)',
                 display: 'flex', alignItems: 'center', gap: '8px'
               }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--vrcd-neon)',
-                  boxShadow: '0 0 8px rgba(var(--vrcd-neon-raw),0.8)', display: 'inline-block', flexShrink: 0 }} />
-                <span style={{ ...S, fontSize: '11px', color: 'rgba(var(--vrcd-neon-raw),0.7)', letterSpacing: '0.08em' }}>
-                  SECURE LINK ESTABLISHED
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--quest-success)', display: 'inline-block', flexShrink: 0 }} />
+                <span style={{ fontSize: 13, color: 'var(--quest-text)', fontWeight: 500 }}>
+                  Connected
                 </span>
               </div>
             )}

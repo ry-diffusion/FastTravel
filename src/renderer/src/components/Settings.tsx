@@ -460,10 +460,6 @@ const ToggleRow: React.FC<ToggleRowProps> = ({ label, description, checked, onCh
 
 const ExtraSystemsSettings: React.FC = () => {
   const {
-    showIntro, setShowIntro,
-    showBreach, setShowBreach,
-    showMatrixShell, setShowMatrixShell,
-    disableAllExtras, setDisableAllExtras,
     disableAutoUpdate, setDisableAutoUpdate,
     fontScale, setFontScale,
     deleteOnRemove, setDeleteOnRemove,
@@ -515,37 +511,6 @@ const ExtraSystemsSettings: React.FC = () => {
 
   return (
     <div style={{ padding: '4px 4px 8px', display: 'flex', flexDirection: 'column', gap: '0' }}>
-
-      {/* Master kill-switch */}
-      <ToggleRow
-        purple
-        label="⚡ Disable ALL Extras"
-        description="Kills intro animation, breach sequence, and matrix shell in one switch. Bare-minimum mode."
-        checked={disableAllExtras}
-        onChange={setDisableAllExtras}
-      />
-
-      {/* Individual toggles */}
-      <div style={{ opacity: disableAllExtras ? 0.35 : 1, pointerEvents: disableAllExtras ? 'none' : 'auto', display: 'flex', flexDirection: 'column' }}>
-        <ToggleRow
-          label="Show intro animation on launch"
-          description="Hacker-console boot sequence shown each time the app opens. ~10 seconds."
-          checked={showIntro}
-          onChange={setShowIntro}
-        />
-        <ToggleRow
-          label="Show breach sequence on device connect"
-          description="TARGET LOCK terminal animation when connecting to a device."
-          checked={showBreach}
-          onChange={setShowBreach}
-        />
-        <ToggleRow
-          label="Show matrix intro in ADB shell"
-          description="Matrix rain + 'Follow the white rabbit' animation before the ADB shell opens."
-          checked={showMatrixShell}
-          onChange={setShowMatrixShell}
-        />
-      </div>
 
       {/* Auto-update */}
       <ToggleRow
@@ -913,106 +878,6 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({ label, sectionKey, openSe
   </button>
 )
 
-// ─── Matrix Identity Settings ─────────────────────────────────────────────────
-const USERNAME_PREFS_KEY = 'vr-matrix-usernames'
-interface UsernamePref { mode: 'random+custom' | 'only-custom'; ratio: number; custom: string[] }
-
-const MatrixIdentitySettings: React.FC = () => {
-  const [prefs, setPrefsState] = useState<UsernamePref>(() => {
-    try {
-      const raw = localStorage.getItem(USERNAME_PREFS_KEY)
-      if (raw) return { mode: 'random+custom', ratio: 2, custom: [], ...JSON.parse(raw) }
-    } catch { /* ignore */ }
-    return { mode: 'random+custom', ratio: 2, custom: [] }
-  })
-  const [newEntry, setNewEntry] = useState('')
-
-  const save = (next: UsernamePref): void => {
-    try { localStorage.setItem(USERNAME_PREFS_KEY, JSON.stringify(next)) } catch { /* ignore */ }
-    setPrefsState(next)
-  }
-
-  const addEntry = (): void => {
-    const v = newEntry.trim()
-    if (!v || prefs.custom.includes(v)) return
-    save({ ...prefs, custom: [...prefs.custom, v] })
-    setNewEntry('')
-  }
-
-  const removeEntry = (name: string): void =>
-    save({ ...prefs, custom: prefs.custom.filter((c) => c !== name) })
-
-  const S = { fontFamily: 'monospace', fontSize: '12px' } as const
-  const inputStyle: React.CSSProperties = { background: 'rgba(var(--vrcd-neon-raw),0.04)', border: '1px solid rgba(var(--vrcd-neon-raw),0.3)', color: 'var(--vrcd-neon)', fontFamily: 'monospace', fontSize: '12px', padding: '4px 8px', borderRadius: '4px', outline: 'none' }
-
-  const RATIO_OPTIONS = [
-    { label: '1:1 — no preference', value: 1 },
-    { label: '1.1:1 — slight preference', value: 1.1 },
-    { label: '2:1 — default preference (recommended)', value: 2 },
-    { label: '3:1 — strong preference', value: 3 },
-    { label: '5:1 — almost always custom', value: 5 }
-  ]
-
-  return (
-    <div style={{ padding: '12px 4px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-      <span style={{ ...S, color: 'rgba(var(--vrcd-neon-raw),0.5)', lineHeight: 1.6 }}>
-        Controls which username appears in the ADB Shell Matrix intro animation.{'\n'}
-        Edit <span style={{ color: 'var(--vrcd-neon)' }}>g33kyu$3rn4m3$.json</span> in the app resources to customise the random pool.
-      </span>
-
-      {/* Mode toggle */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        <span style={{ ...S, color: 'rgba(var(--vrcd-neon-raw),0.7)' }}>Username source</span>
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {(['random+custom', 'only-custom'] as const).map((m) => (
-            <button key={m} onClick={() => save({ ...prefs, mode: m })}
-              style={{ ...inputStyle, cursor: 'pointer', background: prefs.mode === m ? 'rgba(var(--vrcd-neon-raw),0.12)' : 'transparent', borderColor: prefs.mode === m ? 'var(--vrcd-neon)' : 'rgba(var(--vrcd-neon-raw),0.3)', color: prefs.mode === m ? 'var(--vrcd-neon)' : 'rgba(var(--vrcd-neon-raw),0.5)' }}>
-              {m === 'random+custom' ? 'Random + Custom' : 'Custom Only'}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Ratio (only shown in random+custom mode when custom list has entries) */}
-      {prefs.mode === 'random+custom' && prefs.custom.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <span style={{ ...S, color: 'rgba(var(--vrcd-neon-raw),0.7)' }}>Custom preference ratio</span>
-          <select value={prefs.ratio} onChange={(e) => save({ ...prefs, ratio: Number(e.target.value) })}
-            style={{ ...inputStyle, cursor: 'pointer' }}>
-            {RATIO_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value} style={{ background: '#050514', color: 'var(--vrcd-neon)' }}>{o.label}</option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      {/* Custom entries */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        <span style={{ ...S, color: 'rgba(var(--vrcd-neon-raw),0.7)' }}>Custom usernames</span>
-        <div style={{ display: 'flex', gap: '6px' }}>
-          <input value={newEntry} onChange={(e) => setNewEntry(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && addEntry()}
-            placeholder="add username..." style={{ ...inputStyle, flex: 1 }} />
-          <button onClick={addEntry} style={{ ...inputStyle, cursor: 'pointer', padding: '4px 12px' }}>+</button>
-        </div>
-        {prefs.custom.length > 0 && (
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '4px' }}>
-            {prefs.custom.map((name) => (
-              <span key={name} style={{ ...S, background: 'rgba(var(--vrcd-neon-raw),0.06)', border: '1px solid rgba(var(--vrcd-neon-raw),0.25)', color: 'var(--vrcd-neon)', padding: '2px 8px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                {name}
-                <button onClick={() => removeEntry(name)} style={{ background: 'none', border: 'none', color: 'rgba(var(--vrcd-purple-raw),0.8)', cursor: 'pointer', fontSize: '11px', padding: 0, lineHeight: 1 }}>✕</button>
-              </span>
-            ))}
-          </div>
-        )}
-        {prefs.custom.length === 0 && (
-          <span style={{ ...S, color: 'rgba(var(--vrcd-neon-raw),0.3)', fontStyle: 'italic' }}>no custom usernames yet</span>
-        )}
-      </div>
-    </div>
-  )
-}
-
 const Settings: React.FC = () => {
   const styles = useStyles()
   const {
@@ -1036,8 +901,7 @@ const Settings: React.FC = () => {
     logs: false,
     download: false,
     blacklist: false,
-    content: false,
-    matrixId: false
+    content: false
   })
   const toggleSection = useCallback((key: string): void =>
     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }))
@@ -1528,11 +1392,6 @@ const Settings: React.FC = () => {
               </span>
             </div>
           )}
-        </div>
-
-        <div>
-          <SectionHeader label="// MATRIX IDENTITIES" sectionKey="matrixId" openSections={openSections} onToggle={toggleSection} />
-          {openSections.matrixId && <MatrixIdentitySettings />}
         </div>
 
         {/* Credits footer */}

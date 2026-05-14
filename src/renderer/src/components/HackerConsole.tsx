@@ -3,50 +3,79 @@ import { useAdb } from '../hooks/useAdb'
 import { useGames } from '../hooks/useGames'
 import { useSettings } from '../hooks/useSettings'
 
-const HackerConsole: React.FC = () => {
+// Quest-style status panel shown in the app shell. Each row is a calm
+// label + value pair — no terminal jargon, no glow, no jokes.
+const StatusPanel: React.FC = () => {
   const { isConnected, selectedDeviceDetails } = useAdb()
   const { games } = useGames()
   const { serverConfig } = useSettings()
 
   const hasServer = serverConfig?.baseUri?.length > 0
-  const totalGames = games.filter((g) => { const s = String(g.size ?? '').trim(); return s !== '0 MB' && s !== '' }).length
+  const totalGames = games.filter((g) => {
+    const s = String(g.size ?? '').trim()
+    return s !== '0 MB' && s !== ''
+  }).length
   const installedGames = games.filter((g) => g.isInstalled).length
   const updatesAvailable = games.filter((g) => g.hasUpdate).length
   const deviceName = selectedDeviceDetails?.friendlyModelName ?? null
 
-  const line = (label: string, value: string, ok?: boolean): React.JSX.Element => (
-    <div style={{ display: 'flex', gap: '6px', alignItems: 'baseline' }}>
-      <span style={{ color: 'rgba(var(--vrcd-neon-raw),0.75)', minWidth: '38px' }}>{label}</span>
-      <span style={{ color: ok === false ? '#ff6666' : ok === true ? 'var(--vrcd-neon)' : 'var(--vrcd-neon)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 700, textShadow: '0 0 6px rgba(var(--vrcd-neon-raw),0.4)' }}>
-        {value}
-      </span>
-    </div>
-  )
+  const row = (
+    label: string,
+    value: string,
+    tone: 'default' | 'good' | 'warn' | 'dim' = 'default'
+  ): React.JSX.Element => {
+    const color =
+      tone === 'good' ? 'var(--quest-success)'
+        : tone === 'warn' ? 'var(--quest-warn)'
+          : tone === 'dim' ? 'var(--quest-text-dim)'
+            : 'var(--quest-text)'
+    return (
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
+        <span style={{ color: 'var(--quest-text-muted)', fontSize: 11 }}>{label}</span>
+        <span
+          style={{
+            color,
+            fontSize: 12,
+            fontWeight: 600,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            maxWidth: 140
+          }}
+        >
+          {value}
+        </span>
+      </div>
+    )
+  }
 
   return (
-    <div style={{
-      width: '210px',
-      minWidth: '210px',
-      height: '100%',
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'center',
-      padding: '4px 16px',
-      fontFamily: 'var(--vrcd-font-mono)',
-      fontSize: '11px',
-      letterSpacing: '0.04em',
-      lineHeight: '1.4',
-      borderRight: '1px solid rgba(var(--vrcd-neon-raw),0.12)',
-      flexShrink: 0,
-      overflow: 'hidden'
-    }}>
-      {line('SRV', hasServer ? 'ONLINE' : 'NO_SRC', hasServer)}
-      {line('DEV', isConnected && deviceName ? deviceName.toUpperCase().slice(0, 16) : 'OFFLINE', isConnected)}
-      {line('LIB', totalGames ? `${totalGames} TITLES` : 'EMPTY')}
-      {installedGames > 0 && line('INST', String(installedGames))}
-      {updatesAvailable > 0 && line('UPD', `${updatesAvailable} READY`, true)}
+    <div
+      style={{
+        width: 220,
+        minWidth: 220,
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        gap: 8,
+        padding: '10px 18px',
+        borderRight: '1px solid var(--quest-border)',
+        flexShrink: 0,
+        overflow: 'hidden'
+      }}
+    >
+      {row('Server', hasServer ? 'Online' : 'Not configured', hasServer ? 'good' : 'warn')}
+      {row(
+        'Device',
+        isConnected && deviceName ? deviceName : 'Not connected',
+        isConnected ? 'good' : 'dim'
+      )}
+      {row('Library', totalGames ? `${totalGames.toLocaleString()} games` : 'Empty')}
+      {installedGames > 0 && row('Installed', String(installedGames))}
+      {updatesAvailable > 0 && row('Updates', `${updatesAvailable} ready`, 'good')}
     </div>
   )
 }
 
-export default HackerConsole
+export default StatusPanel

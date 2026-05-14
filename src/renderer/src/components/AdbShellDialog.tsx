@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
   Dialog,
   DialogBody,
@@ -7,9 +7,6 @@ import {
   DialogTitle,
   DialogActions
 } from '@fluentui/react-components'
-import { getMatrixUsername, isFirstLaunchToday } from '../utils/matrixUsername'
-import { shouldShowMatrixShell } from '../hooks/useExtrasSettings'
-import { playSound } from '../hooks/useSoundEffects'
 import AdbShortcuts from './AdbShortcuts'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -35,107 +32,8 @@ interface AdbShellDialogProps {
 const NEON = 'var(--vrcd-neon)'
 const NEON_DIM = 'rgba(var(--vrcd-neon-raw),0.35)'
 const NEON_DIM2 = 'rgba(var(--vrcd-neon-raw),0.18)'
-const BG_SURFACE = '#030310'
-const BG_TERMINAL = '#000008'
-const CHAR_POOL = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEF'
-
-const PHASE_1_END = 1500  // ms — rain + "INITIALIZING..."
-// Phase 3 starts at 2500ms — terminal revealed
-// USERNAME_PREFS_KEY exported from matrixUsername utility
-
-// ─── Matrix Canvas Animation ─────────────────────────────────────────────────
-
-interface Column {
-  x: number
-  y: number
-  speed: number
-  chars: string[]
-  head: number
-}
-
-function useMatrixCanvas(
-  canvasRef: React.RefObject<HTMLCanvasElement | null>,
-  active: boolean
-): void {
-  useEffect(() => {
-    if (!active) return
-    const canvas = canvasRef.current
-    if (!canvas) return
-
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
-    const W = canvas.width
-    const H = canvas.height
-    const fontSize = 14
-    const colCount = Math.floor(W / fontSize)
-
-    const columns: Column[] = Array.from({ length: colCount }, (_, i) => ({
-      x: i * fontSize,
-      y: Math.random() * -H,
-      speed: 1 + Math.random() * 2,
-      chars: Array.from({ length: 30 }, () => CHAR_POOL[Math.floor(Math.random() * CHAR_POOL.length)]),
-      head: 0
-    }))
-
-    let rafId = 0
-    let running = true
-
-    const draw = (): void => {
-      if (!running) return
-
-      // semi-transparent black overlay for trail effect
-      ctx.fillStyle = 'rgba(0,0,8,0.18)'
-      ctx.fillRect(0, 0, W, H)
-
-      ctx.font = `${fontSize}px ${getComputedStyle(document.documentElement).getPropertyValue('--vrcd-font-mono').trim() || "'Courier New', monospace"}`
-
-      for (const col of columns) {
-        // bright head char
-        ctx.fillStyle = '#ccffcc'
-        ctx.shadowColor = NEON
-        ctx.shadowBlur = 8
-        ctx.fillText(col.chars[col.head % col.chars.length], col.x, col.y)
-
-        // trailing chars
-        for (let j = 1; j < 20; j++) {
-          const alpha = 1 - j / 20
-          ctx.fillStyle = `rgba(var(--vrcd-neon-raw),${alpha * 0.85})`
-          ctx.shadowBlur = 4
-          ctx.fillText(
-            col.chars[(col.head - j + col.chars.length) % col.chars.length],
-            col.x,
-            col.y - j * fontSize
-          )
-        }
-
-        col.y += col.speed * fontSize * 0.35
-        col.head = (col.head + 1) % col.chars.length
-
-        // randomise char occasionally
-        if (Math.random() < 0.08) {
-          const idx = Math.floor(Math.random() * col.chars.length)
-          col.chars[idx] = CHAR_POOL[Math.floor(Math.random() * CHAR_POOL.length)]
-        }
-
-        if (col.y > H + fontSize * 20) {
-          col.y = Math.random() * -H * 0.5
-          col.speed = 1 + Math.random() * 2
-        }
-      }
-
-      ctx.shadowBlur = 0
-      rafId = requestAnimationFrame(draw)
-    }
-
-    rafId = requestAnimationFrame(draw)
-
-    return () => {
-      running = false
-      cancelAnimationFrame(rafId)
-    }
-  }, [active, canvasRef])
-}
+const BG_SURFACE = '#1c1e23'
+const BG_TERMINAL = '#15161a'
 
 // ─── Typing animation hook ────────────────────────────────────────────────────
 
@@ -360,185 +258,6 @@ function NeonButton({
   )
 }
 
-// ─── MatrixIntro ──────────────────────────────────────────────────────────────
-
-type AnimPhase = 'rain' | 'rabbit' | 'done'
-
-interface MatrixIntroProps {
-  onComplete: () => void
-  width: number
-  height: number
-  holdMs: number
-  username: string
-}
-
-function MatrixIntro({ onComplete, width, height, holdMs, username }: MatrixIntroProps): React.ReactElement {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const [animPhase, setAnimPhase] = useState<AnimPhase>('rain')
-  const [initOpacity, setInitOpacity] = useState(0)
-  const [rainOpacity, setRainOpacity] = useState(1)
-  const [cursorOn, setCursorOn] = useState(true)
-
-  useMatrixCanvas(canvasRef, animPhase === 'rain' || animPhase === 'rabbit')
-
-  // Fade in "INITIALIZING..." during phase 1
-  useEffect(() => {
-    const t = setTimeout(() => setInitOpacity(1), 300)
-    return () => clearTimeout(t)
-  }, [])
-
-  // Cue the matrix sound once the rain starts (best-effort — silent if no
-  // matrix.{wav,mp3,ogg} is dropped into the sounds folder).
-  useEffect(() => {
-    playSound('matrix')
-  }, [])
-
-  // Transition to phase 2 at 1500ms
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setAnimPhase('rabbit')
-      setRainOpacity(0)
-    }, PHASE_1_END)
-    return () => clearTimeout(t)
-  }, [])
-
-  // Cursor blink during phase 2
-  useEffect(() => {
-    if (animPhase !== 'rabbit') return
-    const t = setInterval(() => setCursorOn((v) => !v), 500)
-    return () => clearInterval(t)
-  }, [animPhase])
-
-  // Complete at holdMs
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setAnimPhase('done')
-      onComplete()
-    }, holdMs)
-    return () => clearTimeout(t)
-  }, [onComplete, holdMs])
-
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        inset: 0,
-        zIndex: 10,
-        background: BG_TERMINAL,
-        borderRadius: '4px',
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}
-    >
-      {/* Canvas for falling chars */}
-      <canvas
-        ref={canvasRef}
-        width={width}
-        height={height}
-        style={{
-          position: 'absolute',
-          inset: 0,
-          opacity: rainOpacity,
-          transition: animPhase === 'rabbit' ? 'opacity 0.6s ease-out' : 'none',
-          display: 'block'
-        }}
-      />
-
-      {/* Phase 1 overlay text: INITIALIZING... */}
-      {animPhase === 'rain' && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '40px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            fontFamily: "var(--vrcd-font-mono)",
-            fontSize: '12px',
-            letterSpacing: '0.25em',
-            color: 'rgba(var(--vrcd-neon-raw),0.7)',
-            textShadow: `0 0 12px ${NEON}`,
-            opacity: initOpacity,
-            transition: 'opacity 0.8s ease-in',
-            whiteSpace: 'nowrap',
-            userSelect: 'none',
-            zIndex: 2
-          }}
-        >
-          INITIALIZING...
-        </div>
-      )}
-
-      {/* Phase 2: FOLLOW THE WHITE RABBIT */}
-      {animPhase === 'rabbit' && (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            zIndex: 2,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            textAlign: 'center',
-            fontFamily: "var(--vrcd-font-mono)",
-            userSelect: 'none',
-            flexDirection: 'column',
-            gap: '12px'
-          }}
-        >
-          <div
-            style={{
-              fontSize: '20px',
-              letterSpacing: '0.25em',
-              color: NEON,
-              textShadow: `0 0 16px ${NEON}, 0 0 32px rgba(var(--vrcd-neon-raw),0.5), 0 0 60px rgba(var(--vrcd-neon-raw),0.2)`,
-              animation: 'matrixFadeIn 0.4s ease-out forwards, rabbitPulse 1.2s ease-in-out 0.4s infinite'
-            }}
-          >
-            FOLLOW THE WHITE RABBIT
-            <span
-              style={{
-                display: 'inline-block',
-                marginLeft: '4px',
-                opacity: cursorOn ? 1 : 0,
-                color: NEON,
-                textShadow: `0 0 12px ${NEON}`
-              }}
-            >
-              _
-            </span>
-          </div>
-          <div
-            style={{
-              fontSize: '13px',
-              letterSpacing: '0.15em',
-              color: 'rgba(var(--vrcd-neon-raw),0.55)',
-              fontFamily: "var(--vrcd-font-mono)",
-              animation: 'matrixFadeIn 0.6s ease-out 0.2s both'
-            }}
-          >
-            {`> identity confirmed: `}<span style={{ color: NEON, textShadow: `0 0 8px ${NEON}` }}>{username}</span>
-          </div>
-        </div>
-      )}
-
-      {/* Keyframes injected via a style tag */}
-      <style>{`
-        @keyframes matrixFadeIn {
-          from { opacity: 0; transform: scale(0.94); }
-          to   { opacity: 1; transform: scale(1); }
-        }
-        @keyframes rabbitPulse {
-          0%, 100% { opacity: 1; text-shadow: 0 0 16px var(--vrcd-neon), 0 0 32px rgba(var(--vrcd-neon-raw),0.5), 0 0 60px rgba(var(--vrcd-neon-raw),0.2); }
-          50%       { opacity: 0.65; text-shadow: 0 0 28px var(--vrcd-neon), 0 0 52px rgba(var(--vrcd-neon-raw),0.7), 0 0 90px rgba(var(--vrcd-neon-raw),0.35); }
-        }
-      `}</style>
-    </div>
-  )
-}
-
 // ─── FlashInput ───────────────────────────────────────────────────────────────
 // Wraps a plain <input> and flashes the last typed character on each keystroke.
 
@@ -605,17 +324,10 @@ function FlashInput({ value, onChange, onKeyDown, disabled, inputRef }: FlashInp
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function AdbShellDialog({ deviceId, isOpen, onDismiss }: AdbShellDialogProps): React.ReactElement {
-  const matrixUsername = useRef(getMatrixUsername()).current
-  const firstLaunch = useRef(isFirstLaunchToday()).current
-  const PHASE_2_HOLD = firstLaunch ? 4000 : 2500  // hold longer on first launch of day
-  const matrixEnabled = useRef(shouldShowMatrixShell()).current
-
   const [command, setCommand] = useState('')
   const [history, setHistory] = useState<HistoryEntry[]>([])
   const [isRunning, setIsRunning] = useState(false)
   const [historyIndex, setHistoryIndex] = useState(-1)
-  const [animDone, setAnimDone] = useState(!matrixEnabled)
-  const [dialogSize, setDialogSize] = useState({ w: 700, h: 440 })
 
   const terminalRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -630,32 +342,15 @@ export function AdbShellDialog({ deviceId, isOpen, onDismiss }: AdbShellDialogPr
       setHistory([])
       setCommand('')
       setHistoryIndex(-1)
-      setAnimDone(!matrixEnabled)
     }
-  }, [isOpen, matrixEnabled])
-
-  // Measure container for canvas sizing
-  useEffect(() => {
-    if (!isOpen) return
-    const measure = (): void => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect()
-        if (rect.width > 0) {
-          setDialogSize({ w: Math.floor(rect.width), h: Math.floor(rect.height) })
-        }
-      }
-    }
-    // Delay to let dialog render
-    const t = setTimeout(measure, 40)
-    return () => clearTimeout(t)
   }, [isOpen])
 
-  // Focus input when animation completes
+  // Focus input on open
   useEffect(() => {
-    if (animDone) {
+    if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 80)
     }
-  }, [animDone])
+  }, [isOpen])
 
   // Auto-scroll terminal
   useEffect(() => {
@@ -664,13 +359,9 @@ export function AdbShellDialog({ deviceId, isOpen, onDismiss }: AdbShellDialogPr
     }
   }, [history])
 
-  const handleAnimComplete = useCallback(() => {
-    setAnimDone(true)
-  }, [])
-
   const runCommand = async (cmdOverride?: string): Promise<void> => {
     const cmd = (cmdOverride ?? command).trim()
-    if (!cmd || isRunning || !animDone) return
+    if (!cmd || isRunning) return
 
     setIsRunning(true)
     if (cmdOverride === undefined) setCommand('')
@@ -755,40 +446,21 @@ export function AdbShellDialog({ deviceId, isOpen, onDismiss }: AdbShellDialogPr
           {/* ── Content ── */}
           <DialogContent style={S.content}>
 
-            {/* Quick command shortcuts — only after the matrix animation finishes
-                so they don't appear over the intro */}
-            {animDone && (
-              <AdbShortcuts onRun={(cmd) => runCommand(cmd)} disabled={isRunning} />
-            )}
+            <AdbShortcuts onRun={(cmd) => runCommand(cmd)} disabled={isRunning} />
 
-            {/* Terminal area — wraps both the animation overlay and the terminal output */}
+            {/* Terminal area */}
             <div
               ref={containerRef}
               style={{ position: 'relative' }}
             >
-              {/* Matrix intro — shown until animDone (skipped when disabled) */}
-              {!animDone && matrixEnabled && (
-                <MatrixIntro
-                  onComplete={handleAnimComplete}
-                  width={dialogSize.w}
-                  height={360}
-                  holdMs={PHASE_2_HOLD}
-                  username={matrixUsername}
-                />
-              )}
-
               {/* Terminal output */}
               <div
                 ref={terminalRef}
-                style={{
-                  ...S.terminal,
-                  // Keep in DOM but invisible while animation plays (so refs work)
-                  visibility: animDone ? 'visible' : 'hidden'
-                }}
+                style={S.terminal}
                 onClick={() => inputRef.current?.focus()}
               >
                 {history.length === 0 && (
-                  <span style={S.emptyHint}>// type a shell command and press Enter</span>
+                  <span style={S.emptyHint}>Type a shell command and press Enter.</span>
                 )}
 
                 {history.map((entry, i) => (
@@ -822,7 +494,6 @@ export function AdbShellDialog({ deviceId, isOpen, onDismiss }: AdbShellDialogPr
               <div
                 style={{
                   ...S.inputRow,
-                  visibility: animDone ? 'visible' : 'hidden',
                   marginTop: '8px'
                 }}
               >
@@ -838,14 +509,14 @@ export function AdbShellDialog({ deviceId, isOpen, onDismiss }: AdbShellDialogPr
                   value={command}
                   onChange={setCommand}
                   onKeyDown={handleKeyDown}
-                  disabled={isRunning || !animDone}
+                  disabled={isRunning}
                   inputRef={inputRef}
                 />
                 <NeonButton
                   onClick={runCommand}
-                  disabled={!command.trim() || isRunning || !animDone}
+                  disabled={!command.trim() || isRunning}
                 >
-                  RUN
+                  Run
                 </NeonButton>
               </div>
             </div>
@@ -856,10 +527,10 @@ export function AdbShellDialog({ deviceId, isOpen, onDismiss }: AdbShellDialogPr
           <DialogActions style={{ padding: 0, margin: 0 }}>
             <div style={S.actions}>
               <NeonButton onClick={() => setHistory([])}>
-                CLEAR
+                Clear
               </NeonButton>
               <NeonButton onClick={onDismiss}>
-                CLOSE
+                Close
               </NeonButton>
             </div>
           </DialogActions>

@@ -434,7 +434,7 @@ const AppLayout: React.FC = () => {
           <GameDialogProvider>
             <div className={styles.root}>
               <div className={styles.header}>
-                {/* Left: Hacker Console */}
+                {/* Left: Status panel */}
                 <HackerConsole />
 
                 {/* Center: Logo + title */}
@@ -443,15 +443,13 @@ const AppLayout: React.FC = () => {
                     <img alt="logo" className={styles.logo} src={electronLogo} />
                     <div className={styles.titleSection}>
                       <span className={styles.titleMain}>
-                        <span className={styles.titleVR}>VR</span>
-                        <span className={styles.titleCyberdeck}>
-                          <span className="title-glitch-wrap" data-text="CYBERDECK">CYBERDECK</span>
-                        </span>
+                        <span className={styles.titleVR}>Fast</span>
+                        <span className={styles.titleCyberdeck}>Travel</span>
                       </span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span className={styles.titleSub}>OPERATE. DEPLOY. CONTROL.</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span className={styles.titleSub}>Sideload manager for Meta Quest</span>
                         {appVersion && (
-                          <span style={{ fontSize: '9px', fontFamily: 'monospace', color: 'rgba(var(--vrcd-purple-raw),0.6)', letterSpacing: '0.1em' }}>
+                          <span style={{ fontSize: 11, color: 'var(--quest-text-dim)' }}>
                             v{appVersion}
                           </span>
                         )}
