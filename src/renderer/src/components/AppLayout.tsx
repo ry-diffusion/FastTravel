@@ -35,42 +35,10 @@ import { useDependency } from '../hooks/useDependency'
 import { playSound } from '../hooks/useSoundEffects'
 
 // ─── Lazy-import page components so missing files cause a clean stub ──────────
-// These are authored by other agents. We render a minimal placeholder if the
-// module doesn't exist yet (the dynamic import will throw, caught by the
-// ErrorBoundary wrapping each page).
-let DeviceList: React.ComponentType<{ onConnected?: () => void; onSkip?: () => void }>
-let GamesView: React.ComponentType<{
-  onBackToDevices?: () => void
-  onTransfers?: () => void
-  onSettings?: () => void
-}>
-let TransfersPage: React.ComponentType
-let Settings: React.ComponentType
-
-try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  DeviceList = require('./DeviceList').default
-} catch {
-  DeviceList = () => <PagePlaceholder name="Devices" />
-}
-try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  GamesView = require('./GamesView').default
-} catch {
-  GamesView = () => <PagePlaceholder name="Library" />
-}
-try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  TransfersPage = require('./TransfersPage').default
-} catch {
-  TransfersPage = () => <PagePlaceholder name="Transfers" />
-}
-try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  Settings = require('./Settings').default
-} catch {
-  Settings = () => <PagePlaceholder name="Settings" />
-}
+import DeviceList from './DeviceList'
+import GamesView from './GamesView'
+import TransfersPage from './TransfersPage'
+import Settings from './Settings'
 
 // ─── App view enum ─────────────────────────────────────────────────────────────
 export enum AppView {
@@ -79,13 +47,6 @@ export enum AppView {
   TRANSFERS,
   SETTINGS
 }
-
-// ─── Utility: page-not-yet-built placeholder ──────────────────────────────────
-const PagePlaceholder: React.FC<{ name: string }> = ({ name }) => (
-  <div className="flex h-full w-full items-center justify-center">
-    <p className="text-sm text-muted-foreground">{name} — coming soon</p>
-  </div>
-)
 
 // ─── SidebarView ↔ AppView mapping ────────────────────────────────────────────
 function appViewToSidebarView(v: AppView): SidebarView {
