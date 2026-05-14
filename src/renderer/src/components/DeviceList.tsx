@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   Avatar,
   Button,
@@ -11,6 +11,7 @@ import {
   Spinner,
   cn
 } from '@heroui/react'
+import { Headphones, Wifi, RefreshCw, Usb } from 'lucide-react'
 import { useAdb } from '../hooks/useAdb'
 import { ExtendedDeviceInfo, hasBookmarkData, isWiFiBookmark } from '@shared/types'
 import { AdbShellDialog } from './AdbShellDialog'
@@ -36,21 +37,30 @@ function pingLabel(ms: number | null | undefined): string {
   return `${ms} ms · poor`
 }
 
-/** Headset avatar: monochrome letter avatar using Quest blue */
-const HeadsetAvatar: React.FC<{ wifi: boolean }> = ({ wifi }) => (
+// ---------------------------------------------------------------------------
+// HeadsetAvatar
+// ---------------------------------------------------------------------------
+const HeadsetAvatar: React.FC<{ wifi: boolean; isQuestDevice: boolean }> = ({
+  wifi,
+  isQuestDevice
+}) => (
   <Avatar
     size="md"
     radius="lg"
     classNames={{
       base: cn(
-        'bg-primary/10 text-primary flex-shrink-0',
-        wifi ? 'bg-secondary/10 text-secondary' : ''
+        'flex-shrink-0',
+        wifi ? 'bg-secondary/10 text-secondary' : 'bg-primary/10 text-primary'
       )
     }}
     fallback={
-      <span className="text-lg select-none" aria-hidden>
-        {wifi ? '📡' : '🥽'}
-      </span>
+      wifi ? (
+        <Wifi size={18} aria-hidden />
+      ) : isQuestDevice ? (
+        <Headphones size={18} aria-hidden />
+      ) : (
+        <Usb size={18} aria-hidden />
+      )
     }
     showFallback
   />
@@ -80,7 +90,7 @@ const AddTargetForm: React.FC<{
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-xs font-medium text-default-400 uppercase tracking-wide">Add by IP</p>
+      <p className="text-xs font-medium text-default-500 uppercase tracking-wide">Add by IP</p>
       <div className="flex gap-2 items-center">
         <Input
           size="sm"
@@ -94,11 +104,11 @@ const AddTargetForm: React.FC<{
         />
         <Input
           size="sm"
-          placeholder="Port"
+          placeholder="5555"
           value={port}
           onValueChange={setPort}
           variant="bordered"
-          classNames={{ base: 'w-20 flex-shrink-0' }}
+          classNames={{ base: 'w-24 flex-shrink-0' }}
           aria-label="Port number"
         />
         <Button
@@ -154,7 +164,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
 
   const name = device.friendlyModelName || (device as any).model || device.id
   const ipAddress: string | undefined = (device as any).ipAddress
-  const batteryLevel: number | undefined = (device as any).batteryLevel
+  const batteryLevel: number | null | undefined = (device as any).batteryLevel
   const storageFree: string | undefined = (device as any).storageFree
   const pingStatus: 'reachable' | 'unreachable' | 'checking' | undefined = (device as any).pingStatus
   const pingResponseTime: number | undefined = (device as any).pingResponseTime
@@ -170,7 +180,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
   else if (isOffline) { statusColor = 'default'; statusLabel = 'Offline' }
   else if (isWifiBook) { statusColor = 'default'; statusLabel = 'Saved' }
 
-  // Meta tokens — small text-default-500 row
+  // Meta tokens separated by ·
   const metaParts: React.ReactNode[] = []
 
   if (isWifiBook) {
@@ -196,17 +206,17 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
   if (isWifi && pingStatus === 'reachable' && pingResponseTime != null) {
     metaParts.push(<span key="ping">{pingLabel(pingResponseTime)}</span>)
   } else if (isWifi && pingStatus === 'unreachable') {
-    metaParts.push(<span key="ping" className="text-danger-400">Unreachable</span>)
+    metaParts.push(<span key="ping" className="text-danger">Unreachable</span>)
   } else if (isWifi && pingStatus === 'checking') {
     metaParts.push(<span key="ping" className="text-default-400">Pinging…</span>)
   }
 
   if (isConnectable && !isQuestDevice && !isWifi) {
-    metaParts.push(<span key="unknown" className="text-warning-400">Unknown device</span>)
+    metaParts.push(<span key="unknown" className="text-warning">Unknown device</span>)
   }
 
   const metaRow = metaParts.reduce<React.ReactNode[]>((acc, node, i) => {
-    if (i > 0) acc.push(<span key={`sep-${i}`} className="opacity-30">·</span>)
+    if (i > 0) acc.push(<span key={`sep-${i}`} className="text-default-300 select-none">·</span>)
     acc.push(node)
     return acc
   }, [])
@@ -214,9 +224,10 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
   return (
     <Card
       className={cn(
-        'border border-divider bg-content2 transition-colors duration-150',
+        'border border-divider transition-colors duration-150',
         isConnected && 'border-success/30 bg-success/5',
-        connectionError && 'border-danger/30 bg-danger/5'
+        connectionError && 'border-danger/30 bg-danger/5',
+        !isConnected && !connectionError && 'bg-content2'
       )}
       shadow="none"
       radius="lg"
@@ -224,12 +235,12 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
       <CardBody className="p-3">
         <div className="flex items-center gap-3">
           {/* Avatar */}
-          <HeadsetAvatar wifi={isWifi} />
+          <HeadsetAvatar wifi={isWifi} isQuestDevice={isQuestDevice} />
 
           {/* Name + meta — flex-1 */}
           <div className="flex flex-col gap-0.5 flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-semibold text-foreground truncate">{name}</span>
+              <span className="text-sm font-medium text-foreground truncate">{name}</span>
               <Chip
                 size="sm"
                 color={statusColor}
@@ -240,39 +251,16 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
               </Chip>
             </div>
 
-            {/* Type chips */}
-            <div className="flex items-center gap-1 flex-wrap">
-              {isQuestDevice && (
-                <Chip
-                  size="sm"
-                  variant="flat"
-                  color="primary"
-                  classNames={{ base: 'h-4 flex-shrink-0', content: 'text-[9px] px-1' }}
-                >
-                  Quest device
-                </Chip>
-              )}
-              {isWifiBook && (
-                <Chip
-                  size="sm"
-                  variant="flat"
-                  classNames={{ base: 'h-4 flex-shrink-0', content: 'text-[9px] px-1' }}
-                >
-                  Wi-Fi bookmark
-                </Chip>
-              )}
-            </div>
-
             {/* Meta row */}
             {metaRow.length > 0 && (
-              <div className="flex items-center gap-1 flex-wrap text-[11px] text-default-500 mt-0.5">
+              <div className="flex items-center gap-1 flex-wrap text-xs text-default-500 mt-0.5">
                 {metaRow}
               </div>
             )}
 
             {/* Error inline */}
             {connectionError && (
-              <p className="text-[11px] text-danger mt-0.5">
+              <p className="text-xs text-danger mt-0.5">
                 Connection failed — check device and try again
               </p>
             )}
@@ -282,10 +270,10 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
           <div className="flex flex-col gap-1.5 items-end flex-shrink-0">
             {isConnected ? (
               <>
-                <Button size="sm" color="primary" variant="solid" onPress={onOpenShell}>
+                <Button size="sm" color="primary" onPress={onOpenShell}>
                   Shell
                 </Button>
-                <Button size="sm" variant="light" color="default" onPress={onDisconnect}>
+                <Button size="sm" variant="flat" onPress={onDisconnect}>
                   Disconnect
                 </Button>
               </>
@@ -298,28 +286,27 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
                 <Button
                   size="sm"
                   color="primary"
-                  variant="solid"
                   onPress={onConnect}
                   isDisabled={pingStatus === 'unreachable'}
                 >
                   Connect
                 </Button>
-                <Button size="sm" variant="light" color="danger" onPress={onDeleteBookmark}>
+                <Button size="sm" variant="flat" color="danger" onPress={onDeleteBookmark}>
                   Remove
                 </Button>
               </>
             ) : isConnectable ? (
               <>
-                <Button size="sm" color="primary" variant="solid" onPress={onConnect}>
+                <Button size="sm" color="primary" onPress={onConnect}>
                   Connect
                 </Button>
                 {ipAddress && !isTcp && !isAlreadyBookmarked && (
-                  <Button size="sm" variant="light" color="default" onPress={onBookmark}>
+                  <Button size="sm" variant="flat" onPress={onBookmark}>
                     Save
                   </Button>
                 )}
                 {isAlreadyBookmarked && (
-                  <span className="text-[11px] text-default-400 px-1">Saved</span>
+                  <span className="text-xs text-default-400 px-1">Saved</span>
                 )}
               </>
             ) : (
@@ -355,8 +342,8 @@ const DeviceList: React.FC<DeviceListProps> = ({ onSkip, onConnected }) => {
   const [connectionErrorId, setConnectionErrorId] = useState<string | null>(null)
   const [shellDialogDeviceId, setShellDialogDeviceId] = useState<string | null>(null)
 
-  // Auto-connect: when a Quest appears and nothing is connected yet
-  const hasAutoConnected = React.useRef(false)
+  // Auto-connect: when a Quest appears and nothing is connected yet — fires only once
+  const hasAutoConnected = useRef(false)
   useEffect(() => {
     if (isConnected || isLoading || hasAutoConnected.current) return
     const q = devices.find(
@@ -368,6 +355,7 @@ const DeviceList: React.FC<DeviceListProps> = ({ onSkip, onConnected }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [devices, isConnected, isLoading])
 
+  // Collect bookmarked IPs so we can mark "Save" buttons as already saved
   const bookmarkedIps = React.useMemo(
     () =>
       devices
@@ -468,30 +456,24 @@ const DeviceList: React.FC<DeviceListProps> = ({ onSkip, onConnected }) => {
     [disconnectDevice, disconnectTcpDevice]
   )
 
-  const isScanning = isLoading || connectingDeviceId !== null
-
   return (
-    <div className="flex h-full w-full items-center justify-center p-8 overflow-auto">
+    <div className="flex h-full w-full items-center justify-center p-8 bg-background overflow-auto">
       {/* Main panel */}
       <Card
-        className="w-full max-w-[560px] border border-divider bg-content1"
-        shadow="sm"
+        className="w-full max-w-xl bg-content1"
+        shadow="md"
         radius="lg"
       >
         {/* ── Header ── */}
         <CardHeader className="flex items-center justify-between gap-3 px-5 py-4">
           <div className="flex items-center gap-2">
-            <span className="text-base font-semibold text-foreground">Devices</span>
-            {isScanning && (
+            <span className="text-lg font-semibold text-foreground">Devices</span>
+            {isLoading && (
               <Spinner
                 size="sm"
                 color="primary"
-                classNames={{ base: 'w-4 h-4' }}
                 aria-label="Scanning for devices"
               />
-            )}
-            {isLoading && (
-              <span className="text-xs text-default-400">Searching…</span>
             )}
           </div>
 
@@ -499,33 +481,31 @@ const DeviceList: React.FC<DeviceListProps> = ({ onSkip, onConnected }) => {
             <Button
               size="sm"
               variant="flat"
-              color="default"
               onPress={() => refreshDevices()}
-              isDisabled={isLoading}
+              isLoading={isLoading}
+              startContent={!isLoading ? <RefreshCw size={14} /> : undefined}
             >
-              {isLoading ? 'Scanning…' : 'Scan'}
+              Scan
             </Button>
 
             {onSkip && !isConnected && (
-              <Button size="sm" variant="light" color="default" onPress={onSkip}>
+              <Button size="sm" variant="bordered" onPress={onSkip}>
                 Continue offline
               </Button>
             )}
             {onSkip && isConnected && (
-              <Button size="sm" color="primary" variant="solid" onPress={onSkip}>
+              <Button size="sm" color="primary" onPress={onSkip}>
                 Continue
               </Button>
             )}
           </div>
         </CardHeader>
 
-        <Divider />
-
         <CardBody className="flex flex-col gap-4 px-5 py-4">
           {/* Error banner */}
           {error && (
             <Card
-              className="border border-danger/40 bg-danger-50/20"
+              className="bg-danger/10 border border-danger/30"
               shadow="none"
               radius="md"
             >
@@ -551,12 +531,12 @@ const DeviceList: React.FC<DeviceListProps> = ({ onSkip, onConnected }) => {
             )}
 
             {/* Empty state */}
-            {!error && !isLoading && devices.length === 0 && (
+            {!isLoading && devices.length === 0 && (
               <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
+                <Headphones size={40} className="text-default-300" aria-hidden />
                 <p className="text-sm font-medium text-foreground">No devices found</p>
-                <p className="text-xs text-default-500 max-w-[320px] leading-relaxed">
-                  Connect a headset over USB or add one by IP above. Make sure developer mode is
-                  enabled on the device.
+                <p className="text-xs text-default-500 max-w-xs leading-relaxed">
+                  Connect a headset over USB or add one by IP above.
                 </p>
               </div>
             )}
@@ -599,17 +579,15 @@ const DeviceList: React.FC<DeviceListProps> = ({ onSkip, onConnected }) => {
             <>
               <Divider />
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-success flex-shrink-0" />
-                <span className="text-xs font-medium text-default-600">
-                  Device connected
-                </span>
+                <span className="w-2 h-2 rounded-full bg-success flex-shrink-0" aria-hidden />
+                <span className="text-xs font-medium text-success">Connected</span>
               </div>
             </>
           )}
         </CardBody>
       </Card>
 
-      {/* ADB Shell Dialog */}
+      {/* ADB Shell Dialog — controlled by shellDialogDeviceId state */}
       {shellDialogDeviceId && (
         <AdbShellDialog
           deviceId={shellDialogDeviceId}
