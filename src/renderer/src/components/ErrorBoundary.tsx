@@ -1,4 +1,6 @@
 import React from 'react'
+import { AlertCircle, RefreshCw } from 'lucide-react'
+import { Button } from '@renderer/components/ui/button'
 
 interface State {
   hasError: boolean
@@ -17,10 +19,19 @@ export class ErrorBoundary extends React.Component<{ children: React.ReactNode }
   }
 
   handleReset = (): void => {
-    // Wipe all known preference keys so stale data can't re-trigger the crash
+    // Wipe known preference keys so stale data can't re-trigger the crash
     try {
-      localStorage.removeItem('avr-table-prefs-v1')
-      localStorage.removeItem('avr-table-prefs-v2')
+      const keys = [
+        'avr-table-prefs-v1',
+        'avr-table-prefs-v2',
+        'avr-table-prefs-v5',
+        'vrcyberdeck:categoryFilter',
+        'vrcyberdeck:hideAdult',
+        'vrcyberdeck:transfersTab',
+        'vrcyberdeck:adbCustomShortcuts',
+        'vrcyberdeck:adbShortcutsCollapsed'
+      ]
+      keys.forEach((k) => localStorage.removeItem(k))
     } catch { /* ignore */ }
     window.location.reload()
   }
@@ -29,55 +40,30 @@ export class ErrorBoundary extends React.Component<{ children: React.ReactNode }
     if (!this.state.hasError) return this.props.children
 
     return (
-      <div style={{
-        height: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#050514',
-        gap: '20px',
-        fontFamily: 'var(--vrcd-font-mono)',
-        padding: '40px'
-      }}>
-        <div style={{ fontSize: '32px', color: 'var(--vrcd-neon)', letterSpacing: '0.1em' }}>
-          // SYSTEM FAULT
+      <div className="flex h-screen w-screen items-center justify-center bg-background px-6">
+        <div className="flex w-full max-w-md flex-col items-center gap-5 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10 ring-1 ring-destructive/30">
+            <AlertCircle className="h-7 w-7 text-destructive" aria-hidden />
+          </div>
+
+          <div className="space-y-1.5">
+            <h1 className="text-xl font-semibold tracking-tight text-foreground">
+              Something went wrong
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              An unexpected error stopped the app. Resetting your preferences usually fixes it.
+            </p>
+          </div>
+
+          <pre className="w-full overflow-auto rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-left font-mono text-xs text-destructive">
+            {this.state.message || 'An unexpected error occurred.'}
+          </pre>
+
+          <Button onClick={this.handleReset} className="gap-2">
+            <RefreshCw className="h-3.5 w-3.5" />
+            Reset and reload
+          </Button>
         </div>
-        <div style={{
-          fontSize: '12px',
-          color: 'rgba(255, 68, 68, 0.9)',
-          background: 'rgba(255,68,68,0.06)',
-          border: '1px solid rgba(255,68,68,0.3)',
-          borderRadius: '6px',
-          padding: '16px 24px',
-          maxWidth: '600px',
-          wordBreak: 'break-word',
-          textAlign: 'center',
-          lineHeight: '1.6'
-        }}>
-          {this.state.message || 'An unexpected error occurred.'}
-        </div>
-        <div style={{ fontSize: '11px', color: 'rgba(var(--vrcd-neon-raw),0.5)', textAlign: 'center', maxWidth: '500px', lineHeight: '1.6' }}>
-          Saved preferences will be cleared to prevent this from happening again.
-        </div>
-        <button
-          onClick={this.handleReset}
-          style={{
-            background: 'transparent',
-            border: '1px solid rgba(var(--vrcd-neon-raw),0.5)',
-            color: 'var(--vrcd-neon)',
-            fontFamily: 'var(--vrcd-font-mono)',
-            fontSize: '11px',
-            letterSpacing: '0.14em',
-            textTransform: 'uppercase',
-            padding: '10px 24px',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            boxShadow: '0 0 10px rgba(var(--vrcd-neon-raw),0.15)'
-          }}
-        >
-          Reset &amp; Reload
-        </button>
       </div>
     )
   }

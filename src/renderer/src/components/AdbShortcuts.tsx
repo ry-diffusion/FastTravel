@@ -1,4 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { ChevronDown, ChevronRight, Plus, Trash2, X } from 'lucide-react'
+import { Button } from '@renderer/components/ui/button'
+import { Input } from '@renderer/components/ui/input'
+import { Label } from '@renderer/components/ui/label'
+import { Separator } from '@renderer/components/ui/separator'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
+} from '@renderer/components/ui/tooltip'
+import { cn } from '@renderer/lib/utils'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -11,7 +23,6 @@ export interface CustomShortcut {
 interface PresetShortcut {
   label: string
   command: string
-  /** Optional human-readable hint shown on hover */
   desc?: string
 }
 
@@ -30,61 +41,57 @@ interface AdbShortcutsProps {
 const STORAGE_KEY = 'vrcyberdeck:adbCustomShortcuts'
 const COLLAPSED_KEY = 'vrcyberdeck:adbShortcutsCollapsed'
 
-const NEON = 'var(--vrcd-neon)'
-const NEON_DIM = 'rgba(var(--vrcd-neon-raw),0.35)'
-const PURPLE = 'var(--vrcd-purple)'
-
 const PRESETS: PresetCategory[] = [
   {
-    name: 'PERFORMANCE',
+    name: 'Performance',
     items: [
       { label: 'CPU 4', command: 'setprop debug.oculus.cpuLevel 4', desc: 'Pin CPU to highest level (4)' },
       { label: 'GPU 4', command: 'setprop debug.oculus.gpuLevel 4', desc: 'Pin GPU to highest level (4)' },
-      { label: 'CPU/GPU AUTO', command: 'setprop debug.oculus.cpuLevel 0 && setprop debug.oculus.gpuLevel 0', desc: 'Reset CPU/GPU governors to auto' },
+      { label: 'CPU/GPU auto', command: 'setprop debug.oculus.cpuLevel 0 && setprop debug.oculus.gpuLevel 0', desc: 'Reset CPU/GPU governors to auto' },
       { label: '72 Hz', command: 'setprop debug.oculus.refreshRate 72' },
       { label: '90 Hz', command: 'setprop debug.oculus.refreshRate 90' },
       { label: '120 Hz', command: 'setprop debug.oculus.refreshRate 120' },
-      { label: 'TEX 1.0', command: 'setprop debug.oculus.textureWidth 0 && setprop debug.oculus.textureHeight 0', desc: 'Reset render resolution to default' },
-      { label: 'GFX STATS', command: 'dumpsys SurfaceFlinger --latency-clear', desc: 'Reset SurfaceFlinger frame stats' }
+      { label: 'Tex 1.0', command: 'setprop debug.oculus.textureWidth 0 && setprop debug.oculus.textureHeight 0', desc: 'Reset render resolution to default' },
+      { label: 'GFX stats', command: 'dumpsys SurfaceFlinger --latency-clear', desc: 'Reset SurfaceFlinger frame stats' }
     ]
   },
   {
-    name: 'UPDATES',
+    name: 'Updates',
     items: [
-      { label: 'BLOCK FW', command: 'pm disable-user --user 0 com.oculus.updater', desc: 'Disable the OS updater (rollback-friendly)' },
-      { label: 'UNBLOCK FW', command: 'pm enable com.oculus.updater', desc: 'Re-enable the OS updater' },
-      { label: 'BLOCK STORE', command: 'pm disable-user --user 0 com.oculus.store', desc: 'Disable Meta Store updates' },
-      { label: 'UNBLOCK STORE', command: 'pm enable com.oculus.store' }
+      { label: 'Block FW', command: 'pm disable-user --user 0 com.oculus.updater', desc: 'Disable the OS updater (rollback-friendly)' },
+      { label: 'Unblock FW', command: 'pm enable com.oculus.updater', desc: 'Re-enable the OS updater' },
+      { label: 'Block store', command: 'pm disable-user --user 0 com.oculus.store', desc: 'Disable Meta Store updates' },
+      { label: 'Unblock store', command: 'pm enable com.oculus.store' }
     ]
   },
   {
-    name: 'SYSTEM',
+    name: 'System',
     items: [
-      { label: 'REBOOT', command: 'reboot' },
-      { label: 'REBOOT BOOTLOADER', command: 'reboot bootloader' },
-      { label: 'REBOOT RECOVERY', command: 'reboot recovery' },
-      { label: 'BATTERY', command: 'dumpsys battery', desc: 'Show full battery status' },
-      { label: 'STORAGE', command: 'df -h /sdcard' },
-      { label: 'WIFI INFO', command: 'dumpsys wifi | head -40' },
-      { label: 'IP ADDR', command: 'ip route | awk \'{print $9}\'', desc: 'Print device IP address' },
-      { label: 'PROXIMITY OFF', command: 'am broadcast -a com.oculus.vrpowermanager.prox_close', desc: 'Disable proximity sensor (sleep prevention)' },
-      { label: 'PROXIMITY ON', command: 'am broadcast -a com.oculus.vrpowermanager.automation_disable' },
-      { label: 'REVERT UI (PRE NAVIGATOR)', command: 'adb shell pm clear com.oculus.vrshell', desc: 'Clear VR shell data to revert UI to pre-Navigator state' }
+      { label: 'Reboot', command: 'reboot' },
+      { label: 'Reboot bootloader', command: 'reboot bootloader' },
+      { label: 'Reboot recovery', command: 'reboot recovery' },
+      { label: 'Battery', command: 'dumpsys battery', desc: 'Show full battery status' },
+      { label: 'Storage', command: 'df -h /sdcard' },
+      { label: 'Wi-Fi info', command: 'dumpsys wifi | head -40' },
+      { label: 'IP addr', command: "ip route | awk '{print $9}'", desc: 'Print device IP address' },
+      { label: 'Proximity off', command: 'am broadcast -a com.oculus.vrpowermanager.prox_close', desc: 'Disable proximity sensor (sleep prevention)' },
+      { label: 'Proximity on', command: 'am broadcast -a com.oculus.vrpowermanager.automation_disable' },
+      { label: 'Revert UI', command: 'adb shell pm clear com.oculus.vrshell', desc: 'Clear VR shell data to revert UI to pre-Navigator state' }
     ]
   },
   {
-    name: 'PACKAGES',
+    name: 'Packages',
     items: [
-      { label: 'LIST 3RD-PARTY', command: 'pm list packages -3' },
-      { label: 'LIST ALL', command: 'pm list packages' },
-      { label: 'CURRENT APP', command: 'dumpsys window | grep -E \'mCurrentFocus|mFocusedApp\'' }
+      { label: 'List 3rd-party', command: 'pm list packages -3' },
+      { label: 'List all', command: 'pm list packages' },
+      { label: 'Current app', command: "dumpsys window | grep -E 'mCurrentFocus|mFocusedApp'" }
     ]
   },
   {
-    name: 'WIRELESS',
+    name: 'Wireless',
     items: [
-      { label: 'TCPIP 5555', command: 'adb tcpip 5555', desc: 'Switch local adbd to TCP mode on port 5555' },
-      { label: 'DEVICES', command: 'adb devices -l' }
+      { label: 'TCP/IP 5555', command: 'adb tcpip 5555', desc: 'Switch local adbd to TCP mode on port 5555' },
+      { label: 'Devices', command: 'adb devices -l' }
     ]
   }
 ]
@@ -133,366 +140,246 @@ function writeCollapsed(v: boolean): void {
   }
 }
 
-// ─── Pill button ──────────────────────────────────────────────────────────────
+// ─── Shortcut pill ──────────────────────────────────────────────────────────
 
-interface PillProps {
-  children: React.ReactNode
+const ShortcutPill: React.FC<{
+  label: string
+  desc?: string
   onClick: () => void
-  onContextMenu?: (e: React.MouseEvent) => void
-  title?: string
   disabled?: boolean
-  variant?: 'neon' | 'purple' | 'add'
-}
-
-const Pill: React.FC<PillProps> = ({ children, onClick, onContextMenu, title, disabled, variant = 'neon' }) => {
-  const [hovered, setHovered] = useState(false)
-  const color = variant === 'purple' ? PURPLE : NEON
-  const colorRaw = variant === 'purple' ? 'var(--vrcd-purple-raw)' : 'var(--vrcd-neon-raw)'
-  const dashed = variant === 'add'
-  return (
-    <button
+  onDelete?: () => void
+}> = ({ label, desc, onClick, disabled, onDelete }) => {
+  const btn = (
+    <Button
+      size="sm"
+      variant="outline"
       onClick={onClick}
-      onContextMenu={onContextMenu}
-      title={title}
       disabled={disabled}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        background: hovered && !disabled ? `rgba(${colorRaw},0.12)` : 'transparent',
-        border: `1px ${dashed ? 'dashed' : 'solid'} ${hovered && !disabled ? color : `rgba(${colorRaw},0.4)`}`,
-        color: hovered && !disabled ? color : `rgba(${colorRaw},0.8)`,
-        fontFamily: "var(--vrcd-font-mono)",
-        fontSize: '11px',
-        letterSpacing: '0.06em',
-        padding: '4px 10px',
-        borderRadius: '4px',
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: disabled ? 0.4 : 1,
-        whiteSpace: 'nowrap',
-        boxShadow: hovered && !disabled ? `0 0 8px rgba(${colorRaw},0.35)` : 'none',
-        transition: 'border-color 0.15s, color 0.15s, box-shadow 0.15s, background 0.15s'
-      }}
+      className={cn(
+        'h-7 px-2.5 text-xs font-normal',
+        onDelete && 'pr-1'
+      )}
     >
-      {children}
-    </button>
-  )
-}
-
-// ─── Add/Edit modal ───────────────────────────────────────────────────────────
-
-interface ShortcutEditorProps {
-  initial?: CustomShortcut | null
-  onSave: (label: string, command: string) => void
-  onCancel: () => void
-}
-
-const ShortcutEditor: React.FC<ShortcutEditorProps> = ({ initial, onSave, onCancel }) => {
-  const [label, setLabel] = useState(initial?.label ?? '')
-  const [command, setCommand] = useState(initial?.command ?? '')
-
-  const inputStyle: React.CSSProperties = {
-    background: '#000008',
-    border: `1px solid ${NEON_DIM}`,
-    color: NEON,
-    fontFamily: "var(--vrcd-font-mono)",
-    fontSize: '12px',
-    padding: '6px 10px',
-    borderRadius: '3px',
-    outline: 'none',
-    width: '100%',
-    boxSizing: 'border-box'
-  }
-
-  const canSave = label.trim().length > 0 && command.trim().length > 0
-
-  return (
-    <div
-      onClick={onCancel}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 1500,
-        background: 'rgba(0,0,0,0.7)',
-        backdropFilter: 'blur(2px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          background: '#030310',
-          border: `1px solid rgba(var(--vrcd-neon-raw),0.45)`,
-          borderRadius: '6px',
-          padding: '20px 22px',
-          width: '440px',
-          maxWidth: '90vw',
-          fontFamily: "var(--vrcd-font-mono)",
-          boxShadow: '0 0 40px rgba(var(--vrcd-neon-raw),0.1)'
-        }}
-      >
-        <div
-          style={{
-            color: PURPLE,
-            fontSize: '14px',
-            letterSpacing: '0.12em',
-            fontWeight: 700,
-            marginBottom: '14px',
-            textShadow: `0 0 8px rgba(var(--vrcd-purple-raw),0.6)`
+      <span className="truncate">{label}</span>
+      {onDelete && (
+        <span
+          role="button"
+          tabIndex={0}
+          onClick={(e) => {
+            e.stopPropagation()
+            onDelete()
           }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              e.stopPropagation()
+              onDelete()
+            }
+          }}
+          aria-label={`Remove ${label}`}
+          className="ml-1.5 inline-flex h-4 w-4 items-center justify-center rounded text-muted-foreground hover:bg-destructive/20 hover:text-destructive"
         >
-          [ {initial ? 'EDIT' : 'NEW'} CUSTOM SHORTCUT ]
-        </div>
+          <X className="h-3 w-3" />
+        </span>
+      )}
+    </Button>
+  )
 
-        <label style={{ display: 'block', color: 'rgba(var(--vrcd-neon-raw),0.6)', fontSize: '11px', marginBottom: '4px', letterSpacing: '0.08em' }}>
-          LABEL
-        </label>
-        <input
-          value={label}
-          onChange={(e) => setLabel(e.target.value)}
-          placeholder="e.g. ENABLE PROXIMITY"
-          spellCheck={false}
-          autoFocus
-          style={{ ...inputStyle, marginBottom: '14px' }}
-        />
-
-        <label style={{ display: 'block', color: 'rgba(var(--vrcd-neon-raw),0.6)', fontSize: '11px', marginBottom: '4px', letterSpacing: '0.08em' }}>
-          COMMAND
-        </label>
-        <input
-          value={command}
-          onChange={(e) => setCommand(e.target.value)}
-          placeholder="e.g. setprop debug.oculus.cpuLevel 3"
-          spellCheck={false}
-          style={inputStyle}
-        />
-        <div style={{ color: 'rgba(var(--vrcd-neon-raw),0.4)', fontSize: '10px', marginTop: '4px' }}>
-          Same syntax as the shell input. Prefix with &quot;adb &quot; for local adb commands.
-        </div>
-
-        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' }}>
-          <Pill onClick={onCancel}>CANCEL</Pill>
-          <Pill
-            onClick={() => canSave && onSave(label.trim(), command.trim())}
-            disabled={!canSave}
-            variant="purple"
-          >
-            {initial ? 'SAVE' : 'ADD'}
-          </Pill>
-        </div>
-      </div>
-    </div>
+  if (!desc) return btn
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{btn}</TooltipTrigger>
+      <TooltipContent side="bottom">
+        <p className="text-xs">{desc}</p>
+        <p className="mt-1 font-mono text-[10px] text-muted-foreground">$ {desc ? '' : ''}</p>
+      </TooltipContent>
+    </Tooltip>
   )
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
+// ─── Main component ─────────────────────────────────────────────────────────
 
 const AdbShortcuts: React.FC<AdbShortcutsProps> = ({ onRun, disabled }) => {
-  const [custom, setCustom] = useState<CustomShortcut[]>(() => readCustom())
-  const [collapsed, setCollapsed] = useState(() => readCollapsed())
-  const [editorOpen, setEditorOpen] = useState(false)
-  const [editingId, setEditingId] = useState<string | null>(null)
+  const [collapsed, setCollapsed] = useState<boolean>(readCollapsed)
+  const [custom, setCustom] = useState<CustomShortcut[]>(readCustom)
+  const [adding, setAdding] = useState(false)
+  const [newLabel, setNewLabel] = useState('')
+  const [newCommand, setNewCommand] = useState('')
+
+  const toggleCollapsed = useCallback((): void => {
+    setCollapsed((prev) => {
+      const next = !prev
+      writeCollapsed(next)
+      return next
+    })
+  }, [])
 
   useEffect(() => {
     writeCustom(custom)
   }, [custom])
 
-  useEffect(() => {
-    writeCollapsed(collapsed)
-  }, [collapsed])
+  const addCustom = useCallback((): void => {
+    const l = newLabel.trim()
+    const c = newCommand.trim()
+    if (!l || !c) return
+    setCustom((prev) => [
+      ...prev,
+      { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, label: l, command: c }
+    ])
+    setNewLabel('')
+    setNewCommand('')
+    setAdding(false)
+  }, [newLabel, newCommand])
 
-  const editing = useMemo(
-    () => (editingId ? custom.find((c) => c.id === editingId) ?? null : null),
-    [editingId, custom]
-  )
+  const removeCustom = useCallback((id: string): void => {
+    setCustom((prev) => prev.filter((s) => s.id !== id))
+  }, [])
 
-  const addOrUpdate = useCallback(
-    (label: string, command: string) => {
-      if (editingId) {
-        setCustom((prev) =>
-          prev.map((c) => (c.id === editingId ? { ...c, label, command } : c))
-        )
-      } else {
-        const id = `cs_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`
-        setCustom((prev) => [...prev, { id, label, command }])
-      }
-      setEditorOpen(false)
-      setEditingId(null)
-    },
-    [editingId]
-  )
-
-  const handleCustomContextMenu = useCallback(
-    (item: CustomShortcut) =>
-      (e: React.MouseEvent): void => {
-        e.preventDefault()
-        const action = window.confirm(
-          `Edit "${item.label}"?\n\nCommand: ${item.command}\n\nOK = Edit · Cancel = Delete`
-        )
-        if (action) {
-          setEditingId(item.id)
-          setEditorOpen(true)
-        } else {
-          if (window.confirm(`Delete "${item.label}"?`)) {
-            setCustom((prev) => prev.filter((c) => c.id !== item.id))
-          }
-        }
-      },
-    []
+  const totalCount = useMemo(
+    () => PRESETS.reduce((n, c) => n + c.items.length, 0) + custom.length,
+    [custom.length]
   )
 
   return (
-    <>
-      <div
-        style={{
-          border: `1px solid ${NEON_DIM}`,
-          borderRadius: '4px',
-          background: 'rgba(0,0,8,0.5)',
-          fontFamily: "var(--vrcd-font-mono)"
-        }}
-      >
-        {/* Header bar */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '6px 12px',
-            borderBottom: collapsed ? 'none' : `1px solid rgba(var(--vrcd-neon-raw),0.15)`,
-            cursor: 'pointer',
-            userSelect: 'none'
-          }}
-          onClick={() => setCollapsed((v) => !v)}
+    <TooltipProvider delayDuration={200}>
+      <div className="rounded-md border border-border bg-card">
+        {/* Header */}
+        <button
+          type="button"
+          onClick={toggleCollapsed}
+          className="flex w-full items-center justify-between px-3 py-2 text-left hover:bg-accent/50"
         >
-          <span
-            style={{
-              color: 'rgba(var(--vrcd-neon-raw),0.65)',
-              fontSize: '11px',
-              letterSpacing: '0.14em'
-            }}
-          >
-            // QUICK COMMANDS
-          </span>
-          <span
-            style={{
-              color: 'rgba(var(--vrcd-neon-raw),0.45)',
-              fontSize: '10px',
-              letterSpacing: '0.1em'
-            }}
-          >
-            {collapsed ? '▸ EXPAND' : '▾ COLLAPSE'}
-          </span>
-        </div>
+          <div className="flex items-center gap-2">
+            {collapsed ? (
+              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+            )}
+            <span className="text-sm font-medium">Quick commands</span>
+            <span className="text-xs text-muted-foreground">{totalCount}</span>
+          </div>
+        </button>
 
+        {/* Body */}
         {!collapsed && (
-          <div
-            style={{
-              padding: '10px 12px',
-              maxHeight: '180px',
-              overflowY: 'auto',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '8px'
-            }}
-          >
+          <div className="border-t border-border px-3 py-3 space-y-3">
             {PRESETS.map((cat) => (
-              <div key={cat.name} style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                <span
-                  style={{
-                    color: 'rgba(var(--vrcd-neon-raw),0.45)',
-                    fontSize: '10px',
-                    letterSpacing: '0.16em',
-                    minWidth: '90px',
-                    flexShrink: 0
-                  }}
-                >
+              <div key={cat.name} className="space-y-1.5">
+                <Label className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                   {cat.name}
-                </span>
-                {cat.items.map((it) => (
-                  <Pill
-                    key={it.label}
-                    onClick={() => onRun(it.command)}
-                    disabled={disabled}
-                    title={it.desc ? `${it.desc}\n\n$ ${it.command}` : `$ ${it.command}`}
-                  >
-                    {it.label}
-                  </Pill>
-                ))}
+                </Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {cat.items.map((item) => (
+                    <ShortcutPill
+                      key={item.label}
+                      label={item.label}
+                      desc={item.desc}
+                      onClick={() => onRun(item.command)}
+                      disabled={disabled}
+                    />
+                  ))}
+                </div>
               </div>
             ))}
 
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                flexWrap: 'wrap',
-                paddingTop: '6px',
-                borderTop: `1px solid rgba(var(--vrcd-purple-raw),0.18)`
-              }}
-            >
-              <span
-                style={{
-                  color: 'rgba(var(--vrcd-purple-raw),0.7)',
-                  fontSize: '10px',
-                  letterSpacing: '0.16em',
-                  minWidth: '90px',
-                  flexShrink: 0
-                }}
-              >
-                MY MACROS
-              </span>
-              {custom.length === 0 && (
-                <span
-                  style={{
-                    color: 'rgba(var(--vrcd-neon-raw),0.35)',
-                    fontSize: '11px',
-                    fontStyle: 'italic'
-                  }}
-                >
-                  none yet — click [+] to add one
-                </span>
+            <Separator />
+
+            {/* Custom shortcuts */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                  Custom
+                </Label>
+                {!adding && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setAdding(true)}
+                    className="h-6 px-2 text-xs"
+                  >
+                    <Plus className="mr-1 h-3 w-3" />
+                    Add
+                  </Button>
+                )}
+              </div>
+
+              {custom.length === 0 && !adding && (
+                <p className="text-xs text-muted-foreground">No custom shortcuts yet.</p>
               )}
-              {custom.map((c) => (
-                <Pill
-                  key={c.id}
-                  onClick={() => onRun(c.command)}
-                  onContextMenu={handleCustomContextMenu(c)}
-                  disabled={disabled}
-                  title={`$ ${c.command}\n\nright-click to edit / delete`}
-                  variant="purple"
-                >
-                  {c.label}
-                </Pill>
-              ))}
-              <Pill
-                onClick={() => {
-                  setEditingId(null)
-                  setEditorOpen(true)
-                }}
-                disabled={disabled}
-                variant="add"
-                title="Add a custom shortcut"
-              >
-                + ADD
-              </Pill>
+
+              {custom.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {custom.map((s) => (
+                    <ShortcutPill
+                      key={s.id}
+                      label={s.label}
+                      desc={s.command}
+                      onClick={() => onRun(s.command)}
+                      disabled={disabled}
+                      onDelete={() => removeCustom(s.id)}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {adding && (
+                <div className="mt-2 space-y-2 rounded-md border border-border bg-background p-2">
+                  <Input
+                    value={newLabel}
+                    onChange={(e) => setNewLabel(e.target.value)}
+                    placeholder="Label (e.g. Show packages)"
+                    className="h-8 text-sm"
+                    autoFocus
+                  />
+                  <Input
+                    value={newCommand}
+                    onChange={(e) => setNewCommand(e.target.value)}
+                    placeholder="Shell command"
+                    className="h-8 font-mono text-sm"
+                  />
+                  <div className="flex justify-end gap-1.5">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setAdding(false)
+                        setNewLabel('')
+                        setNewCommand('')
+                      }}
+                      className="h-7 px-2 text-xs"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={addCustom}
+                      disabled={!newLabel.trim() || !newCommand.trim()}
+                      className="h-7 px-2 text-xs"
+                    >
+                      Save
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
+
+            {custom.length > 0 && (
+              <div className="flex justify-end">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setCustom([])}
+                  className="h-6 px-2 text-xs text-muted-foreground hover:text-destructive"
+                >
+                  <Trash2 className="mr-1 h-3 w-3" />
+                  Clear custom
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>
-
-      {editorOpen && (
-        <ShortcutEditor
-          initial={editing}
-          onSave={addOrUpdate}
-          onCancel={() => {
-            setEditorOpen(false)
-            setEditingId(null)
-          }}
-        />
-      )}
-    </>
+    </TooltipProvider>
   )
 }
 

@@ -4,7 +4,8 @@ import { useAdb } from '../hooks/useAdb'
 import { ExtendedDeviceInfo, hasBookmarkData, isWiFiBookmark } from '@shared/types'
 import { AdbShellDialog } from './AdbShellDialog'
 
-import { Avatar, AvatarFallback } from '@renderer/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@renderer/components/ui/avatar'
+import quest3sImage from '@renderer/assets/images/quest-3s.webp'
 import { Badge } from '@renderer/components/ui/badge'
 import { Button } from '@renderer/components/ui/button'
 import {
@@ -40,22 +41,29 @@ const HeadsetAvatar: React.FC<{ wifi: boolean; isQuestDevice: boolean }> = ({
   wifi,
   isQuestDevice
 }) => (
-  <Avatar className="h-10 w-10 flex-shrink-0 rounded-lg">
+  <Avatar className="h-16 w-16 flex-shrink-0 rounded-xl bg-gradient-to-br from-zinc-800 to-zinc-900 ring-1 ring-white/5">
+    {isQuestDevice && (
+      <AvatarImage
+        src={quest3sImage}
+        alt="Meta Quest 3S"
+        className="object-contain p-1"
+      />
+    )}
     <AvatarFallback
       className={
         wifi
-          ? 'rounded-lg bg-blue-500/10 text-blue-400'
+          ? 'rounded-xl bg-blue-500/10 text-blue-400'
           : isQuestDevice
-            ? 'rounded-lg bg-primary/10 text-primary'
-            : 'rounded-lg bg-muted text-muted-foreground'
+            ? 'rounded-xl bg-primary/10 text-primary'
+            : 'rounded-xl bg-muted text-muted-foreground'
       }
     >
       {wifi ? (
-        <Wifi className="h-4 w-4" aria-hidden />
+        <Wifi className="h-5 w-5" aria-hidden />
       ) : isQuestDevice ? (
-        <Headphones className="h-4 w-4" aria-hidden />
+        <Headphones className="h-5 w-5" aria-hidden />
       ) : (
-        <Usb className="h-4 w-4" aria-hidden />
+        <Usb className="h-5 w-5" aria-hidden />
       )}
     </AvatarFallback>
   </Avatar>
