@@ -892,7 +892,7 @@ const Settings: React.FC = () => {
         color: 'var(--quest-text)'
       }}
     >
-      <div style={{ width: '100%', maxWidth: '880px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <div style={{ width: '100%', maxWidth: '1280px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
         {/* Page header */}
         <div style={{ marginBottom: '8px' }}>
@@ -910,42 +910,60 @@ const Settings: React.FC = () => {
           </p>
         )}
 
-        {/* Collapsible sections */}
-        <Accordion
-          selectionMode="multiple"
-          defaultExpandedKeys={['appearance']}
-          className="gap-2 flex flex-col"
-          itemClasses={sectionClasses}
-        >
+        {/* Collapsible sections — 2-col grid; the densest section spans full width */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
 
-          {/* 1. Appearance & extras */}
-          <AccordionItem key="appearance" title="Appearance & extras">
-            <Card shadow="none" className="border border-default-100 bg-content1">
-              <CardBody className="p-4">
-                <ExtraSystemsSettings />
-              </CardBody>
-            </Card>
-          </AccordionItem>
+          {/* 1. Appearance & extras — spans full width */}
+          <div className="lg:col-span-2">
+            <Accordion
+              selectionMode="multiple"
+              defaultExpandedKeys={['appearance']}
+              itemClasses={sectionClasses}
+            >
+              <AccordionItem key="appearance" title="Appearance & extras">
+                <Card shadow="none" className="border border-default-100 bg-content1">
+                  <CardBody className="p-4">
+                    <ExtraSystemsSettings />
+                  </CardBody>
+                </Card>
+              </AccordionItem>
+            </Accordion>
+          </div>
 
           {/* 2. Multiplayer identity */}
-          <AccordionItem key="identity" title="Multiplayer identity">
-            <Card shadow="none" className="border border-default-100 bg-content1">
-              <CardBody className="p-4">
-                <MpUsernameSettings />
-              </CardBody>
-            </Card>
-          </AccordionItem>
+          <Accordion
+            selectionMode="multiple"
+            itemClasses={sectionClasses}
+          >
+            <AccordionItem key="identity" title="Multiplayer identity">
+              <Card shadow="none" className="border border-default-100 bg-content1">
+                <CardBody className="p-4">
+                  <MpUsernameSettings />
+                </CardBody>
+              </Card>
+            </AccordionItem>
+          </Accordion>
 
           {/* 3. Log upload */}
-          <AccordionItem key="logs" title="Log upload">
-            <Card shadow="none" className="border border-default-100 bg-content1">
-              <CardBody className="p-4">
-                <LogUploadSettings />
-              </CardBody>
-            </Card>
-          </AccordionItem>
+          <Accordion
+            selectionMode="multiple"
+            itemClasses={sectionClasses}
+          >
+            <AccordionItem key="logs" title="Log upload">
+              <Card shadow="none" className="border border-default-100 bg-content1">
+                <CardBody className="p-4">
+                  <LogUploadSettings />
+                </CardBody>
+              </Card>
+            </AccordionItem>
+          </Accordion>
 
-          {/* 4. Downloads & speed */}
+          {/* 4. Downloads & speed — spans full width because it's dense */}
+          <div className="lg:col-span-2">
+          <Accordion
+            selectionMode="multiple"
+            itemClasses={sectionClasses}
+          >
           <AccordionItem key="downloads" title="Downloads & speed">
             <Card shadow="none" className="border border-default-100 bg-content1">
               <CardBody className="p-4">
@@ -1083,34 +1101,46 @@ const Settings: React.FC = () => {
               </CardBody>
             </Card>
           </AccordionItem>
+          </Accordion>
+          </div>
 
           {/* 5. Game blacklist */}
-          <AccordionItem key="blacklist" title="Game blacklist">
-            <Card shadow="none" className="border border-default-100 bg-content1">
-              <CardBody className="p-4">
-                <BlacklistSettings />
-              </CardBody>
-            </Card>
-          </AccordionItem>
+          <Accordion
+            selectionMode="multiple"
+            itemClasses={sectionClasses}
+          >
+            <AccordionItem key="blacklist" title="Game blacklist">
+              <Card shadow="none" className="border border-default-100 bg-content1">
+                <CardBody className="p-4">
+                  <BlacklistSettings />
+                </CardBody>
+              </Card>
+            </AccordionItem>
+          </Accordion>
 
           {/* 6. Content filter */}
-          <AccordionItem key="content" title="Content filter">
-            <Card shadow="none" className="border border-default-100 bg-content1">
-              <CardBody className="p-4">
-                <SwitchRow
-                  label="Hide adult content"
-                  description="Filters explicit-tagged titles from the library. Requires a game refresh to take effect."
-                  checked={hideAdultContent}
-                  onChange={(v) => {
-                    setHideAdultContentLocal(v)
-                    try { localStorage.setItem('vrcyberdeck:hideAdult', String(v)) } catch { }
-                  }}
-                />
-              </CardBody>
-            </Card>
-          </AccordionItem>
+          <Accordion
+            selectionMode="multiple"
+            itemClasses={sectionClasses}
+          >
+            <AccordionItem key="content" title="Content filter">
+              <Card shadow="none" className="border border-default-100 bg-content1">
+                <CardBody className="p-4">
+                  <SwitchRow
+                    label="Hide adult content"
+                    description="Filters explicit-tagged titles from the library. Requires a game refresh to take effect."
+                    checked={hideAdultContent}
+                    onChange={(v) => {
+                      setHideAdultContentLocal(v)
+                      try { localStorage.setItem('vrcyberdeck:hideAdult', String(v)) } catch { }
+                    }}
+                  />
+                </CardBody>
+              </Card>
+            </AccordionItem>
+          </Accordion>
 
-        </Accordion>
+        </div>
 
         {/* Credits footer */}
         <div className="credits-settings-footer">

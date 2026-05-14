@@ -205,16 +205,15 @@ const Sidebar: React.FC<SidebarProps> = ({
             {isDark ? 'Dark mode' : 'Light mode'}
           </span>
           <Switch
-            size="sm"
+            size="md"
+            color="primary"
             isSelected={isDark}
             onValueChange={(val) => setColorScheme(val ? 'dark' : 'light')}
-            thumbIcon={({ isSelected }) =>
-              isSelected ? (
-                <WeatherMoonRegular fontSize={10} />
-              ) : (
-                <WeatherSunnyRegular fontSize={10} />
-              )
-            }
+            startContent={<WeatherMoonRegular fontSize={12} />}
+            endContent={<WeatherSunnyRegular fontSize={12} />}
+            classNames={{
+              wrapper: 'bg-default-200 group-data-[selected=true]:bg-primary'
+            }}
             aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
           />
         </div>
