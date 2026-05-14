@@ -13,12 +13,6 @@ import {
   ColumnSizingState
 } from '@tanstack/react-table'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { useAdb } from '../hooks/useAdb'
-import { useGames } from '../hooks/useGames'
-import { useDownload } from '../hooks/useDownload'
-import { useLanguage } from '../hooks/useLanguage'
-import { GameInfo } from '@shared/types'
-import placeholderImage from '../assets/images/game-placeholder.png'
 import {
   Button,
   Spinner,
@@ -33,8 +27,37 @@ import {
   DropdownItem,
   Tooltip,
   Divider,
-  Switch
+  Switch,
+  Card,
+  CardBody,
+  Image
 } from '@heroui/react'
+import {
+  Search,
+  LayoutGrid,
+  Table2,
+  MoreHorizontal,
+  SlidersHorizontal,
+  BatteryMedium,
+  LogOut,
+  RefreshCw,
+  Terminal,
+  Globe,
+  Upload,
+  FolderPlus,
+  Check,
+  X,
+  LibraryBig,
+  ArrowUpDown,
+  Settings,
+  ArrowDownToLine
+} from 'lucide-react'
+import { useAdb } from '../hooks/useAdb'
+import { useGames } from '../hooks/useGames'
+import { useDownload } from '../hooks/useDownload'
+import { useLanguage } from '../hooks/useLanguage'
+import { GameInfo } from '@shared/types'
+import placeholderImage from '../assets/images/game-placeholder.png'
 import GameDetailsDialog from './GameDetailsDialog'
 import { useGameDialog } from '@renderer/hooks/useGameDialog'
 import MirrorManagement from './MirrorManagement'
@@ -44,7 +67,6 @@ import { AdbShellDialog } from './AdbShellDialog'
 import { useTablePreferences } from '@renderer/hooks/useTablePreferences'
 import { useSettings } from '../hooks/useSettings'
 import { useMirrors } from '../hooks/useMirrors'
-import '../assets/games-view.css'
 import { TranslationKey } from '../i18n/translations'
 
 // ─── Column width constants ──────────────────────────────────────────────────
@@ -78,7 +100,9 @@ const readCategoryFilter = (): CategoryFilter => {
   try {
     const v = localStorage.getItem(CATEGORY_FILTER_KEY)
     if (v === 'all' || v === 'adult' || v === 'non-adult') return v
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return 'all'
 }
 
@@ -133,13 +157,13 @@ declare module '@tanstack/react-table' {
 }
 
 const COLOR_SWATCHES = [
-  { label: 'None',    value: 'transparent' },
-  { label: 'Cyan',    value: 'rgba(0, 212, 255, 0.07)' },
-  { label: 'Purple',  value: 'rgba(176, 64, 255, 0.07)' },
-  { label: 'Pink',    value: 'rgba(255, 0, 180, 0.06)' },
-  { label: 'Green',   value: 'rgba(0, 255, 128, 0.07)' },
-  { label: 'Blue',    value: 'rgba(40, 120, 255, 0.08)' },
-  { label: 'Subtle',  value: 'rgba(255, 255, 255, 0.05)' },
+  { label: 'None', value: 'transparent' },
+  { label: 'Cyan', value: 'rgba(0, 212, 255, 0.07)' },
+  { label: 'Purple', value: 'rgba(176, 64, 255, 0.07)' },
+  { label: 'Pink', value: 'rgba(255, 0, 180, 0.06)' },
+  { label: 'Green', value: 'rgba(0, 255, 128, 0.07)' },
+  { label: 'Blue', value: 'rgba(40, 120, 255, 0.08)' },
+  { label: 'Subtle', value: 'rgba(255, 255, 255, 0.05)' }
 ] as const
 
 function parseStorageGB(s: string | null | undefined): number {
@@ -148,78 +172,6 @@ function parseStorageGB(s: string | null | undefined): number {
   if (!m) return 0
   return /T/i.test(m[2]) ? parseFloat(m[1]) * 1024 : parseFloat(m[1])
 }
-
-// ─── Icons (inline SVG for zero-dep) ────────────────────────────────────────
-const SearchIcon = ({ size = 18 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
-  </svg>
-)
-const GridIcon = ({ size = 16 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
-  </svg>
-)
-const TableIcon = ({ size = 16 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M3 15h18M9 3v18" />
-  </svg>
-)
-const MoreIcon = ({ size = 16 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="5" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="12" cy="19" r="1" />
-  </svg>
-)
-const SlidersIcon = ({ size = 16 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" /><line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" /><line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" /><line x1="1" y1="14" x2="7" y2="14" /><line x1="9" y1="8" x2="15" y2="8" /><line x1="17" y1="16" x2="23" y2="16" />
-  </svg>
-)
-const BatteryIcon = ({ size = 14 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="1" y="6" width="18" height="12" rx="2" /><line x1="23" y1="13" x2="23" y2="11" />
-  </svg>
-)
-const DisconnectIcon = ({ size = 14 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
-  </svg>
-)
-const RefreshIcon = ({ size = 14 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-  </svg>
-)
-const TerminalIcon = ({ size = 14 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="4 17 10 11 4 5" /><line x1="12" y1="19" x2="20" y2="19" />
-  </svg>
-)
-const MirrorIcon = ({ size = 14 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-  </svg>
-)
-const UploadIcon = ({ size = 14 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="16 16 12 12 8 16" /><line x1="12" y1="12" x2="12" y2="21" /><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
-  </svg>
-)
-const FolderPlusIcon = ({ size = 14 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" /><line x1="12" y1="11" x2="12" y2="17" /><line x1="9" y1="14" x2="15" y2="14" />
-  </svg>
-)
-const CheckIcon = ({ size = 14 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="20 6 9 17 4 12" />
-  </svg>
-)
-const XIcon = ({ size = 14 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-  </svg>
-)
 
 // ─── ConnectedDeviceChip ─────────────────────────────────────────────────────
 interface ConnectedDeviceChipProps {
@@ -248,12 +200,7 @@ const ConnectedDeviceChip: React.FC<ConnectedDeviceChipProps> = ({
 }) => {
   if (!selectedDeviceDetails) {
     return (
-      <Chip
-        size="sm"
-        variant="flat"
-        color="danger"
-        className="text-xs"
-      >
+      <Chip size="sm" variant="flat" color="danger" className="text-xs">
         No device
       </Chip>
     )
@@ -262,19 +209,6 @@ const ConnectedDeviceChip: React.FC<ConnectedDeviceChipProps> = ({
   const modelName = selectedDeviceDetails.friendlyModelName || 'Quest'
   const battery = selectedDeviceDetails.batteryLevel
   const batteryColor = battery != null && battery <= 20 ? 'text-danger' : 'text-success'
-
-  const chipLabel = (
-    <span className="flex items-center gap-1.5">
-      <span className="w-1.5 h-1.5 rounded-full bg-success inline-block flex-shrink-0" />
-      <span className="font-medium truncate max-w-[140px]">{modelName}</span>
-      {battery != null && (
-        <span className={`flex items-center gap-0.5 ${batteryColor}`}>
-          <BatteryIcon size={12} />
-          <span>{battery}%</span>
-        </span>
-      )}
-    </span>
-  )
 
   return (
     <Popover placement="bottom-end">
@@ -285,14 +219,21 @@ const ConnectedDeviceChip: React.FC<ConnectedDeviceChipProps> = ({
           color="primary"
           className="cursor-pointer text-xs hover:opacity-80 transition-opacity"
         >
-          {chipLabel}
+          <span className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-success inline-block flex-shrink-0" />
+            <span className="font-medium truncate max-w-[140px]">{modelName}</span>
+            {battery != null && (
+              <span className={`flex items-center gap-0.5 ${batteryColor}`}>
+                <BatteryMedium size={12} />
+                <span>{battery}%</span>
+              </span>
+            )}
+          </span>
         </Chip>
       </PopoverTrigger>
       <PopoverContent className="p-2 min-w-[180px]">
         <div className="flex flex-col gap-1">
-          <p className="text-xs text-default-400 px-2 py-1 font-medium">
-            {modelName}
-          </p>
+          <p className="text-xs text-default-400 px-2 py-1 font-medium">{modelName}</p>
           <Divider className="my-0.5" />
           {selectedDeviceDetails.storageFree && selectedDeviceDetails.storageTotal && (
             <div className="px-2 py-1">
@@ -303,6 +244,7 @@ const ConnectedDeviceChip: React.FC<ConnectedDeviceChipProps> = ({
                 maxValue={parseStorageGB(selectedDeviceDetails.storageTotal)}
                 color="primary"
                 className="max-w-full"
+                aria-label="Storage"
               />
               <p className="text-xs text-default-500 mt-1">
                 {selectedDeviceDetails.storageFree} free
@@ -315,7 +257,7 @@ const ConnectedDeviceChip: React.FC<ConnectedDeviceChipProps> = ({
             onClick={onRefreshPackages}
             disabled={isBusy}
           >
-            <RefreshIcon size={12} />
+            <RefreshCw size={12} />
             {t('refreshQuest')}
           </button>
           <button
@@ -323,7 +265,7 @@ const ConnectedDeviceChip: React.FC<ConnectedDeviceChipProps> = ({
             onClick={onAdbShell}
             disabled={!isConnected}
           >
-            <TerminalIcon size={12} />
+            <Terminal size={12} />
             ADB shell
           </button>
           <Divider className="my-0.5" />
@@ -331,7 +273,7 @@ const ConnectedDeviceChip: React.FC<ConnectedDeviceChipProps> = ({
             className="flex items-center gap-2 text-xs text-danger hover:bg-danger/10 px-2 py-1.5 rounded-md transition-colors w-full text-left"
             onClick={onDisconnect}
           >
-            <DisconnectIcon size={12} />
+            <LogOut size={12} />
             Disconnect
           </button>
         </div>
@@ -380,27 +322,24 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
   const { activeMirror } = useMirrors()
   const isUsingVrSrcEndpoint = !activeMirror && serverConfig.baseUri.includes('srcdl1.xyz')
 
-  // ── Dialog/modal state ────────────────────────────────────────────────────
+  // ── Dialog/modal state ─────────────────────────────────────────────────────
   const [shellDialogOpen, setShellDialogOpen] = useState(false)
   const [showMirrorMgmt, setShowMirrorMgmt] = useState(false)
   const [showUploadGames, setShowUploadGames] = useState(false)
   const [viewOptionsOpen, setViewOptionsOpen] = useState(false)
 
-  // ── Table preferences & filtering ────────────────────────────────────────
+  // ── Table preferences & filtering ─────────────────────────────────────────
   const { prefs, setPrefs } = useTablePreferences()
   const [globalFilter, setGlobalFilter] = useState('')
   const [searchInput, setSearchInput] = useState('')
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const handleSearchChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const val = String(e.target.value)
-      setSearchInput(val)
-      if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
-      searchTimerRef.current = setTimeout(() => setGlobalFilter(val), 400)
-    },
-    []
-  )
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = String(e.target.value)
+    setSearchInput(val)
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
+    searchTimerRef.current = setTimeout(() => setGlobalFilter(val), 400)
+  }, [])
 
   const handleSearchClear = useCallback(() => {
     setSearchInput('')
@@ -412,10 +351,16 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
   )
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [activeFilter, setActiveFilter] = useState<FilterType>('all')
-  const [categoryFilter, setCategoryFilterState] = useState<CategoryFilter>(() => readCategoryFilter())
+  const [categoryFilter, setCategoryFilterState] = useState<CategoryFilter>(() =>
+    readCategoryFilter()
+  )
   const setCategoryFilter = useCallback((v: CategoryFilter) => {
     setCategoryFilterState(v)
-    try { localStorage.setItem(CATEGORY_FILTER_KEY, v) } catch { /* ignore */ }
+    try {
+      localStorage.setItem(CATEGORY_FILTER_KEY, v)
+    } catch {
+      /* ignore */
+    }
   }, [])
 
   const [isLoading, setIsLoading] = useState<boolean>(false)
@@ -455,12 +400,12 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
   useEffect(() => {
     const el = tableContainerRef.current
     if (!el) return
-    const padV  = 4  + (prefs.rowDensity / 100) * 12
+    const padV = 4 + (prefs.rowDensity / 100) * 12
     const thumb = 48 + (prefs.rowDensity / 100) * 42
-    el.style.setProperty('--row-pad-v',       `${padV}px`)
-    el.style.setProperty('--row-thumb-size',  `${Math.round(thumb)}px`)
-    el.style.setProperty('--row-even-color',  prefs.evenRowColor)
-    el.style.setProperty('--row-odd-color',   prefs.oddRowColor)
+    el.style.setProperty('--row-pad-v', `${padV}px`)
+    el.style.setProperty('--row-thumb-size', `${Math.round(thumb)}px`)
+    el.style.setProperty('--row-even-color', prefs.evenRowColor)
+    el.style.setProperty('--row-odd-color', prefs.oddRowColor)
   }, [prefs])
 
   useEffect(() => {
@@ -488,11 +433,23 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
         loadPackages().catch((err) => console.error('[GamesView] Package refresh error:', err))
       }
     })
-    return () => { unsubscribe() }
+    return () => {
+      unsubscribe()
+    }
   }, [selectedDevice, loadPackages])
 
   const downloadStatusMap = useMemo(() => {
-    const map = new Map<string, { status: string; progress: number; speed?: string; eta?: string; error?: string; downloadPath?: string }>()
+    const map = new Map<
+      string,
+      {
+        status: string
+        progress: number
+        speed?: string
+        eta?: string
+        error?: string
+        downloadPath?: string
+      }
+    >()
     downloadQueue.forEach((item) => {
       if (item.releaseName) {
         const progress =
@@ -527,7 +484,9 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
       window.requestAnimationFrame(updateTableWidth)
     })
     resizeObserver.observe(currentRef)
-    return () => { resizeObserver.unobserve(currentRef) }
+    return () => {
+      resizeObserver.unobserve(currentRef)
+    }
   }, [])
 
   const columns = useMemo<ColumnDef<GameInfo>[]>(() => {
@@ -555,18 +514,33 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
           return (
             <div className="flex items-center justify-center h-full gap-1">
               {isInstalled && !isUpdateAvailable && (
-                <Chip size="sm" color="success" variant="flat" className="text-xs px-1 py-0 min-w-0 h-5">
-                  <CheckIcon size={10} />
+                <Chip
+                  size="sm"
+                  color="success"
+                  variant="flat"
+                  className="text-xs px-1 py-0 min-w-0 h-5"
+                >
+                  <Check size={10} />
                 </Chip>
               )}
               {isUpdateAvailable && (
-                <Chip size="sm" color="warning" variant="flat" className="text-xs px-1 py-0 min-w-0 h-5">
-                  <RefreshIcon size={10} />
+                <Chip
+                  size="sm"
+                  color="warning"
+                  variant="flat"
+                  className="text-xs px-1 py-0 min-w-0 h-5"
+                >
+                  <RefreshCw size={10} />
                 </Chip>
               )}
               {isDownloaded && !isInstalled && (
-                <Chip size="sm" color="default" variant="flat" className="text-xs px-1 py-0 min-w-0 h-5">
-                  <CheckIcon size={10} />
+                <Chip
+                  size="sm"
+                  color="default"
+                  variant="flat"
+                  className="text-xs px-1 py-0 min-w-0 h-5"
+                >
+                  <Check size={10} />
                 </Chip>
               )}
             </div>
@@ -582,11 +556,19 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
           const pathValue = getValue()
           const imagePath = typeof pathValue === 'string' ? pathValue : ''
           return (
-            <div className="game-thumbnail-cell">
+            <div
+              style={{
+                width: 'var(--row-thumb-size, 64px)',
+                height: 'var(--row-thumb-size, 64px)',
+                borderRadius: '6px',
+                overflow: 'hidden',
+                flexShrink: 0
+              }}
+            >
               <img
                 src={imagePath ? `file://${imagePath}` : placeholderImage}
                 alt="Thumbnail"
-                className="game-thumbnail-img"
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
               />
             </div>
           )
@@ -603,10 +585,12 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
           for (let i = 0; i < Math.max(a.length, b.length); i++) {
             if (i >= a.length) return -1
             if (i >= b.length) return 1
-            const ca = a[i], cb = b[i]
+            const ca = a[i],
+              cb = b[i]
             if (ca === cb) continue
-            const p = (c: string) => c === '_' ? 0 : c >= '0' && c <= '9' ? 1 : 2
-            const pa = p(ca), pb = p(cb)
+            const p = (c: string) => (c === '_' ? 0 : c >= '0' && c <= '9' ? 1 : 2)
+            const pa = p(ca),
+              pb = p(cb)
             if (pa !== pb) return pa - pb
             return ca < cb ? -1 : 1
           }
@@ -625,27 +609,44 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
           const badge = getGameBadge(game)
 
           return (
-            <div className="flex flex-col justify-center h-full relative pb-2">
+            <div
+              className="flex flex-col justify-center h-full relative"
+              style={{ paddingBottom: '8px' }}
+            >
               <div className="mb-1">
-                <div className="game-name-main">{game.name}</div>
-                <div className="game-package-sub">{game.releaseName}</div>
-                <div className="game-package-sub">{game.packageName}</div>
+                <div className="text-sm font-medium text-foreground truncate">{game.name}</div>
+                <div className="text-xs text-default-400 truncate">{game.releaseName}</div>
+                <div className="text-xs text-default-400 truncate">{game.packageName}</div>
               </div>
               <div className="flex items-center gap-1 flex-wrap">
                 {badge === 'new' && (
-                  <Chip size="sm" color="success" variant="flat" className="text-xs h-4 px-1">NEW</Chip>
+                  <Chip size="sm" color="success" variant="flat" className="text-xs h-4 px-1">
+                    New
+                  </Chip>
                 )}
                 {badge === 'updated' && (
-                  <Chip size="sm" color="warning" variant="flat" className="text-xs h-4 px-1">UPDATED</Chip>
+                  <Chip size="sm" color="warning" variant="flat" className="text-xs h-4 px-1">
+                    Updated
+                  </Chip>
                 )}
                 {isQueued && (
-                  <Chip size="sm" color="primary" variant="flat" className="text-xs h-4 px-1">{t('queued')}</Chip>
+                  <Chip size="sm" color="primary" variant="flat" className="text-xs h-4 px-1">
+                    {t('queued')}
+                  </Chip>
                 )}
                 {(isDownloading || isExtracting || isInstalling) && (
                   <div className="flex items-center gap-1">
                     <Spinner size="sm" color="primary" />
-                    <Chip size="sm" color="primary" variant="bordered" className="text-xs h-4 px-1">
-                      {downloadInfo?.status}{isDownloading && downloadInfo?.progress != null ? ` ${downloadInfo.progress}%` : ''}
+                    <Chip
+                      size="sm"
+                      color="primary"
+                      variant="bordered"
+                      className="text-xs h-4 px-1"
+                    >
+                      {downloadInfo?.status}
+                      {isDownloading && downloadInfo?.progress != null
+                        ? ` ${downloadInfo.progress}%`
+                        : ''}
                     </Chip>
                     {isDownloading && downloadInfo?.speed && (
                       <span className="text-xs text-default-400">{downloadInfo.speed}</span>
@@ -653,7 +654,9 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
                   </div>
                 )}
                 {isInstallError && (
-                  <Chip size="sm" color="danger" variant="flat" className="text-xs h-4 px-1">{t('installError')}</Chip>
+                  <Chip size="sm" color="danger" variant="flat" className="text-xs h-4 px-1">
+                    {t('installError')}
+                  </Chip>
                 )}
               </div>
               {(isDownloading || isExtracting || isInstalling) && downloadInfo && (
@@ -683,12 +686,12 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
           const deviceVersion = row.original.deviceVersionCode
           const displayListVersion = listVersion ? `v${listVersion}` : '-'
           return (
-            <div className="version-cell">
-              <div className="list-version-main">{displayListVersion}</div>
+            <div className="flex flex-col justify-center">
+              <span className="text-sm text-foreground">{displayListVersion}</span>
               {isInstalled && (
-                <div className="installed-version-info">
+                <span className="text-xs text-default-400">
                   {deviceVersion !== undefined ? `Installed: v${deviceVersion}` : 'Installed'}
-                </div>
+                </span>
               )}
             </div>
           )
@@ -701,7 +704,11 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
         size: COLUMN_WIDTHS.POPULARITY,
         cell: (info) => {
           const count = info.getValue()
-          return typeof count === 'number' ? count.toLocaleString() : '-'
+          return (
+            <span className="text-sm text-foreground">
+              {typeof count === 'number' ? count.toLocaleString() : '-'}
+            </span>
+          )
         },
         enableResizing: true
       },
@@ -709,12 +716,13 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
         accessorKey: 'size',
         header: () => t('size'),
         size: COLUMN_WIDTHS.SIZE,
-        sortingFn: (a, b) => parseSizeBytes(a.original.size ?? '') - parseSizeBytes(b.original.size ?? ''),
+        sortingFn: (a, b) =>
+          parseSizeBytes(a.original.size ?? '') - parseSizeBytes(b.original.size ?? ''),
         cell: (info) => {
           const sizeValue = info.getValue()
           const sizeStr = String(sizeValue || '')
           if (sizeStr === '0 MB' || !sizeStr.trim()) return null
-          return sizeStr
+          return <span className="text-sm text-foreground">{sizeStr}</span>
         },
         enableResizing: true
       },
@@ -727,7 +735,9 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
           const db = b.original.lastUpdated ? new Date(b.original.lastUpdated).getTime() : 0
           return da - db
         },
-        cell: (info) => info.getValue() || '-',
+        cell: (info) => (
+          <span className="text-sm text-foreground">{String(info.getValue() || '-')}</span>
+        ),
         enableResizing: true
       },
       {
@@ -741,12 +751,16 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
         enableResizing: false
       }
     ]
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tableWidth, t])
 
   const filteredGames = useMemo(() => {
     let hideAdult = true
-    try { hideAdult = localStorage.getItem('vrcyberdeck:hideAdult') !== 'false' } catch { /* ignore */ }
+    try {
+      hideAdult = localStorage.getItem('vrcyberdeck:hideAdult') !== 'false'
+    } catch {
+      /* ignore */
+    }
     return games.filter((game) => {
       const size = String(game.size ?? '').trim()
       if (size === '0 MB' || size === '') return false
@@ -803,6 +817,7 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
 
   useEffect(() => {
     rowVirtualizer.measure()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prefs.rowDensity])
 
   const formatDate = (date: Date | null): string => {
@@ -833,7 +848,10 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
     return 0
   }
 
-  const handleRowClick = (_event: React.MouseEvent<HTMLTableRowElement>, row: Row<GameInfo>): void => {
+  const handleRowClick = (
+    _event: React.MouseEvent<HTMLTableRowElement>,
+    row: Row<GameInfo>
+  ): void => {
     setDialogGame(row.original)
     setIsDialogOpen(true)
   }
@@ -844,7 +862,9 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
 
   const handleCloseDialog = useCallback((): void => {
     setIsDialogOpen(false)
-    setTimeout(() => { setDialogGame(null) }, 300)
+    setTimeout(() => {
+      setDialogGame(null)
+    }, 300)
   }, [setDialogGame])
 
   const handleInstall = (game: GameInfo): void => {
@@ -877,7 +897,10 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
     }
     setIsLoading(true)
     try {
-      const uninstallSuccess = await window.api.adb.uninstallPackage(selectedDevice, game.packageName)
+      const uninstallSuccess = await window.api.adb.uninstallPackage(
+        selectedDevice,
+        game.packageName
+      )
       if (uninstallSuccess) {
         const downloadInfo = downloadStatusMap.get(game.releaseName)
         if (downloadInfo?.status === 'Completed') {
@@ -937,10 +960,12 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
       window.alert('Cannot start installation: Missing required information.')
       return
     }
-    window.api.downloads.installFromCompleted(game.releaseName, selectedDevice).catch((err) => {
-      console.error('Error triggering install from completed:', err)
-      window.alert('Failed to start installation.')
-    })
+    window.api.downloads
+      .installFromCompleted(game.releaseName, selectedDevice)
+      .catch((err) => {
+        console.error('Error triggering install from completed:', err)
+        window.alert('Failed to start installation.')
+      })
   }
 
   const handleDeleteDownloaded = useCallback(
@@ -1082,98 +1107,7 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
   const isBusy = adbLoading || loadingGames || isLoading || isManualInstalling
   const displayedCount = table.getFilteredRowModel().rows.length
 
-  // ── Manual install dialog (native-ish modal) ─────────────────────────────
-  const ManualInstallDialog = () => {
-    if (!showInstallDialog) return null
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-        <div className="bg-content1 border border-divider rounded-2xl p-6 w-full max-w-sm shadow-2xl">
-          <h3 className="text-base font-semibold text-foreground mb-4">{t('manualOperation')}</h3>
-          <div className="mb-3">
-            <p className="text-sm text-foreground/80">{installStatusMessage}</p>
-          </div>
-          {isManualInstalling && (
-            <div className="flex items-center gap-2 mb-3">
-              <Spinner size="sm" color="primary" />
-              <span className="text-sm text-default-500">{t('processing')}</span>
-            </div>
-          )}
-          {installSuccess !== null && (
-            <div className={`flex items-center gap-2 p-3 rounded-xl mb-3 ${installSuccess ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}`}>
-              {installSuccess ? <CheckIcon size={16} /> : <XIcon size={16} />}
-              <span className="text-sm font-medium">
-                {installSuccess ? t('operationSuccess') : t('operationFailed')}
-              </span>
-            </div>
-          )}
-          <Button
-            color="primary"
-            size="sm"
-            onPress={closeInstallDialog}
-            isDisabled={isManualInstalling}
-            className="w-full"
-          >
-            {isManualInstalling ? t('processing') : t('close')}
-          </Button>
-        </div>
-      </div>
-    )
-  }
-
-  // ── OBB confirm dialog ───────────────────────────────────────────────────
-  const ObbConfirmDialog = () => {
-    if (!showObbConfirmDialog) return null
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-        <div className="bg-content1 border border-divider rounded-2xl p-6 w-full max-w-sm shadow-2xl">
-          <h3 className="text-base font-semibold text-foreground mb-3">{t('confirmObbCopy')}</h3>
-          <p className="text-sm text-default-500 mb-2">
-            {t('obbNoPackageFound')} &quot;{obbFolderToConfirm?.split(/[/\\]/).pop()}&quot;.
-          </p>
-          <p className="text-sm text-default-500 mb-4">{t('obbCopyConfirm')}</p>
-          <div className="flex gap-2">
-            <Button color="primary" size="sm" onPress={handleObbConfirmCopy} isDisabled={isManualInstalling} className="flex-1">
-              {t('copyAnyway')}
-            </Button>
-            <Button color="default" variant="flat" size="sm" onPress={handleObbCancelCopy} isDisabled={isManualInstalling} className="flex-1">
-              {t('cancel')}
-            </Button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // ── Mirror management modal ──────────────────────────────────────────────
-  const MirrorManagementModal = () => {
-    if (!showMirrorMgmt) return null
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-        <div className="bg-content1 border border-divider rounded-2xl flex flex-col shadow-2xl" style={{ width: '80vw', maxWidth: '1200px', height: '80vh' }}>
-          <div className="flex items-center justify-between px-6 py-4 border-b border-divider flex-shrink-0">
-            <h3 className="text-base font-semibold text-foreground">Mirror management</h3>
-            <button
-              className="text-default-400 hover:text-default-700 transition-colors"
-              onClick={() => setShowMirrorMgmt(false)}
-              aria-label="Close"
-            >
-              <XIcon size={16} />
-            </button>
-          </div>
-          <div className="flex-1 overflow-hidden p-6">
-            <MirrorManagement />
-          </div>
-          <div className="px-6 py-4 border-t border-divider flex-shrink-0 flex justify-end">
-            <Button color="default" variant="flat" size="sm" onPress={() => setShowMirrorMgmt(false)}>
-              Close
-            </Button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // ── View options popover content ─────────────────────────────────────────
+  // ── View options popover content ──────────────────────────────────────────
   const ViewOptionsContent = () => (
     <div className="p-4 min-w-[260px] flex flex-col gap-4">
       {prefs.viewMode === 'cards' ? (
@@ -1212,7 +1146,8 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
                 onClick={() => {
                   const dir = prefs.cardSortDir === 'asc' ? 'desc' : 'asc'
                   setPrefs({ cardSortDir: dir })
-                  if (prefs.cardSortKey) setSorting([{ id: prefs.cardSortKey, desc: dir === 'desc' }])
+                  if (prefs.cardSortKey)
+                    setSorting([{ id: prefs.cardSortKey, desc: dir === 'desc' }])
                 }}
                 className="bg-content2 border border-divider rounded-lg text-xs text-foreground px-2 py-1.5 hover:bg-content3 transition-colors"
               >
@@ -1261,7 +1196,10 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
                         className="w-5 h-5 rounded transition-all"
                         style={{
                           background: sw.value,
-                          outline: prefs[key] === sw.value ? '2px solid #3D7DFF' : '1px solid rgba(128,128,128,0.3)',
+                          outline:
+                            prefs[key] === sw.value
+                              ? '2px solid #3D7DFF'
+                              : '1px solid rgba(128,128,128,0.3)',
                           outlineOffset: '1px'
                         }}
                         onClick={() => setPrefs({ [key]: sw.value })}
@@ -1288,84 +1226,122 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
   return (
     <div className="flex flex-col h-full overflow-hidden bg-background">
 
-      {/* ════════════ HEADER BAR ════════════ */}
-      <header className="flex-shrink-0 flex items-center gap-3 px-4 py-3 border-b border-divider bg-content1/80 backdrop-blur-sm z-10">
-        {/* Title + count */}
-        <div className="flex-shrink-0">
-          <h1 className="text-sm font-semibold text-foreground leading-none">Library</h1>
-          <p className="text-xs text-default-400 mt-0.5 leading-none">
-            {displayedCount.toLocaleString()} games
-          </p>
-        </div>
-
-        <Divider orientation="vertical" className="h-8 mx-1" />
-
-        {/* Search input */}
-        <div className="relative flex items-center flex-1 min-w-0 max-w-xs">
-          <span className="absolute left-3 text-default-400 pointer-events-none">
-            <SearchIcon size={14} />
-          </span>
-          <input
-            type="search"
-            value={searchInput}
-            onChange={handleSearchChange}
-            placeholder={t('searchPlaceholder')}
-            className="w-full bg-content2 border border-divider rounded-xl pl-8 pr-8 py-1.5 text-sm text-foreground placeholder:text-default-400 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+      {/* ════════ HEADER BAR ════════ */}
+      <header className="flex-shrink-0 px-8 py-4 border-b border-divider bg-content1/80 backdrop-blur-sm z-10">
+        {/* Row 1: title + count + device chip */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Library</h1>
+            <span className="text-sm text-default-500">
+              {displayedCount.toLocaleString()} games
+              {lastSyncTime && <span className="ml-2">· Synced {formatDate(lastSyncTime)}</span>}
+            </span>
+          </div>
+          <ConnectedDeviceChip
+            selectedDeviceDetails={selectedDeviceDetails}
+            isConnected={isConnected}
+            isBusy={isBusy}
+            onDisconnect={() => {
+              requestUploadCheck()
+              disconnectDevice()
+            }}
+            onRefreshPackages={() => loadPackages()}
+            onAdbShell={() => setShellDialogOpen(true)}
+            t={t}
           />
-          {searchInput && (
-            <button
-              onClick={handleSearchClear}
-              className="absolute right-3 text-default-400 hover:text-default-700 transition-colors"
-            >
-              <XIcon size={12} />
-            </button>
-          )}
         </div>
 
-        {/* Filter tabs */}
-        <div className="flex items-center gap-1 flex-shrink-0">
-          {(
-            [
-              { key: 'all' as FilterType, label: t('filterAll'), count: counts.total },
-              { key: 'installed' as FilterType, label: t('filterInstalled'), count: counts.installed },
-              { key: 'update' as FilterType, label: t('filterUpdates'), count: counts.updates }
-            ] as { key: FilterType; label: string; count: number }[]
-          ).map(({ key, label, count }) => (
-            <button
-              key={key}
-              onClick={() => setActiveFilter(key)}
-              disabled={key === 'update' && counts.updates === 0}
-              className={[
-                'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
-                activeFilter === key
-                  ? 'bg-primary text-white shadow-sm'
-                  : 'text-default-500 hover:text-foreground hover:bg-content2',
-                key === 'update' && counts.updates === 0 ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
-              ].join(' ')}
-            >
-              {label}
-              <span className={`text-xs px-1 py-0 rounded-full ${activeFilter === key ? 'bg-white/20 text-white' : 'bg-content3 text-default-400'}`}>
-                {count}
-              </span>
-            </button>
-          ))}
-        </div>
+        {/* Row 2: toolbar */}
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Search */}
+          <div className="relative flex items-center flex-1 min-w-0 max-w-md">
+            <span className="absolute left-3 text-default-400 pointer-events-none z-10">
+              <Search size={14} />
+            </span>
+            <input
+              type="search"
+              value={searchInput}
+              onChange={handleSearchChange}
+              placeholder={t('searchPlaceholder')}
+              className="w-full bg-content2 border border-divider rounded-xl pl-8 pr-8 py-1.5 text-sm text-foreground placeholder:text-default-400 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+            />
+            {searchInput && (
+              <button
+                onClick={handleSearchClear}
+                className="absolute right-3 text-default-400 hover:text-default-700 transition-colors"
+                aria-label="Clear search"
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
 
-        {/* Category select */}
-        <select
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value as CategoryFilter)}
-          title="Filter by category"
-          className="flex-shrink-0 bg-content2 text-foreground border border-divider rounded-lg text-xs px-2 py-1.5 focus:outline-none focus:border-primary transition-colors cursor-pointer"
-        >
-          <option value="all">All games</option>
-          <option value="non-adult">Safe only</option>
-          <option value="adult">Adult (18+)</option>
-        </select>
+          {/* Filter tabs */}
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {(
+              [
+                { key: 'all' as FilterType, label: t('filterAll'), count: counts.total },
+                {
+                  key: 'installed' as FilterType,
+                  label: t('filterInstalled'),
+                  count: counts.installed
+                },
+                {
+                  key: 'update' as FilterType,
+                  label: t('filterUpdates'),
+                  count: counts.updates
+                }
+              ] as { key: FilterType; label: string; count: number }[]
+            ).map(({ key, label, count }) => (
+              <button
+                key={key}
+                onClick={() => setActiveFilter(key)}
+                disabled={key === 'update' && counts.updates === 0}
+                className={[
+                  'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
+                  activeFilter === key
+                    ? 'bg-primary text-white shadow-sm'
+                    : 'text-default-500 hover:text-foreground hover:bg-content2',
+                  key === 'update' && counts.updates === 0
+                    ? 'opacity-40 cursor-not-allowed'
+                    : 'cursor-pointer'
+                ].join(' ')}
+              >
+                {label}
+                <span
+                  className={`text-xs px-1 py-0 rounded-full ${
+                    activeFilter === key
+                      ? 'bg-white/20 text-white'
+                      : 'bg-content3 text-default-400'
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            ))}
+          </div>
 
-        <div className="flex items-center gap-1.5 ml-auto flex-shrink-0">
+          {/* Category select */}
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value as CategoryFilter)}
+            title="Filter by category"
+            className="flex-shrink-0 bg-content2 text-foreground border border-divider rounded-lg text-xs px-2 py-1.5 focus:outline-none focus:border-primary transition-colors cursor-pointer"
+          >
+            <option value="all">All games</option>
+            <option value="non-adult">Safe only</option>
+            <option value="adult">Adult (18+)</option>
+          </select>
+
+          <div className="flex-1" />
+
           {/* View toggle */}
-          <Tooltip content={prefs.viewMode === 'table' ? 'Switch to card view' : 'Switch to table view'} placement="bottom">
+          <Tooltip
+            content={
+              prefs.viewMode === 'table' ? 'Switch to card view' : 'Switch to table view'
+            }
+            placement="bottom"
+          >
             <Button
               isIconOnly
               size="sm"
@@ -1382,15 +1358,25 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
                 }
               }}
             >
-              {prefs.viewMode === 'table' ? <GridIcon size={15} /> : <TableIcon size={15} />}
+              {prefs.viewMode === 'table' ? <LayoutGrid size={15} /> : <Table2 size={15} />}
             </Button>
           </Tooltip>
 
           {/* Display options popover */}
-          <Popover isOpen={viewOptionsOpen} onOpenChange={setViewOptionsOpen} placement="bottom-end">
+          <Popover
+            isOpen={viewOptionsOpen}
+            onOpenChange={setViewOptionsOpen}
+            placement="bottom-end"
+          >
             <PopoverTrigger>
-              <Button isIconOnly size="sm" variant="flat" color="default" aria-label="Display options">
-                <SlidersIcon size={15} />
+              <Button
+                isIconOnly
+                size="sm"
+                variant="flat"
+                color="default"
+                aria-label="Display options"
+              >
+                <SlidersHorizontal size={15} />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="p-0">
@@ -1401,14 +1387,20 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
           {/* More dropdown */}
           <Dropdown placement="bottom-end">
             <DropdownTrigger>
-              <Button isIconOnly size="sm" variant="flat" color="default" aria-label="More actions">
-                <MoreIcon size={15} />
+              <Button
+                isIconOnly
+                size="sm"
+                variant="flat"
+                color="default"
+                aria-label="More actions"
+              >
+                <MoreHorizontal size={15} />
               </Button>
             </DropdownTrigger>
             <DropdownMenu aria-label="More actions">
               <DropdownItem
                 key="refresh"
-                startContent={<RefreshIcon size={14} />}
+                startContent={<RefreshCw size={14} />}
                 onPress={() => refreshGames()}
                 isDisabled={isBusy}
               >
@@ -1416,29 +1408,26 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
               </DropdownItem>
               <DropdownItem
                 key="mirrors"
-                startContent={<MirrorIcon size={14} />}
+                startContent={<Globe size={14} />}
                 onPress={() => setShowMirrorMgmt(true)}
               >
                 Manage mirrors
               </DropdownItem>
               {isUsingVrSrcEndpoint ? (
-                <DropdownItem
-                  key="local-upload"
-                  startContent={<UploadIcon size={14} />}
-                >
+                <DropdownItem key="local-upload" startContent={<Upload size={14} />}>
                   <LocalUploadDialog />
                 </DropdownItem>
-              ) : null as unknown as React.ReactElement}
+              ) : (null as unknown as React.ReactElement)}
               <DropdownItem
                 key="upload-games"
-                startContent={<UploadIcon size={14} />}
+                startContent={<Upload size={14} />}
                 onPress={() => setShowUploadGames(true)}
               >
                 Upload local files
               </DropdownItem>
               <DropdownItem
                 key="manual-install-apk"
-                startContent={<FolderPlusIcon size={14} />}
+                startContent={<FolderPlus size={14} />}
                 onPress={() => handleManualInstall('apk')}
                 isDisabled={isBusy || !isConnected}
               >
@@ -1446,7 +1435,7 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
               </DropdownItem>
               <DropdownItem
                 key="manual-install-folder"
-                startContent={<FolderPlusIcon size={14} />}
+                startContent={<FolderPlus size={14} />}
                 onPress={() => handleManualInstall('folder')}
                 isDisabled={isBusy || !isConnected}
               >
@@ -1454,7 +1443,7 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
               </DropdownItem>
               <DropdownItem
                 key="copy-obb"
-                startContent={<FolderPlusIcon size={14} />}
+                startContent={<FolderPlus size={14} />}
                 onPress={handleCopyObbFolder}
                 isDisabled={isBusy || !isConnected}
               >
@@ -1462,7 +1451,7 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
               </DropdownItem>
               <DropdownItem
                 key="adb-shell"
-                startContent={<TerminalIcon size={14} />}
+                startContent={<Terminal size={14} />}
                 onPress={() => setShellDialogOpen(true)}
                 isDisabled={!isConnected}
               >
@@ -1470,41 +1459,32 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
               </DropdownItem>
               <DropdownItem
                 key="transfers"
-                startContent={<RefreshIcon size={14} />}
+                startContent={<ArrowDownToLine size={14} />}
                 onPress={onTransfers}
               >
                 Transfers
                 {activeTransferCount > 0 && (
-                  <Chip size="sm" color="primary" variant="flat" className="ml-2 text-xs h-4">{activeTransferCount}</Chip>
+                  <Chip size="sm" color="primary" variant="flat" className="ml-2 text-xs h-4">
+                    {activeTransferCount}
+                  </Chip>
                 )}
               </DropdownItem>
               <DropdownItem
                 key="settings"
-                startContent={<SlidersIcon size={14} />}
+                startContent={<Settings size={14} />}
                 onPress={onSettings}
               >
                 Settings
               </DropdownItem>
               <DropdownItem
                 key="back"
-                startContent={<DisconnectIcon size={14} />}
+                startContent={<LogOut size={14} />}
                 onPress={onBackToDevices}
               >
                 Change device
               </DropdownItem>
             </DropdownMenu>
           </Dropdown>
-
-          {/* Connected device chip */}
-          <ConnectedDeviceChip
-            selectedDeviceDetails={selectedDeviceDetails}
-            isConnected={isConnected}
-            isBusy={isBusy}
-            onDisconnect={() => { requestUploadCheck(); disconnectDevice() }}
-            onRefreshPackages={() => loadPackages()}
-            onAdbShell={() => setShellDialogOpen(true)}
-            t={t}
-          />
         </div>
       </header>
 
@@ -1518,17 +1498,22 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
             color="primary"
             label={getProcessMessage()}
             className="max-w-full"
+            aria-label="Library sync progress"
           />
         </div>
       )}
 
-      {/* Busy indicator strip (non-progress ops) */}
-      {isBusy && !loadingGames && !downloadProgress && !extractProgress && installStatusMessage === '' && (
-        <div className="flex-shrink-0 flex items-center gap-2 px-4 py-2 bg-primary/5 border-b border-primary/20">
-          <Spinner size="sm" color="primary" />
-          <span className="text-xs text-default-500">{t('processing')}</span>
-        </div>
-      )}
+      {/* Busy indicator strip */}
+      {isBusy &&
+        !loadingGames &&
+        !downloadProgress &&
+        !extractProgress &&
+        installStatusMessage === '' && (
+          <div className="flex-shrink-0 flex items-center gap-2 px-4 py-2 bg-primary/5 border-b border-primary/20">
+            <Spinner size="sm" color="primary" />
+            <span className="text-xs text-default-500">{t('processing')}</span>
+          </div>
+        )}
 
       {/* Install status strip */}
       {installStatusMessage !== '' && !showInstallDialog && (
@@ -1537,8 +1522,8 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
         </div>
       )}
 
-      {/* ════════════ CONTENT ════════════ */}
-      <div className="flex-1 overflow-hidden flex flex-col p-3">
+      {/* ════════ CONTENT ════════ */}
+      <div className="flex-1 overflow-hidden flex flex-col px-8 py-6">
         {loadingGames ? (
           <div className="flex flex-col items-center justify-center flex-1 gap-4">
             <Spinner size="lg" color="primary" />
@@ -1546,19 +1531,13 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
           </div>
         ) : gamesError ? (
           <div className="flex items-center justify-center flex-1">
-            <p className="text-sm text-danger">{gamesError}</p>
+            <div className="bg-danger/10 border border-danger/30 rounded-large px-6 py-4">
+              <p className="text-sm text-danger">{gamesError}</p>
+            </div>
           </div>
         ) : games.length === 0 ? (
           <div className="flex flex-col items-center justify-center flex-1 gap-5 px-6 py-10">
-            {/* Calm Quest controller icon */}
-            <svg width="72" height="72" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="opacity-30">
-              <rect x="8" y="20" width="48" height="28" rx="14" stroke="currentColor" strokeWidth="2"/>
-              <path d="M20 32h-6M17 29v6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
-              <circle cx="44" cy="29" r="2.5" fill="currentColor" opacity="0.6"/>
-              <circle cx="50" cy="32" r="2.5" fill="currentColor"/>
-              <circle cx="44" cy="35" r="2.5" fill="currentColor" opacity="0.5"/>
-              <circle cx="38" cy="32" r="2.5" fill="currentColor" opacity="0.4"/>
-            </svg>
+            <LibraryBig size={48} className="text-default-300" />
             <div className="text-center">
               <p className="text-base font-semibold text-foreground mb-1">No games found</p>
               <p className="text-sm text-default-400">Sync your library to discover games</p>
@@ -1567,7 +1546,7 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
               color="primary"
               variant="flat"
               size="sm"
-              startContent={<RefreshIcon size={14} />}
+              startContent={<RefreshCw size={14} />}
               onPress={() => refreshGames()}
               isDisabled={isBusy}
             >
@@ -1576,105 +1555,167 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
           </div>
         ) : rows.length === 0 ? (
           <div className="flex flex-col items-center justify-center flex-1 gap-3">
-            <p className="text-sm text-default-400">No games match your filters.</p>
-            <Button size="sm" variant="flat" onPress={() => { setActiveFilter('all'); setSearchInput(''); setGlobalFilter('') }}>
+            <LibraryBig size={48} className="text-default-300" />
+            <p className="text-base text-default-500">No games match your filters.</p>
+            <Button
+              size="sm"
+              variant="flat"
+              onPress={() => {
+                setActiveFilter('all')
+                setSearchInput('')
+                setGlobalFilter('')
+              }}
+            >
               Clear filters
             </Button>
           </div>
         ) : prefs.viewMode === 'cards' ? (
           /* ── Card grid ── */
           <div
-            className="games-card-grid"
-            style={{ '--card-min-w': `${140 + Math.round(prefs.cardSize * 1.4)}px` } as React.CSSProperties}
+            className="overflow-auto"
+            style={{
+              display: 'grid',
+              gridTemplateColumns: `repeat(auto-fill, minmax(${140 + Math.round(prefs.cardSize * 1.4)}px, 1fr))`,
+              gap: '1rem',
+              alignContent: 'start'
+            }}
           >
             {rows.map((row) => {
               const game = row.original
               const ds = game.releaseName ? downloadStatusMap.get(game.releaseName) : undefined
+              const badge = getGameBadge(game)
               return (
-                <div
+                <Card
                   key={row.id}
-                  className="game-card"
-                  onClick={() => { setDialogGame(game); setIsDialogOpen(true) }}
+                  isPressable
+                  shadow="sm"
+                  onPress={() => {
+                    setDialogGame(game)
+                    setIsDialogOpen(true)
+                  }}
+                  className="bg-content1 border border-divider"
                 >
-                  <div className="game-card-thumbnail-wrap">
-                    <img
-                      src={game.thumbnailPath ? `file://${game.thumbnailPath}` : placeholderImage}
-                      alt={game.name}
-                    />
-                    {game.isInstalled ? (
-                      <span className={`game-card-badge ${game.hasUpdate ? 'update' : 'installed'}`}>
-                        {game.hasUpdate ? 'Update' : 'Installed'}
-                      </span>
-                    ) : (() => {
-                      const badge = getGameBadge(game)
-                      if (badge === 'new') return <span className="game-card-badge new-game">New</span>
-                      if (badge === 'updated') return <span className="game-card-badge updated-game">Updated</span>
-                      return null
-                    })()}
-                  </div>
-                  <div className="game-card-body">
-                    <div className="game-card-title">{game.name}</div>
-                    <div className="game-card-meta">
-                      {game.version ? `v${game.version}` : ''}{game.size ? ` · ${game.size}` : ''}
+                  <CardBody className="p-0">
+                    <div className="relative aspect-square w-full overflow-hidden">
+                      <Image
+                        src={
+                          game.thumbnailPath ? `file://${game.thumbnailPath}` : placeholderImage
+                        }
+                        alt={game.name}
+                        radius="none"
+                        className="w-full h-full object-cover"
+                        removeWrapper
+                      />
+                      {game.isInstalled ? (
+                        <div className="absolute top-2 right-2">
+                          <Chip
+                            size="sm"
+                            color={game.hasUpdate ? 'warning' : 'success'}
+                            variant="flat"
+                            className="text-xs"
+                          >
+                            {game.hasUpdate ? 'Update' : 'Installed'}
+                          </Chip>
+                        </div>
+                      ) : badge ? (
+                        <div className="absolute top-2 right-2">
+                          <Chip
+                            size="sm"
+                            color={badge === 'new' ? 'success' : 'warning'}
+                            variant="flat"
+                            className="text-xs"
+                          >
+                            {badge === 'new' ? 'New' : 'Updated'}
+                          </Chip>
+                        </div>
+                      ) : null}
                     </div>
-                    {ds && ds.status !== 'Completed' && (
-                      <div className="game-card-status-text">
-                        {ds.status}{ds.progress ? ` ${ds.progress}%` : ''}
-                      </div>
-                    )}
-                  </div>
-                </div>
+                    <div className="p-3 flex flex-col gap-1">
+                      <p className="text-sm font-semibold line-clamp-2">{game.name}</p>
+                      <p className="text-xs text-default-500">
+                        {game.version ? `v${game.version}` : ''}
+                        {game.size ? ` · ${game.size}` : ''}
+                      </p>
+                      {ds && ds.status !== 'Completed' && (
+                        <p className="text-xs text-primary">
+                          {ds.status}
+                          {ds.progress ? ` ${ds.progress}%` : ''}
+                        </p>
+                      )}
+                    </div>
+                  </CardBody>
+                </Card>
               )
             })}
           </div>
         ) : (
           /* ── Table ── */
           <div
-            className={`table-wrapper${prefs.alternatingRows ? ' alternating-rows' : ''}`}
             ref={tableContainerRef}
+            className="overflow-auto flex-1"
+            style={{ position: 'relative' }}
           >
             {(() => {
               const totalSize = table.getTotalSize()
               return (
-                <table className="games-table" style={{ width: '100%', minWidth: totalSize, display: 'block' }}>
-                  <thead style={{ display: 'block', position: 'sticky', top: 0, zIndex: 1 }}>
+                <table
+                  style={{
+                    width: '100%',
+                    minWidth: totalSize,
+                    display: 'block',
+                    borderCollapse: 'collapse'
+                  }}
+                >
+                  <thead
+                    style={{ display: 'block', position: 'sticky', top: 0, zIndex: 1 }}
+                  >
                     {table.getHeaderGroups().map((headerGroup) => (
                       <tr key={headerGroup.id} style={{ display: 'flex', width: '100%' }}>
                         {headerGroup.headers.map((header) => (
                           <th
                             key={header.id}
                             colSpan={header.colSpan}
+                            className="text-xs font-semibold text-default-500 px-3 py-2 border-b border-divider bg-content1"
                             style={{
                               flex: `${header.getSize()} 0 0`,
                               minWidth: header.getSize(),
                               position: 'relative',
                               display: 'flex',
-                              alignItems: 'center'
+                              alignItems: 'center',
+                              textAlign: 'left'
                             }}
                           >
                             {header.isPlaceholder ? null : (
                               <div
-                                className={header.column.getCanSort() ? 'cursor-pointer select-none' : ''}
+                                className={
+                                  header.column.getCanSort()
+                                    ? 'cursor-pointer select-none flex items-center gap-1'
+                                    : 'flex items-center gap-1'
+                                }
                                 onClick={header.column.getToggleSortingHandler()}
                                 style={{ flex: 1, minWidth: 0 }}
                               >
-                                {flexRender(header.column.columnDef.header, header.getContext())}
+                                {flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext()
+                                )}
                                 {header.column.getIsSorted() === 'asc' && (
-                                  <span className="ml-1 text-xs text-primary">▲</span>
+                                  <span className="text-xs text-primary">▲</span>
                                 )}
                                 {header.column.getIsSorted() === 'desc' && (
-                                  <span className="ml-1 text-xs text-default-400">▼</span>
+                                  <span className="text-xs text-default-400">▼</span>
                                 )}
-                                {!header.column.getIsSorted() && header.column.getCanSort() && (
-                                  <span className="ml-1 text-xs text-default-200">⇅</span>
-                                )}
+                                {!header.column.getIsSorted() &&
+                                  header.column.getCanSort() && (
+                                    <ArrowUpDown size={10} className="text-default-300" />
+                                  )}
                               </div>
                             )}
                             {header.column.getCanResize() && (
                               <div
                                 onMouseDown={header.getResizeHandler()}
                                 onTouchStart={header.getResizeHandler()}
-                                className={`resizer${header.column.getIsResizing() ? ' isResizing' : ''}`}
+                                className={`absolute right-0 top-0 h-full w-1 cursor-col-resize hover:bg-primary/40 transition-colors ${header.column.getIsResizing() ? 'bg-primary' : ''}`}
                               />
                             )}
                           </th>
@@ -1682,30 +1723,43 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
                       </tr>
                     ))}
                   </thead>
-                  <tbody style={{ display: 'block', height: `${rowVirtualizer.getTotalSize()}px`, position: 'relative' }}>
+                  <tbody
+                    style={{
+                      display: 'block',
+                      height: `${rowVirtualizer.getTotalSize()}px`,
+                      position: 'relative'
+                    }}
+                  >
                     {rowVirtualizer.getVirtualItems().map((virtualRow) => {
                       const row = rows[virtualRow.index]
                       if (!row) return null
-                      const rowClasses = [
-                        row.original.isInstalled ? 'row-installed' : 'row-not-installed',
-                        row.original.hasUpdate ? 'row-update-available' : '',
-                        virtualRow.index % 2 === 0 ? 'row-even' : 'row-odd'
-                      ].filter(Boolean).join(' ')
+                      const isEven = virtualRow.index % 2 === 0
+                      const bgColor = prefs.alternatingRows
+                        ? isEven
+                          ? prefs.evenRowColor
+                          : prefs.oddRowColor
+                        : undefined
                       return (
                         <tr
                           key={row.id}
-                          className={rowClasses}
                           style={{
                             display: 'flex',
-                            position: 'absolute', top: 0, left: 0, width: '100%',
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
                             height: `${virtualRow.size}px`,
-                            transform: `translateY(${virtualRow.start}px)`
+                            transform: `translateY(${virtualRow.start}px)`,
+                            backgroundColor: bgColor,
+                            cursor: 'pointer'
                           }}
+                          className="hover:bg-content2 transition-colors border-b border-divider"
                           onClick={(e) => handleRowClick(e, row)}
                         >
                           {row.getVisibleCells().map((cell) => (
                             <td
                               key={cell.id}
+                              className="text-sm text-foreground px-3 py-2 whitespace-nowrap"
                               style={{
                                 flex: `${cell.column.getSize()} 0 0`,
                                 minWidth: cell.column.getSize(),
@@ -1714,7 +1768,14 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
                                 overflow: 'hidden'
                               }}
                             >
-                              <div style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              <div
+                                style={{
+                                  flex: 1,
+                                  minWidth: 0,
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis'
+                                }}
+                              >
                                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
                               </div>
                             </td>
@@ -1730,16 +1791,7 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
         )}
       </div>
 
-      {/* ── Last synced footer strip ── */}
-      {lastSyncTime && (
-        <div className="flex-shrink-0 flex items-center justify-end px-4 py-1.5 border-t border-divider bg-content1/40">
-          <p className="text-xs text-default-300">
-            {t('lastSynced')} {formatDate(lastSyncTime)}
-          </p>
-        </div>
-      )}
-
-      {/* ════════════ DIALOGS ════════════ */}
+      {/* ════════ DIALOGS ════════ */}
       {dialogGame && (
         <GameDetailsDialog
           game={dialogGame}
@@ -1768,9 +1820,122 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
         />
       )}
 
+      {/* Manual install dialog */}
+      {showInstallDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-content1 border border-divider rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <h3 className="text-base font-semibold text-foreground mb-4">
+              {t('manualOperation')}
+            </h3>
+            <div className="mb-3">
+              <p className="text-sm text-foreground/80">{installStatusMessage}</p>
+            </div>
+            {isManualInstalling && (
+              <div className="flex items-center gap-2 mb-3">
+                <Spinner size="sm" color="primary" />
+                <span className="text-sm text-default-500">{t('processing')}</span>
+              </div>
+            )}
+            {installSuccess !== null && (
+              <div
+                className={`flex items-center gap-2 p-3 rounded-xl mb-3 ${installSuccess ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}`}
+              >
+                {installSuccess ? <Check size={16} /> : <X size={16} />}
+                <span className="text-sm font-medium">
+                  {installSuccess ? t('operationSuccess') : t('operationFailed')}
+                </span>
+              </div>
+            )}
+            <Button
+              color="primary"
+              size="sm"
+              onPress={closeInstallDialog}
+              isDisabled={isManualInstalling}
+              className="w-full"
+            >
+              {isManualInstalling ? t('processing') : t('close')}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* OBB confirm dialog */}
+      {showObbConfirmDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-content1 border border-divider rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <h3 className="text-base font-semibold text-foreground mb-3">
+              {t('confirmObbCopy')}
+            </h3>
+            <p className="text-sm text-default-500 mb-2">
+              {t('obbNoPackageFound')} &quot;{obbFolderToConfirm?.split(/[/\\]/).pop()}&quot;.
+            </p>
+            <p className="text-sm text-default-500 mb-4">{t('obbCopyConfirm')}</p>
+            <div className="flex gap-2">
+              <Button
+                color="primary"
+                size="sm"
+                onPress={handleObbConfirmCopy}
+                isDisabled={isManualInstalling}
+                className="flex-1"
+              >
+                {t('copyAnyway')}
+              </Button>
+              <Button
+                color="default"
+                variant="flat"
+                size="sm"
+                onPress={handleObbCancelCopy}
+                isDisabled={isManualInstalling}
+                className="flex-1"
+              >
+                {t('cancel')}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mirror management modal */}
+      {showMirrorMgmt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div
+            className="bg-content1 border border-divider rounded-2xl flex flex-col shadow-2xl"
+            style={{ width: '80vw', maxWidth: '1200px', height: '80vh' }}
+          >
+            <div className="flex items-center justify-between px-6 py-4 border-b border-divider flex-shrink-0">
+              <h3 className="text-base font-semibold text-foreground">Mirror management</h3>
+              <button
+                className="text-default-400 hover:text-default-700 transition-colors"
+                onClick={() => setShowMirrorMgmt(false)}
+                aria-label="Close"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-hidden p-6">
+              <MirrorManagement />
+            </div>
+            <div className="px-6 py-4 border-t border-divider flex-shrink-0 flex justify-end">
+              <Button
+                color="default"
+                variant="flat"
+                size="sm"
+                onPress={() => setShowMirrorMgmt(false)}
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upload games dialog */}
       {showUploadGames && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-content1 border border-divider rounded-2xl shadow-2xl overflow-hidden" style={{ width: '90vw', maxWidth: '700px', maxHeight: '85vh' }}>
+          <div
+            className="bg-content1 border border-divider rounded-2xl shadow-2xl overflow-hidden"
+            style={{ width: '90vw', maxWidth: '700px', maxHeight: '85vh' }}
+          >
             <div className="flex items-center justify-between px-6 py-4 border-b border-divider">
               <h3 className="text-base font-semibold text-foreground">Upload local files</h3>
               <button
@@ -1778,7 +1943,7 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
                 onClick={() => setShowUploadGames(false)}
                 aria-label="Close"
               >
-                <XIcon size={16} />
+                <X size={16} />
               </button>
             </div>
             <div className="overflow-auto" style={{ maxHeight: 'calc(85vh - 120px)' }}>
@@ -1787,10 +1952,6 @@ const GamesView: React.FC<GamesViewProps> = ({ onBackToDevices, onTransfers, onS
           </div>
         </div>
       )}
-
-      <ManualInstallDialog />
-      <ObbConfirmDialog />
-      <MirrorManagementModal />
     </div>
   )
 }

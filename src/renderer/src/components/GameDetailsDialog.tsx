@@ -1,70 +1,44 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  Button,
+  Chip,
+  Progress,
+  Spinner,
+  Divider
+} from '@heroui/react'
+import {
+  X,
+  Download,
+  Trash2,
+  RefreshCw,
+  ArrowUp,
+  Trash,
+  CheckCircle,
+  Info,
+  Play,
+  ChevronDown
+} from 'lucide-react'
 import { GameInfo } from '@shared/types'
-import { Button, Chip, Progress, Spinner } from '@heroui/react'
-import placeholderImage from '../assets/images/game-placeholder.png'
 import { useGames } from '@renderer/hooks/useGames'
 import { useAdb } from '@renderer/hooks/useAdb'
 import { getSideloadingDisabled } from '@renderer/hooks/useExtrasSettings'
 import ErrorDetailDialog, { ErrorPhase } from './ErrorDetailDialog'
 import NoteRenderer from './NoteRenderer'
-
-// ─── Inline icons ─────────────────────────────────────────────────────────────
-const XIcon = ({ size = 16 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-  </svg>
-)
-const DownloadIcon = ({ size = 14 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
-  </svg>
-)
-const TrashIcon = ({ size = 14 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-  </svg>
-)
-const RefreshIcon = ({ size = 14 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-  </svg>
-)
-const ArrowUpIcon = ({ size = 14 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="12" y1="19" x2="12" y2="5" /><polyline points="5 12 12 5 19 12" />
-  </svg>
-)
-const UninstallIcon = ({ size = 14 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
-  </svg>
-)
-const CheckCircleIcon = ({ size = 14 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
-  </svg>
-)
-const InfoIcon = ({ size = 14 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
-  </svg>
-)
-const PlayIcon = ({ size = 14 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polygon points="5 3 19 12 5 21 5 3" />
-  </svg>
-)
-const ChevronDownIcon = ({ size = 14 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="6 9 12 15 18 9" />
-  </svg>
-)
+import placeholderImage from '../assets/images/game-placeholder.png'
 
 interface GameDetailsDialogProps {
   game: GameInfo | null
   open: boolean
   onClose: () => void
-  downloadStatusMap: Map<string, { status: string; progress: number; error?: string; downloadPath?: string }>
+  downloadStatusMap: Map<
+    string,
+    { status: string; progress: number; error?: string; downloadPath?: string }
+  >
   onInstall: (game: GameInfo) => void
   onUninstall: (game: GameInfo) => Promise<void>
   onReinstall: (game: GameInfo) => Promise<void>
@@ -79,10 +53,21 @@ interface GameDetailsDialogProps {
 }
 
 const GameDetailsDialog: React.FC<GameDetailsDialogProps> = ({
-  game, open, onClose, downloadStatusMap,
-  onInstall, onUninstall, onReinstall, onUpdate,
-  onRetry, onCancelDownload, onDeleteDownloaded,
-  onInstallFromCompleted, getNote, isConnected, isBusy
+  game,
+  open,
+  onClose,
+  downloadStatusMap,
+  onInstall,
+  onUninstall,
+  onReinstall,
+  onUpdate,
+  onRetry,
+  onCancelDownload,
+  onDeleteDownloaded,
+  onInstallFromCompleted,
+  getNote,
+  isConnected,
+  isBusy
 }) => {
   const { getTrailerUrl } = useGames()
   const { selectedDevice } = useAdb()
@@ -157,11 +142,19 @@ const GameDetailsDialog: React.FC<GameDetailsDialogProps> = ({
       setLoadingNote(true)
       setCurrentGameNote(null)
       getNote(game.releaseName)
-        .then((n) => { if (alive) setCurrentGameNote(n) })
-        .catch(() => { if (alive) setCurrentGameNote('Error loading note.') })
-        .finally(() => { if (alive) setLoadingNote(false) })
+        .then((n) => {
+          if (alive) setCurrentGameNote(n)
+        })
+        .catch(() => {
+          if (alive) setCurrentGameNote('Error loading note.')
+        })
+        .finally(() => {
+          if (alive) setLoadingNote(false)
+        })
     }
-    return () => { alive = false }
+    return () => {
+      alive = false
+    }
   }, [open, game, getNote])
 
   useEffect(() => {
@@ -171,115 +164,122 @@ const GameDetailsDialog: React.FC<GameDetailsDialogProps> = ({
       setTrailerUrl(null)
       setTrailerOpen(false)
       getTrailerUrl(game.name, game.packageName)
-        .then((url) => { if (alive && url) setTrailerUrl(url) })
-        .catch(() => { /* no trailer */ })
-        .finally(() => { if (alive) setLoadingVideo(false) })
+        .then((url) => {
+          if (alive && url) setTrailerUrl(url)
+        })
+        .catch(() => {
+          /* no trailer */
+        })
+        .finally(() => {
+          if (alive) setLoadingVideo(false)
+        })
     }
-    return () => { alive = false }
+    return () => {
+      alive = false
+    }
   }, [open, game, getTrailerUrl])
-
-  // Close on Escape
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    if (open) document.addEventListener('keydown', handler)
-    return () => document.removeEventListener('keydown', handler)
-  }, [open, onClose])
 
   const renderActionButtons = (g: GameInfo): React.ReactNode => {
     const status = downloadStatusMap.get(g.releaseName || '')?.status
-    const canCancel = status === 'Downloading' || status === 'Extracting' || status === 'Queued'
+    const canCancel =
+      status === 'Downloading' || status === 'Extracting' || status === 'Queued'
     const isDownloaded = status === 'Completed'
     const isInstallError = status === 'InstallError'
     const isErrorOrCancelled = status === 'Error' || status === 'Cancelled'
     const isInstalling = status === 'Installing'
     const noSideload = getSideloadingDisabled()
 
-    if (isInstalling) return (
-      <div className="flex items-center gap-2 text-sm text-default-500">
-        <Spinner size="sm" color="primary" />
-        <span>Installing...</span>
-      </div>
-    )
+    if (isInstalling)
+      return (
+        <div className="flex items-center gap-2 text-sm text-default-500">
+          <Spinner size="sm" color="primary" />
+          <span>Installing...</span>
+        </div>
+      )
 
-    if (canCancel) return (
-      <Button
-        color="danger"
-        variant="flat"
-        size="sm"
-        startContent={<XIcon size={13} />}
-        onPress={() => onCancelDownload(g)}
-        isDisabled={isBusy}
-      >
-        Cancel download
-      </Button>
-    )
-
-    if (isInstallError || isErrorOrCancelled) return (
-      <div className="flex gap-2 flex-wrap">
-        <Button
-          color="primary"
-          size="sm"
-          startContent={<RefreshIcon size={13} />}
-          onPress={() => onRetry(g)}
-          isDisabled={isBusy}
-        >
-          Retry
-        </Button>
-        {(isInstallError || status === 'Error') && (
-          <Button
-            color="danger"
-            variant="flat"
-            size="sm"
-            startContent={<InfoIcon size={13} />}
-            onPress={() => setErrorDetailOpen(true)}
-          >
-            Error details
-          </Button>
-        )}
+    if (canCancel)
+      return (
         <Button
           color="danger"
           variant="flat"
           size="sm"
-          startContent={<TrashIcon size={13} />}
-          onPress={() => onDeleteDownloaded(g)}
+          startContent={<X size={13} />}
+          onPress={() => onCancelDownload(g)}
           isDisabled={isBusy}
         >
-          Delete files
+          Cancel download
         </Button>
-      </div>
-    )
+      )
 
-    if (g.isInstalled) {
-      if (g.hasUpdate) return (
+    if (isInstallError || isErrorOrCancelled)
+      return (
         <div className="flex gap-2 flex-wrap">
-          {!noSideload && (
-            <Button
-              color="primary"
-              size="sm"
-              startContent={<ArrowUpIcon size={13} />}
-              onPress={() => onUpdate(g)}
-              isDisabled={!isConnected || isBusy}
-            >
-              Update
-            </Button>
-          )}
-          {!noSideload && (
+          <Button
+            color="primary"
+            size="sm"
+            startContent={<RefreshCw size={13} />}
+            onPress={() => onRetry(g)}
+            isDisabled={isBusy}
+          >
+            Retry
+          </Button>
+          {(isInstallError || status === 'Error') && (
             <Button
               color="danger"
               variant="flat"
               size="sm"
-              startContent={<UninstallIcon size={13} />}
-              onPress={() => onUninstall(g)}
-              isDisabled={!isConnected || isBusy}
+              startContent={<Info size={13} />}
+              onPress={() => setErrorDetailOpen(true)}
             >
-              Uninstall
+              Error details
             </Button>
           )}
-          {noSideload && (
-            <span className="text-xs text-default-400">Sideloading disabled</span>
-          )}
+          <Button
+            color="danger"
+            variant="flat"
+            size="sm"
+            startContent={<Trash2 size={13} />}
+            onPress={() => onDeleteDownloaded(g)}
+            isDisabled={isBusy}
+          >
+            Delete files
+          </Button>
         </div>
       )
+
+    if (g.isInstalled) {
+      if (g.hasUpdate)
+        return (
+          <div className="flex gap-2 flex-wrap">
+            {!noSideload && (
+              <Button
+                color="primary"
+                size="sm"
+                startContent={<ArrowUp size={13} />}
+                onPress={() => onUpdate(g)}
+                isDisabled={!isConnected || isBusy}
+              >
+                Update
+              </Button>
+            )}
+            {!noSideload && (
+              <Button
+                color="danger"
+                variant="flat"
+                size="sm"
+                startContent={<Trash size={13} />}
+                onPress={() => onUninstall(g)}
+                isDisabled={!isConnected || isBusy}
+              >
+                Uninstall
+              </Button>
+            )}
+            {noSideload && (
+              <span className="text-xs text-default-400">Sideloading disabled</span>
+            )}
+          </div>
+        )
+
       return (
         <div className="flex gap-2 flex-wrap">
           {!noSideload && (
@@ -287,7 +287,7 @@ const GameDetailsDialog: React.FC<GameDetailsDialogProps> = ({
               color="default"
               variant="flat"
               size="sm"
-              startContent={<RefreshIcon size={13} />}
+              startContent={<RefreshCw size={13} />}
               onPress={() => onReinstall(g)}
               isDisabled={!isConnected || isBusy}
             >
@@ -299,7 +299,7 @@ const GameDetailsDialog: React.FC<GameDetailsDialogProps> = ({
               color="danger"
               variant="flat"
               size="sm"
-              startContent={<UninstallIcon size={13} />}
+              startContent={<Trash size={13} />}
               onPress={() => onUninstall(g)}
               isDisabled={!isConnected || isBusy}
             >
@@ -313,37 +313,38 @@ const GameDetailsDialog: React.FC<GameDetailsDialogProps> = ({
       )
     }
 
-    if (isDownloaded) return (
-      <div className="flex gap-2 flex-wrap">
-        {!noSideload && (
+    if (isDownloaded)
+      return (
+        <div className="flex gap-2 flex-wrap">
+          {!noSideload && (
+            <Button
+              color="primary"
+              size="sm"
+              startContent={<CheckCircle size={13} />}
+              onPress={() => onInstallFromCompleted(g)}
+              isDisabled={!isConnected || isBusy}
+            >
+              Install
+            </Button>
+          )}
           <Button
-            color="primary"
+            color="danger"
+            variant="flat"
             size="sm"
-            startContent={<CheckCircleIcon size={13} />}
-            onPress={() => onInstallFromCompleted(g)}
-            isDisabled={!isConnected || isBusy}
+            startContent={<Trash2 size={13} />}
+            onPress={() => onDeleteDownloaded(g)}
+            isDisabled={isBusy}
           >
-            Install
+            Delete files
           </Button>
-        )}
-        <Button
-          color="danger"
-          variant="flat"
-          size="sm"
-          startContent={<TrashIcon size={13} />}
-          onPress={() => onDeleteDownloaded(g)}
-          isDisabled={isBusy}
-        >
-          Delete files
-        </Button>
-      </div>
-    )
+        </div>
+      )
 
     return (
       <Button
         color="primary"
         size="sm"
-        startContent={<DownloadIcon size={13} />}
+        startContent={<Download size={13} />}
         onPress={() => onInstall(g)}
         isDisabled={isBusy}
       >
@@ -352,211 +353,255 @@ const GameDetailsDialog: React.FC<GameDetailsDialogProps> = ({
     )
   }
 
-  if (!game || !open) return null
+  if (!game) return null
 
   const statusEntry = game.releaseName ? downloadStatusMap.get(game.releaseName) : undefined
   const dlStatus = statusEntry?.status
   const dlProgress = statusEntry?.progress ?? 0
-  const showProgress = dlStatus === 'Downloading' || dlStatus === 'Extracting' || dlStatus === 'Installing'
+  const showProgress =
+    dlStatus === 'Downloading' || dlStatus === 'Extracting' || dlStatus === 'Installing'
 
-  // Status chip color + label
-  const statusColor: 'success' | 'warning' | 'danger' | 'default' | 'primary' =
-    game.isInstalled
-      ? (game.hasUpdate ? 'warning' : 'success')
-      : dlStatus === 'Completed' ? 'default'
-      : dlStatus === 'InstallError' || dlStatus === 'Error' ? 'danger'
-      : dlStatus === 'Installing' ? 'primary'
-      : 'default'
+  const statusColor: 'success' | 'warning' | 'danger' | 'default' | 'primary' = game.isInstalled
+    ? game.hasUpdate
+      ? 'warning'
+      : 'success'
+    : dlStatus === 'Completed'
+      ? 'default'
+      : dlStatus === 'InstallError' || dlStatus === 'Error'
+        ? 'danger'
+        : dlStatus === 'Installing'
+          ? 'primary'
+          : 'default'
 
-  const statusLabel =
-    game.isInstalled ? (game.hasUpdate ? 'Update available' : 'Installed')
-    : dlStatus === 'Completed' ? 'Downloaded'
-    : dlStatus === 'InstallError' ? 'Install error'
-    : dlStatus === 'Error' ? 'Download error'
-    : dlStatus === 'Installing' ? 'Installing...'
-    : 'Not installed'
+  const statusLabel = game.isInstalled
+    ? game.hasUpdate
+      ? 'Update available'
+      : 'Installed'
+    : dlStatus === 'Completed'
+      ? 'Downloaded'
+      : dlStatus === 'InstallError'
+        ? 'Install error'
+        : dlStatus === 'Error'
+          ? 'Download error'
+          : dlStatus === 'Installing'
+            ? 'Installing...'
+            : 'Not installed'
 
   return (
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
-    >
-      <div
-        className="bg-content1 border border-divider rounded-2xl shadow-2xl flex flex-col overflow-hidden"
-        style={{ width: '90vw', maxWidth: 680, maxHeight: '92vh' }}
-        onClick={(e) => e.stopPropagation()}
+    <>
+      <Modal
+        isOpen={open}
+        onClose={onClose}
+        size="2xl"
+        scrollBehavior="inside"
+        classNames={{
+          base: 'bg-content1 border border-divider',
+          header: 'border-b border-divider pb-3',
+          footer: 'border-t border-divider pt-3'
+        }}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-divider flex-shrink-0">
-          <h2 className="text-base font-semibold text-foreground truncate pr-4">{game.name}</h2>
-          <button
-            onClick={onClose}
-            className="flex-shrink-0 text-default-400 hover:text-default-700 transition-colors rounded-lg p-1 hover:bg-default-100"
-            aria-label="Close"
-          >
-            <XIcon size={16} />
-          </button>
-        </div>
+        <ModalContent>
+          <ModalHeader>
+            <span className="text-base font-semibold text-foreground truncate">{game.name}</span>
+          </ModalHeader>
 
-        {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-5">
+          <ModalBody className="flex flex-col gap-5 py-5">
+            {/* Cover + meta row */}
+            <div className="flex gap-5">
+              {/* Thumbnail */}
+              <div className="flex-shrink-0 w-48 aspect-square rounded-medium overflow-hidden border border-divider bg-content2">
+                <img
+                  src={game.thumbnailPath ? `file://${game.thumbnailPath}` : placeholderImage}
+                  alt={game.name}
+                  className="w-full h-full object-cover block"
+                />
+              </div>
 
-          {/* Cover + meta row */}
-          <div className="flex gap-4">
-            {/* Cover image */}
-            <div className="flex-shrink-0 w-32 h-32 rounded-xl overflow-hidden border border-divider bg-content2">
-              <img
-                src={game.thumbnailPath ? `file://${game.thumbnailPath}` : placeholderImage}
-                alt={game.name}
-                className="w-full h-full object-cover block"
-              />
-            </div>
+              {/* Meta */}
+              <div className="flex flex-col gap-2 min-w-0 flex-1">
+                <p className="text-xs text-default-400 font-mono truncate">{game.packageName}</p>
 
-            {/* Meta */}
-            <div className="flex flex-col gap-2 min-w-0 flex-1">
-              <p className="text-xs text-default-400 font-mono truncate">{game.packageName}</p>
-
-              {/* Status + badges row */}
-              <div className="flex items-center gap-2 flex-wrap">
-                {(dlStatus === 'InstallError' || dlStatus === 'Error') ? (
-                  <button
-                    type="button"
-                    onClick={() => setErrorDetailOpen(true)}
-                    title="Click for error details"
-                    className="flex items-center gap-1"
-                  >
-                    <Chip size="sm" color={statusColor} variant="flat" className="text-xs cursor-pointer hover:opacity-80">
-                      {statusLabel} <InfoIcon size={11} />
+                {/* Status chip */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  {dlStatus === 'InstallError' || dlStatus === 'Error' ? (
+                    <button
+                      type="button"
+                      onClick={() => setErrorDetailOpen(true)}
+                      title="Click for error details"
+                      className="flex items-center gap-1"
+                    >
+                      <Chip
+                        size="sm"
+                        color={statusColor}
+                        variant="flat"
+                        className="text-xs cursor-pointer hover:opacity-80"
+                      >
+                        <span className="flex items-center gap-1">
+                          {statusLabel} <Info size={11} />
+                        </span>
+                      </Chip>
+                    </button>
+                  ) : (
+                    <Chip size="sm" color={statusColor} variant="flat" className="text-xs">
+                      {statusLabel}
                     </Chip>
-                  </button>
-                ) : (
-                  <Chip size="sm" color={statusColor} variant="flat" className="text-xs">{statusLabel}</Chip>
-                )}
-              </div>
+                  )}
+                </div>
 
-              {/* Info row */}
-              <div className="flex items-center gap-3 flex-wrap">
-                {game.size && game.size !== '0 MB' && (
-                  <span className="text-xs text-default-400">{game.size}</span>
-                )}
-                {game.downloads != null && (
-                  <span className="text-xs text-default-400">{game.downloads.toLocaleString()} downloads</span>
-                )}
-                {game.version && (
-                  <span className="text-xs text-default-400">
-                    v{game.version}
-                    {game.isInstalled && game.deviceVersionCode && (
-                      <span className="text-default-300"> (installed: v{game.deviceVersionCode})</span>
-                    )}
+                {/* Info row */}
+                <div className="flex items-center gap-3 flex-wrap">
+                  {game.size && game.size !== '0 MB' && (
+                    <span className="text-xs text-default-400">{game.size}</span>
+                  )}
+                  {game.downloads != null && (
+                    <span className="text-xs text-default-400">
+                      {game.downloads.toLocaleString()} downloads
+                    </span>
+                  )}
+                  {game.version && (
+                    <span className="text-xs text-default-400">
+                      v{game.version}
+                      {game.isInstalled && game.deviceVersionCode && (
+                        <span className="text-default-300">
+                          {' '}
+                          (installed: v{game.deviceVersionCode})
+                        </span>
+                      )}
+                    </span>
+                  )}
+                </div>
+
+                {/* Release + date */}
+                <div className="flex flex-col gap-0.5">
+                  {game.releaseName && (
+                    <p className="text-xs text-default-400 truncate">{game.releaseName}</p>
+                  )}
+                  {game.lastUpdated && (
+                    <p className="text-xs text-default-400">{String(game.lastUpdated)}</p>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className="mt-auto pt-1">{renderActionButtons(game)}</div>
+              </div>
+            </div>
+
+            {/* Download progress */}
+            {showProgress && (
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <Spinner size="sm" color="primary" />
+                  <span className="text-xs text-default-500">
+                    {dlStatus}... {dlProgress}%
                   </span>
-                )}
+                </div>
+                <Progress
+                  value={dlProgress}
+                  maxValue={100}
+                  color="primary"
+                  size="sm"
+                  className="w-full"
+                  aria-label="Download progress"
+                />
               </div>
+            )}
 
-              {/* Release + date */}
-              <div className="flex flex-col gap-0.5">
-                {game.releaseName && (
-                  <p className="text-xs text-default-400 truncate">{game.releaseName}</p>
-                )}
-                {game.lastUpdated && (
-                  <p className="text-xs text-default-400">{String(game.lastUpdated)}</p>
-                )}
-              </div>
+            <Divider />
 
-              {/* Action buttons */}
-              <div className="mt-1">
-                {renderActionButtons(game)}
-              </div>
-            </div>
-          </div>
-
-          {/* Download progress */}
-          {showProgress && (
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-2">
-                <Spinner size="sm" color="primary" />
-                <span className="text-xs text-default-500">
-                  {dlStatus}... {dlProgress}%
-                </span>
-              </div>
-              <Progress value={dlProgress} maxValue={100} color="primary" size="sm" className="w-full" aria-label="Download progress" />
-            </div>
-          )}
-
-          {/* Divider */}
-          <div className="h-px bg-divider" />
-
-          {/* Trailer section */}
-          <div>
-            <button
-              onClick={() => setTrailerOpen(!trailerOpen)}
-              className="flex items-center gap-2 text-xs text-default-500 hover:text-foreground transition-colors w-full text-left"
-            >
-              <span className={`transition-transform ${trailerOpen ? 'rotate-180' : ''}`}>
-                <ChevronDownIcon size={13} />
-              </span>
-              <PlayIcon size={13} />
-              <span className="font-medium">Trailer</span>
-              {loadingVideo && <Spinner size="sm" color="default" className="ml-1" />}
-              {!trailerUrl && !loadingVideo && (
-                <span className="ml-auto text-default-300">Not available</span>
-              )}
-            </button>
-
-            {trailerOpen && trailerUrl && (
-              <div
-                className="relative mt-3 rounded-xl overflow-hidden bg-black border border-divider"
-                style={{ paddingTop: '56.25%' }}
+            {/* Trailer section */}
+            <div>
+              <button
+                onClick={() => setTrailerOpen(!trailerOpen)}
+                className="flex items-center gap-2 text-xs text-default-500 hover:text-foreground transition-colors w-full text-left"
               >
-                {/youtube(?:-nocookie)?\.com|youtu\.be/.test(trailerUrl) ? (
-                  <webview
-                    ref={webviewRef}
-                    key={trailerUrl}
-                    src={trailerUrl}
-                    // eslint-disable-next-line react/no-unknown-property
-                    partition="persist:youtube"
-                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
-                  />
-                ) : (
-                  <video
-                    key={trailerUrl}
-                    src={trailerUrl}
-                    controls
-                    autoPlay
-                    playsInline
-                    preload="metadata"
-                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'contain' }}
-                  />
+                <span
+                  className={`transition-transform duration-200 ${trailerOpen ? 'rotate-180' : ''}`}
+                >
+                  <ChevronDown size={13} />
+                </span>
+                <Play size={13} />
+                <span className="font-medium">Trailer</span>
+                {loadingVideo && <Spinner size="sm" color="default" className="ml-1" />}
+                {!trailerUrl && !loadingVideo && (
+                  <span className="ml-auto text-default-400">Not available</span>
                 )}
-              </div>
-            )}
-            {trailerOpen && !trailerUrl && !loadingVideo && (
-              <p className="text-xs text-default-400 mt-2">No trailer available.</p>
-            )}
-          </div>
+              </button>
 
-          {/* Divider */}
-          <div className="h-px bg-divider" />
+              {trailerOpen && trailerUrl && (
+                <div
+                  className="relative mt-3 rounded-xl overflow-hidden bg-black border border-divider"
+                  style={{ paddingTop: '56.25%' }}
+                >
+                  {/youtube(?:-nocookie)?\.com|youtu\.be/.test(trailerUrl) ? (
+                    <webview
+                      ref={webviewRef}
+                      key={trailerUrl}
+                      src={trailerUrl}
+                      // eslint-disable-next-line react/no-unknown-property
+                      partition="persist:youtube"
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        border: 'none'
+                      }}
+                    />
+                  ) : (
+                    <video
+                      key={trailerUrl}
+                      src={trailerUrl}
+                      controls
+                      autoPlay
+                      playsInline
+                      preload="metadata"
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain'
+                      }}
+                    />
+                  )}
+                </div>
+              )}
+              {trailerOpen && !trailerUrl && !loadingVideo && (
+                <p className="text-xs text-default-400 mt-2">No trailer available.</p>
+              )}
+            </div>
 
-          {/* Notes section */}
-          <div>
-            <p className="text-xs font-medium text-default-500 uppercase tracking-wide mb-2">Notes</p>
-            {loadingNote ? (
-              <div className="flex items-center gap-2 text-xs text-default-400">
-                <Spinner size="sm" color="default" />
-                <span>Loading...</span>
-              </div>
-            ) : currentGameNote ? (
-              <NoteRenderer
-                note={currentGameNote}
-                selectedDevice={selectedDevice}
-                downloadPath={statusEntry?.downloadPath ?? null}
-              />
-            ) : (
-              <p className="text-xs text-default-400">No notes available.</p>
-            )}
-          </div>
-        </div>
-      </div>
+            <Divider />
+
+            {/* Notes section */}
+            <div>
+              <p className="text-xs font-medium text-default-500 mb-2">Notes</p>
+              {loadingNote ? (
+                <div className="flex items-center gap-2 text-xs text-default-400">
+                  <Spinner size="sm" color="default" />
+                  <span>Loading...</span>
+                </div>
+              ) : currentGameNote ? (
+                <NoteRenderer
+                  note={currentGameNote}
+                  selectedDevice={selectedDevice}
+                  downloadPath={statusEntry?.downloadPath ?? null}
+                />
+              ) : (
+                <p className="text-xs text-default-400">No notes available.</p>
+              )}
+            </div>
+          </ModalBody>
+
+          <ModalFooter className="flex justify-end">
+            <Button variant="flat" size="sm" onPress={onClose}>
+              Close
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
       <ErrorDetailDialog
         open={errorDetailOpen}
@@ -566,7 +611,7 @@ const GameDetailsDialog: React.FC<GameDetailsDialogProps> = ({
         contextLabel={`${game.name}${game.releaseName ? ` (${game.releaseName})` : ''}`}
         onRetry={() => onRetry(game)}
       />
-    </div>
+    </>
   )
 }
 
