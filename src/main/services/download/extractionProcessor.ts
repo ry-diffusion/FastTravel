@@ -1,11 +1,27 @@
 import { join, basename } from 'path'
 import { promises as fs, existsSync } from 'fs'
+import { cpus } from 'os'
 import { execa } from 'execa'
 import { QueueManager } from './queueManager'
 import dependencyService from '../dependencyService'
+import settingsService from '../settingsService'
 import { DownloadItem, DownloadStatus } from '@shared/types'
 import mirrorService from '../mirrorService'
 import { getAvailableDiskSpace, getDirectorySize, formatBytes } from './utils'
+
+// Returns the -mmt= argument value. When the user has enabled the thread-limit
+// option (default), we cap 7-zip to ~1/3 of the system's logical CPUs so heavy
+// archive extraction can't pin every core and starve the rest of the app.
+function getSevenZipThreadArg(): string {
+  try {
+    if (!settingsService.getLimitExtractionThreads()) return 'on'
+    const total = cpus().length || 1
+    const limited = Math.max(1, Math.floor(total / 3))
+    return String(limited)
+  } catch {
+    return 'on'
+  }
+}
 
 // Type for VRP config - reuse or import
 interface VrpConfig {
@@ -118,7 +134,7 @@ export class ExtractionProcessor {
             'x', nestedArchivePath,
             '-y',
             `-o${baseExtractPath}`,
-            '-mmt=on'
+            `-mmt=${getSevenZipThreadArg()}`
           ], { windowsHide: true })
           console.log(`[ExtractProc] Nested extraction complete for ${archiveName}`)
 
@@ -282,7 +298,7 @@ export class ExtractionProcessor {
         `-o${downloadPath}`,
         `-p${decodedPassword}`,
         '-bsp1',
-        '-mmt=on'
+        `-mmt=${getSevenZipThreadArg()}`
       ], { windowsHide: true, buffer: false })
 
       this.activeExtractions.set(item.releaseName, () => {

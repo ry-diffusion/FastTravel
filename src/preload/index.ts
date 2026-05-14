@@ -272,7 +272,11 @@ const api = {
     getExistingDownloadAction: () =>
       typedIpcRenderer.invoke('settings:get-existing-download-action'),
     setExistingDownloadAction: (v) =>
-      typedIpcRenderer.invoke('settings:set-existing-download-action', v)
+      typedIpcRenderer.invoke('settings:set-existing-download-action', v),
+    getLimitExtractionThreads: (): Promise<boolean> =>
+      typedIpcRenderer.invoke('settings:get-limit-extraction-threads'),
+    setLimitExtractionThreads: (v: boolean): Promise<void> =>
+      typedIpcRenderer.invoke('settings:set-limit-extraction-threads', v)
   } satisfies SettingsAPIRenderer,
   // Logs APIs
   logs: {

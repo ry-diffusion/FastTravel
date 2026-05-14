@@ -122,6 +122,8 @@ export interface IPCChannels {
   'settings:set-max-concurrent-downloads': DefineChannel<[n: number], void>
   'settings:get-existing-download-action': DefineChannel<[], ExistingDownloadAction>
   'settings:set-existing-download-action': DefineChannel<[v: ExistingDownloadAction], void>
+  'settings:get-limit-extraction-threads': DefineChannel<[], boolean>
+  'settings:set-limit-extraction-threads': DefineChannel<[v: boolean], void>
 
   // Log upload related channels
   'logs:upload-current': DefineChannel<[], { url: string; password: string; slug: string } | null>

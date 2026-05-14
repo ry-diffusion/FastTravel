@@ -691,6 +691,13 @@ app.whenReady().then(async () => {
     settingsService.setExistingDownloadAction(v)
   )
 
+  typedIpcMain.handle('settings:get-limit-extraction-threads', () =>
+    settingsService.getLimitExtractionThreads()
+  )
+  typedIpcMain.handle('settings:set-limit-extraction-threads', (_event, v) =>
+    settingsService.setLimitExtractionThreads(v)
+  )
+
   // --- Logs Handlers ---
   typedIpcMain.handle('logs:upload-current', async () => {
     console.log('[IPC] Log upload requested')

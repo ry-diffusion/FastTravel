@@ -388,6 +388,7 @@ export interface Settings {
   maxConcurrentDownloads: number
   existingDownloadAction?: ExistingDownloadAction
   windowBounds?: WindowBounds
+  limitExtractionThreads?: boolean
 }
 
 export interface SettingsAPI {
@@ -407,6 +408,8 @@ export interface SettingsAPI {
   setMaxConcurrentDownloads: (n: number) => void
   getExistingDownloadAction: () => ExistingDownloadAction
   setExistingDownloadAction: (v: ExistingDownloadAction) => void
+  getLimitExtractionThreads: () => boolean
+  setLimitExtractionThreads: (v: boolean) => void
 }
 
 export interface SettingsAPIRenderer
@@ -429,6 +432,8 @@ export interface SettingsAPIRenderer
       setMaxConcurrentDownloads: (n: number) => Promise<void>
       getExistingDownloadAction: () => Promise<ExistingDownloadAction>
       setExistingDownloadAction: (v: ExistingDownloadAction) => Promise<void>
+      getLimitExtractionThreads: () => Promise<boolean>
+      setLimitExtractionThreads: (v: boolean) => Promise<void>
     }
   > {}
 

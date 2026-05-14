@@ -478,6 +478,7 @@ const ExtraSystemsSettings: React.FC = () => {
 
   const [maxConcurrent, setMaxConcurrentState] = useState<number>(3)
   const [existingDlAction, setExistingDlActionState] = useState<'ask' | 'reinstall' | 'redownload'>('ask')
+  const [limitExtractionThreads, setLimitExtractionThreadsState] = useState<boolean>(true)
   useEffect(() => {
     window.api.settings.getExistingDownloadAction().then(setExistingDlActionState).catch(() => {/* ignore */})
   }, [])
@@ -492,6 +493,16 @@ const ExtraSystemsSettings: React.FC = () => {
     setMaxConcurrentState(n)
     window.api.settings.setMaxConcurrentDownloads(n).catch(() => {/* ignore */})
   }
+  useEffect(() => {
+    window.api.settings.getLimitExtractionThreads().then(setLimitExtractionThreadsState).catch(() => {/* ignore */})
+  }, [])
+  const handleSetLimitExtractionThreads = (v: boolean): void => {
+    setLimitExtractionThreadsState(v)
+    window.api.settings.setLimitExtractionThreads(v).catch(() => {/* ignore */})
+  }
+  // Display the actual thread count so users see what "1/3 of system" resolves to.
+  const totalCpuThreads = typeof navigator !== 'undefined' ? (navigator.hardwareConcurrency || 0) : 0
+  const limitedThreadCount = Math.max(1, Math.floor(totalCpuThreads / 3))
 
   const neonOptionBtn = (active: boolean) => ({
     background: active ? 'rgba(var(--vrcd-neon-raw),0.12)' : 'transparent',
@@ -750,6 +761,14 @@ const ExtraSystemsSettings: React.FC = () => {
           Number of games that download simultaneously. Takes effect on next queue item.
         </span>
       </div>
+
+      {/* 7-zip extraction thread cap */}
+      <ToggleRow
+        label={`Limit extraction threads${totalCpuThreads ? ` (~${limitedThreadCount}/${totalCpuThreads})` : ''}`}
+        description="Caps 7-zip to ~1/3 of your CPU threads so archive extraction doesn't pin every core and stall the rest of the UI. Disable to let 7-zip use all available threads."
+        checked={limitExtractionThreads}
+        onChange={handleSetLimitExtractionThreads}
+      />
 
       {/* When download already exists on disk */}
       <div style={{ padding: '10px 0 4px', display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid rgba(var(--vrcd-neon-raw),0.1)', marginTop: '6px' }}>

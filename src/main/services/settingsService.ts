@@ -40,7 +40,8 @@ class SettingsService extends EventEmitter implements SettingsAPI {
       serverConfig: { baseUri: '', password: '' },
       language: defaultLanguage,
       maxConcurrentDownloads: 3,
-      existingDownloadAction: 'ask'
+      existingDownloadAction: 'ask',
+      limitExtractionThreads: true
     }
 
     // Load settings from disk
@@ -136,6 +137,16 @@ class SettingsService extends EventEmitter implements SettingsAPI {
     this.settings.existingDownloadAction = v
     this.saveSettings()
     this.emit('existing-download-action-changed', v)
+  }
+
+  getLimitExtractionThreads(): boolean {
+    return this.settings.limitExtractionThreads ?? true
+  }
+
+  setLimitExtractionThreads(v: boolean): void {
+    this.settings.limitExtractionThreads = v
+    this.saveSettings()
+    this.emit('limit-extraction-threads-changed', v)
   }
 
   getWindowBounds(): WindowBounds | undefined {
