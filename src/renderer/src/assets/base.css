@@ -1,34 +1,10 @@
+/* ── Base reset & font scale ─────────────────────────────────── */
 :root {
-  --ev-c-white: #ffffff;
-  --ev-c-white-soft: #f8f8f8;
-  --ev-c-white-mute: #f2f2f2;
+  --color-background: var(--quest-bg);
+  --color-background-soft: var(--quest-bg-raised);
+  --color-background-mute: var(--quest-surface);
 
-  --ev-c-black: #080810;
-  --ev-c-black-soft: #0d0d1a;
-  --ev-c-black-mute: #111120;
-
-  --ev-c-gray-1: #515c67;
-  --ev-c-gray-2: #414853;
-  --ev-c-gray-3: #32363f;
-
-  --ev-c-text-1: rgba(255, 255, 245, 0.86);
-  --ev-c-text-2: rgba(235, 235, 245, 0.6);
-  --ev-c-text-3: rgba(235, 235, 245, 0.38);
-
-  --ev-button-alt-border: transparent;
-  --ev-button-alt-text: var(--ev-c-text-1);
-  --ev-button-alt-bg: var(--ev-c-gray-3);
-  --ev-button-alt-hover-border: transparent;
-  --ev-button-alt-hover-text: var(--ev-c-text-1);
-  --ev-button-alt-hover-bg: var(--ev-c-gray-2);
-}
-
-:root {
-  --color-background: var(--ev-c-black);
-  --color-background-soft: var(--ev-c-black-soft);
-  --color-background-mute: var(--ev-c-black-mute);
-
-  --color-text: var(--ev-c-text-1);
+  --color-text: var(--quest-text);
 
   /* Global font scale — controlled by Settings > UI Scale */
   --vrcd-font-scale: 1;
@@ -43,32 +19,30 @@ html {
 *::after {
   box-sizing: border-box;
   margin: 0;
-  font-weight: normal;
+  font-weight: 400;
 }
 
 ul {
   list-style: none;
+  padding: 0;
 }
 
 body {
   min-height: 100vh;
   color: var(--color-text);
   background: var(--color-background);
-  line-height: 1.6;
-  font-family:
-    Inter,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    Oxygen,
-    Ubuntu,
-    Cantarell,
-    'Fira Sans',
-    'Droid Sans',
-    'Helvetica Neue',
-    sans-serif;
+  line-height: 1.5;
+  font-family: var(--quest-font-sans);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.005em;
+}
+
+/* Quiet down monospace usage app-wide. The old theme leaned on it
+ * heavily as decoration; in the Quest aesthetic, mono is reserved for
+ * actual code/path output (still available via --quest-font-mono). */
+[style*="monospace"] {
+  font-family: var(--quest-font-sans) !important;
+  letter-spacing: 0;
 }

@@ -1,18 +1,64 @@
-/* ── Neon theme CSS variables ─────────────────────────────── */
+/* ── Quest / Horizon OS design tokens ──────────────────────────
+ * The variable names from the old cyberpunk theme are kept so the
+ * many inline styles across the app inherit the new palette without
+ * a sweeping rewrite. They no longer mean "neon" / "purple" — they
+ * are simply the primary accent and the muted secondary.
+ * --------------------------------------------------------------- */
 :root {
-  --vrcd-neon: #39ff14;
-  --vrcd-neon-raw: 57, 255, 20;
-  --vrcd-purple: #a855f7;
-  --vrcd-purple-raw: 168, 85, 247;
-  --vrcd-font-mono: 'Courier New', Courier, monospace;
+  /* Primary accent — Quest blue */
+  --vrcd-neon: #3d7dff;
+  --vrcd-neon-raw: 61, 125, 255;
+
+  /* Secondary / subtle — slate-violet, calmer than the old purple */
+  --vrcd-purple: #8b95a5;
+  --vrcd-purple-raw: 139, 149, 165;
+
+  /* Surface palette — Horizon-style dark grays */
+  --quest-bg: #15161a;
+  --quest-bg-raised: #1c1e23;
+  --quest-surface: #25272d;
+  --quest-surface-hover: #2d2f36;
+  --quest-border: rgba(255, 255, 255, 0.08);
+  --quest-border-strong: rgba(255, 255, 255, 0.16);
+
+  /* Text */
+  --quest-text: rgba(255, 255, 255, 0.92);
+  --quest-text-muted: rgba(255, 255, 255, 0.62);
+  --quest-text-dim: rgba(255, 255, 255, 0.38);
+
+  /* Status colors */
+  --quest-success: #2ed47a;
+  --quest-warn: #ffb547;
+  --quest-error: #ff6b6b;
+
+  /* Typography — body uses an Inter/SF system stack; the legacy
+   * --vrcd-font-mono token is repointed to the same sans so any
+   * surface still referencing it stops looking like a terminal. */
+  --quest-font-sans:
+    'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI',
+    Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --quest-font-mono:
+    ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  --vrcd-font-mono: var(--quest-font-sans);
+
+  /* Radii */
+  --quest-radius-sm: 8px;
+  --quest-radius-md: 12px;
+  --quest-radius-lg: 16px;
+  --quest-radius-pill: 999px;
+
+  /* Elevation */
+  --quest-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --quest-shadow-2: 0 4px 16px rgba(0, 0, 0, 0.45);
 }
 
-/* Colorblind mode: green→near-white, purple→orange (distinguishable for red-green color blindness) */
+/* Colorblind mode now just swaps the accent to a neutral, high-contrast
+ * white-blue and bumps the secondary toward amber. */
 html.vrcd-colorblind {
-  --vrcd-neon: #f0f0f0;
-  --vrcd-neon-raw: 240, 240, 240;
-  --vrcd-purple: #ff8c00;
-  --vrcd-purple-raw: 255, 140, 0;
+  --vrcd-neon: #e8eaf0;
+  --vrcd-neon-raw: 232, 234, 240;
+  --vrcd-purple: #ffb547;
+  --vrcd-purple-raw: 255, 181, 71;
 }
 
 html,
@@ -25,10 +71,10 @@ body {
 }
 
 body {
-  font-family:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans',
-    'Helvetica Neue', sans-serif;
-  color: inherit;
+  font-family: var(--quest-font-sans);
+  font-feature-settings: 'cv11', 'ss01';
+  color: var(--quest-text);
+  background: var(--quest-bg);
 }
 
 #root {
@@ -37,9 +83,12 @@ body {
   overflow: hidden;
 }
 
-/* ── Green scrollbars ─────────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.3); }
-::-webkit-scrollbar-thumb { background: rgba(var(--vrcd-neon-raw), 0.45); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(var(--vrcd-neon-raw), 0.75); }
+/* ── Neutral, slim scrollbars ─────────────────────────────────── */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.22); }
 ::-webkit-scrollbar-corner { background: transparent; }
