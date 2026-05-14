@@ -12,12 +12,10 @@ import {
   FluentProvider,
   makeStyles,
   tokens,
-  Spinner,
   Text,
   teamsDarkTheme,
   teamsLightTheme,
   Button,
-  Switch,
   Drawer,
   DrawerHeader,
   DrawerHeaderTitle,
@@ -26,6 +24,7 @@ import {
   Tab,
   CounterBadge
 } from '@fluentui/react-components'
+import QuestLoader from './QuestLoader'
 import electronLogo from '../assets/icon.svg'
 import { useDependency } from '../hooks/useDependency'
 import { DependencyProvider } from '../context/DependencyProvider'
@@ -66,56 +65,47 @@ const useStyles = makeStyles({
     display: 'flex',
     flexDirection: 'row',
     alignItems: 'stretch',
-    borderBottom: '1px solid rgba(var(--vrcd-neon-raw), 0.2)',
-    backgroundColor: '#050514',
-    backgroundImage:
-      'linear-gradient(rgba(var(--vrcd-neon-raw), 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(var(--vrcd-neon-raw), 0.03) 1px, transparent 1px)',
-    backgroundSize: '40px 40px',
-    boxShadow: '0 1px 24px 0 rgba(var(--vrcd-neon-raw), 0.06), inset 0 -1px 0 rgba(var(--vrcd-purple-raw), 0.12)',
-    height: '88px',
+    borderBottom: '1px solid var(--quest-border)',
+    backgroundColor: 'var(--quest-bg-raised)',
+    height: '72px',
     flexShrink: 0
   },
   headerCenter: {
     flex: 1,
     display: 'flex',
-    flexDirection: 'column',
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: '2px',
-    padding: '4px 0'
+    justifyContent: 'flex-start',
+    gap: '14px',
+    padding: '0 20px'
   },
   headerRight: {
-    width: '210px',
-    minWidth: '210px',
+    minWidth: '120px',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center',
-    borderLeft: '1px solid rgba(var(--vrcd-neon-raw), 0.12)',
+    justifyContent: 'flex-end',
+    padding: '0 16px',
     flexShrink: 0
   },
   logo: {
-    height: '48px',
-    filter:
-      'drop-shadow(0 0 8px var(--vrcd-neon)) drop-shadow(0 0 18px rgba(var(--vrcd-purple-raw), 0.8))'
+    height: '36px',
+    width: '36px',
+    borderRadius: '50%'
   },
   transferStrip: {
-    height: '32px',
+    minHeight: '0px',
     flexShrink: 0,
     display: 'flex',
     alignItems: 'center',
-    padding: '0 16px',
-    background: '#02020a',
-    borderBottom: '1px solid rgba(var(--vrcd-neon-raw), 0.12)',
-    overflow: 'hidden',
-    fontFamily: 'var(--vrcd-font-mono)',
-    fontSize: '11px',
-    letterSpacing: '0.04em'
+    padding: '0 20px',
+    background: 'transparent',
+    overflow: 'hidden'
   },
   headerContent: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: tokens.spacingHorizontalM
+    justifyContent: 'flex-start',
+    gap: '14px'
   },
   titleSection: {
     display: 'flex',
@@ -124,44 +114,33 @@ const useStyles = makeStyles({
     gap: '2px'
   },
   titleMain: {
-    fontSize: '26px',
-    fontWeight: '800',
-    letterSpacing: '0.06em',
-    lineHeight: '1.05',
+    fontSize: '20px',
+    fontWeight: 700,
+    letterSpacing: '-0.015em',
+    lineHeight: '1.1',
     display: 'flex',
     alignItems: 'baseline',
-    gap: '10px'
+    gap: '6px'
   },
   titleVR: {
-    color: 'var(--vrcd-purple)',
-    textShadow: '0 0 18px rgba(var(--vrcd-purple-raw), 0.9), 0 0 40px rgba(var(--vrcd-purple-raw), 0.4)',
-    fontFamily: 'var(--vrcd-font-mono)'
+    color: 'var(--quest-text)'
   },
   titleCyberdeck: {
-    color: 'var(--vrcd-neon)',
-    textShadow: '0 0 18px rgba(var(--vrcd-neon-raw), 0.8), 0 0 40px rgba(var(--vrcd-neon-raw), 0.3)',
-    fontFamily: 'var(--vrcd-font-mono)',
-    letterSpacing: '0.08em'
+    color: 'var(--vrcd-neon)'
   },
   titleSub: {
-    fontSize: '11px',
-    letterSpacing: '0.22em',
-    fontFamily: 'monospace',
-    color: 'rgba(var(--vrcd-neon-raw), 0.7)',
-    lineHeight: '1.2'
+    fontSize: '12px',
+    color: 'var(--quest-text-muted)',
+    lineHeight: '1.3'
   },
   titleCredit: {
-    fontSize: '10px',
-    letterSpacing: '0.14em',
-    fontFamily: 'monospace',
-    color: 'rgba(var(--vrcd-neon-raw), 0.45)',
+    fontSize: '11px',
+    color: 'var(--quest-text-dim)',
     lineHeight: '1.2',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: '4px',
-    width: '100%',
-    textTransform: 'uppercase'
+    marginLeft: 'auto'
   },
   mainContent: {
     flex: 1,
@@ -287,19 +266,31 @@ const MainContent: React.FC<MainContentProps> = ({
         </div>
       )
     }
-    let progressText = 'Checking requirements...'
+    let title = 'Getting things ready'
+    let subtitle: string | undefined = 'This only takes a moment.'
+    let progress: number | null = null
 
     if (dependencyProgress?.name === 'connectivity-check') {
-      progressText = `Checking network connectivity... ${dependencyProgress.percentage}%`
+      title = 'Checking network connectivity'
+      subtitle = 'Make sure your computer is connected to the internet.'
+      progress = dependencyProgress.percentage
     } else if (dependencyStatus?.rclone.downloading && dependencyProgress) {
-      progressText = `Setting up ${dependencyProgress.name}... ${dependencyProgress.percentage}%`
       if (dependencyProgress.name === 'rclone-extract') {
-        progressText = `Extracting ${dependencyProgress.name.replace('-extract', '')}...`
+        title = 'Setting up sync engine'
+        subtitle = 'Extracting components — a few seconds left.'
+      } else {
+        title = 'Setting up sync engine'
+        subtitle = `Downloading ${dependencyProgress.name}…`
+        progress = dependencyProgress.percentage
       }
     } else if (dependencyStatus?.adb.downloading && dependencyProgress) {
-      progressText = `Setting up ${dependencyProgress.name}... ${dependencyProgress.percentage}%`
       if (dependencyProgress.name === 'adb-extract') {
-        progressText = `Extracting ${dependencyProgress.name.replace('-extract', '')}...`
+        title = 'Setting up device tools'
+        subtitle = 'Extracting components — a few seconds left.'
+      } else {
+        title = 'Setting up device tools'
+        subtitle = `Downloading ${dependencyProgress.name}…`
+        progress = dependencyProgress.percentage
       }
     } else if (
       dependencyStatus &&
@@ -307,13 +298,13 @@ const MainContent: React.FC<MainContentProps> = ({
         !dependencyStatus.rclone.ready ||
         !dependencyStatus.adb.ready)
     ) {
-      progressText = 'Setting up requirements...'
+      title = 'Setting up Fast Travel'
+      subtitle = 'Preparing the required components.'
     }
 
     return (
       <div className={styles.loadingOrErrorContainer}>
-        <Spinner size="huge" />
-        <Text>{progressText}</Text>
+        <QuestLoader title={title} subtitle={subtitle} progress={progress} />
       </div>
     )
   }
@@ -341,7 +332,6 @@ const AppLayout: React.FC = () => {
   })
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isCreditsOpen, setIsCreditsOpen] = useState(false)
-  const [isDarkModeJokeOpen, setIsDarkModeJokeOpen] = useState(false)
   const [isCloseConfirmOpen, setIsCloseConfirmOpen] = useState(false)
   const mountNodeRef = useRef<HTMLDivElement>(null)
   const styles = useStyles()
@@ -469,109 +459,31 @@ const AppLayout: React.FC = () => {
                   </span>
                 </div>
 
-                {/* Right: Dark mode toggle (decorative joke) */}
+                {/* Right: theme toggle */}
                 <div className={styles.headerRight}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', cursor: 'pointer' }} onClick={() => setIsDarkModeJokeOpen(true)}>
-                    <span style={{ fontSize: '9px', fontFamily: 'monospace', letterSpacing: '0.12em', color: 'rgba(var(--vrcd-neon-raw), 0.6)', textTransform: 'uppercase' }}>Dark Mode</span>
-                    <div style={{ '--colorBrandBackground': 'var(--vrcd-neon)', '--colorBrandBackgroundHover': 'rgba(var(--vrcd-neon-raw),0.8)', '--colorBrandBackgroundPressed': 'rgba(var(--vrcd-neon-raw),0.6)', '--colorCompoundBrandBackground': 'var(--vrcd-neon)', '--colorCompoundBrandBackgroundHover': 'rgba(var(--vrcd-neon-raw),0.8)', pointerEvents: 'none' } as React.CSSProperties}>
-                      <Switch checked={true} readOnly />
-                    </div>
-                  </div>
+                  <button
+                    onClick={() => setColorScheme(colorScheme === 'dark' ? 'light' : 'dark')}
+                    title={colorScheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      padding: '6px 14px',
+                      background: 'var(--quest-surface)',
+                      color: 'var(--quest-text)',
+                      border: '1px solid var(--quest-border-strong)',
+                      borderRadius: 'var(--quest-radius-pill)',
+                      cursor: 'pointer',
+                      fontSize: 13,
+                      fontWeight: 500
+                    }}
+                  >
+                    <span style={{ fontSize: 14, lineHeight: 1 }}>{colorScheme === 'dark' ? '🌙' : '☀️'}</span>
+                    {colorScheme === 'dark' ? 'Dark' : 'Light'}
+                  </button>
                 </div>
 
               </div>
-
-              {/* Dark mode joke dialog — custom overlay for guaranteed viewport centering */}
-              {isDarkModeJokeOpen && (
-                <div
-                  style={{
-                    position: 'fixed',
-                    inset: 0,
-                    zIndex: 1100,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: 'rgba(0,0,0,0.75)',
-                    backdropFilter: 'blur(2px)'
-                  }}
-                  onClick={(e) => {
-                    if (e.target === e.currentTarget) setIsDarkModeJokeOpen(false)
-                  }}
-                >
-                  <div
-                    style={{
-                      background: '#030310',
-                      border: '1px solid rgba(var(--vrcd-neon-raw),0.45)',
-                      maxWidth: '480px',
-                      width: '90vw',
-                      fontFamily: 'monospace',
-                      borderRadius: '8px',
-                      padding: '24px 28px 28px',
-                      boxShadow: '0 0 50px rgba(var(--vrcd-neon-raw),0.08), 0 0 80px rgba(var(--vrcd-purple-raw),0.06)'
-                    }}
-                  >
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px', textAlign: 'center' }}>
-                      {/* Neon crying-laughing face */}
-                      <svg width="200" height="200" viewBox="0 0 200 200" style={{ overflow: 'visible', filter: 'drop-shadow(0 0 14px var(--vrcd-neon)) drop-shadow(0 0 40px rgba(var(--vrcd-neon-raw),0.55)) drop-shadow(0 0 70px rgba(var(--vrcd-neon-raw),0.2))' }}>
-                        <defs>
-                          <filter id="jk-g" x="-50%" y="-50%" width="200%" height="200%">
-                            <feGaussianBlur stdDeviation="4" result="b"/>
-                            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-                          </filter>
-                          <filter id="jk-pg" x="-50%" y="-50%" width="200%" height="200%">
-                            <feGaussianBlur stdDeviation="5" result="b"/>
-                            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-                          </filter>
-                        </defs>
-                        <circle cx="100" cy="100" r="88" fill="#010108"/>
-                        <circle cx="100" cy="100" r="88" fill="none" stroke="var(--vrcd-neon)" strokeWidth="5" filter="url(#jk-g)"/>
-                        <path d="M 58,80 Q 72,68 86,80" fill="none" stroke="var(--vrcd-neon)" strokeWidth="4" strokeLinecap="round" filter="url(#jk-g)"/>
-                        <path d="M 114,80 Q 128,68 142,80" fill="none" stroke="var(--vrcd-neon)" strokeWidth="4" strokeLinecap="round" filter="url(#jk-g)"/>
-                        <path d="M 52,124 Q 100,175 148,124" fill="none" stroke="var(--vrcd-neon)" strokeWidth="4.5" strokeLinecap="round" filter="url(#jk-g)"/>
-                        <path d="M 64,87 Q 52,108 58,128" fill="none" stroke="var(--vrcd-purple)" strokeWidth="3.5" strokeLinecap="round" filter="url(#jk-pg)"/>
-                        <ellipse cx="57" cy="132" rx="5.5" ry="8" fill="var(--vrcd-purple)" filter="url(#jk-pg)"/>
-                        <path d="M 136,87 Q 148,108 142,128" fill="none" stroke="var(--vrcd-purple)" strokeWidth="3.5" strokeLinecap="round" filter="url(#jk-pg)"/>
-                        <ellipse cx="143" cy="132" rx="5.5" ry="8" fill="var(--vrcd-purple)" filter="url(#jk-pg)"/>
-                      </svg>
-
-                      <div style={{ fontSize: '52px', color: 'var(--vrcd-neon)', letterSpacing: '0.2em', fontWeight: 900, fontFamily: 'var(--vrcd-font-mono)', textShadow: '0 0 10px var(--vrcd-neon), 0 0 30px rgba(var(--vrcd-neon-raw),0.7), 0 0 60px rgba(var(--vrcd-neon-raw),0.3)', lineHeight: 1 }}>LMAO</div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                        <div style={{ flex: 1, height: '1px', background: 'rgba(var(--vrcd-purple-raw),0.6)', boxShadow: '0 0 6px rgba(var(--vrcd-purple-raw),0.4)' }}/>
-                        <span style={{ color: 'var(--vrcd-purple)', fontSize: '12px', margin: '0 10px', textShadow: '0 0 8px rgba(var(--vrcd-purple-raw),0.9)', filter: 'drop-shadow(0 0 4px var(--vrcd-purple))' }}>◆</span>
-                        <div style={{ flex: 1, height: '1px', background: 'rgba(var(--vrcd-purple-raw),0.6)', boxShadow: '0 0 6px rgba(var(--vrcd-purple-raw),0.4)' }}/>
-                      </div>
-
-                      <div style={{ fontSize: '15px', color: 'var(--vrcd-neon)', lineHeight: 2, fontFamily: 'var(--vrcd-font-mono)', textShadow: '0 0 6px rgba(var(--vrcd-neon-raw),0.35)' }}>
-                        This is just for looks.<br />
-                        Do people actually USE<br />
-                        light mode?
-                      </div>
-
-                      <button
-                        onClick={() => setIsDarkModeJokeOpen(false)}
-                        style={{
-                          width: '100%',
-                          background: 'transparent',
-                          border: '2px solid rgba(var(--vrcd-neon-raw),0.65)',
-                          color: 'var(--vrcd-neon)',
-                          fontFamily: 'var(--vrcd-font-mono)',
-                          fontSize: '14px',
-                          letterSpacing: '0.1em',
-                          padding: '12px 0',
-                          borderRadius: '8px',
-                          cursor: 'pointer',
-                          fontStyle: 'italic',
-                          boxShadow: '0 0 14px rgba(var(--vrcd-neon-raw),0.15), inset 0 0 14px rgba(var(--vrcd-neon-raw),0.04)',
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        [ *Cries in binary ]
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               <div className={styles.transferStrip}>
                 <TransferStrip />

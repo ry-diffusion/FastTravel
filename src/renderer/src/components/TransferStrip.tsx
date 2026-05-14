@@ -16,25 +16,34 @@ type Entry = {
 const downloadStageLabel = (status: DownloadItem['status']): string => {
   switch (status) {
     case 'Queued':
-      return 'QUEUED'
+      return 'Queued'
     case 'Downloading':
-      return 'DOWNLOADING'
+      return 'Downloading'
     case 'Extracting':
-      return 'EXTRACTING'
+      return 'Extracting'
     case 'Installing':
-      return 'INSTALLING'
+      return 'Installing'
     case 'Paused':
-      return 'PAUSED'
+      return 'Paused'
     default:
-      return String(status).toUpperCase()
+      return String(status)
   }
 }
 
 const uploadStageLabel = (item: UploadItem): string => {
-  if (item.stage) return item.stage.toUpperCase()
-  return String(item.status).toUpperCase()
+  if (item.stage) {
+    const s = item.stage
+    return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
+  }
+  const s = String(item.status)
+  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
 }
 
+/**
+ * Compact Meta-style transfer status. Shows nothing when idle; when one or
+ * more transfers are active, shows a single pill with direction arrow, name,
+ * stage, and progress. Multiple transfers rotate through every 4 s.
+ */
 const TransferStrip: React.FC = () => {
   const { queue: downloadQueue } = useDownload()
   const { queue: uploadQueue } = useUpload()
@@ -70,8 +79,6 @@ const TransferStrip: React.FC = () => {
     return [...downloads, ...uploads]
   }, [downloadQueue, uploadQueue])
 
-  // Rotate through entries when there are more than one, so the user always
-  // sees something even when many transfers are running.
   const [index, setIndex] = useState(0)
   const indexRef = useRef(index)
   useEffect(() => {
@@ -90,29 +97,12 @@ const TransferStrip: React.FC = () => {
   }, [entries.length, index])
 
   if (entries.length === 0) {
-    return (
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          width: '100%',
-          color: 'rgba(var(--vrcd-neon-raw),0.35)'
-        }}
-      >
-        <span style={{ color: 'rgba(var(--vrcd-neon-raw),0.45)', letterSpacing: '0.14em' }}>
-          // TRANSFER_BUS
-        </span>
-        <span style={{ color: 'rgba(var(--vrcd-neon-raw),0.3)' }}>IDLE — no active transfers</span>
-      </div>
-    )
+    // Collapse entirely when nothing is happening — no decorative idle copy.
+    return null
   }
 
   const safeIndex = Math.min(index, entries.length - 1)
   const e = entries[safeIndex]
-  const directionGlyph = e.direction === 'down' ? '↓' : '↑'
-  const directionColor =
-    e.direction === 'down' ? 'var(--vrcd-neon)' : 'var(--vrcd-purple)'
   const progressPct = e.progress != null ? Math.max(0, Math.min(100, e.progress)) : null
 
   return (
@@ -120,28 +110,35 @@ const TransferStrip: React.FC = () => {
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '14px',
+        gap: 12,
         width: '100%',
-        minWidth: 0
+        minWidth: 0,
+        color: 'var(--quest-text-muted)',
+        fontSize: 13
       }}
     >
-      <span style={{ color: 'rgba(var(--vrcd-neon-raw),0.45)', letterSpacing: '0.14em', flexShrink: 0 }}>
-        // TRANSFER_BUS
-      </span>
       <span
         style={{
-          color: directionColor,
-          fontWeight: 700,
-          fontSize: '14px',
-          textShadow: `0 0 6px ${directionColor}`,
+          width: 22,
+          height: 22,
+          borderRadius: '50%',
+          background: 'rgba(255,255,255,0.06)',
+          color: 'var(--quest-text)',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 13,
+          fontWeight: 600,
           flexShrink: 0
         }}
+        aria-label={e.direction === 'down' ? 'Downloading' : 'Uploading'}
       >
-        {directionGlyph}
+        {e.direction === 'down' ? '↓' : '↑'}
       </span>
       <span
         style={{
-          color: 'var(--vrcd-neon)',
+          color: 'var(--quest-text)',
+          fontWeight: 500,
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
@@ -153,59 +150,45 @@ const TransferStrip: React.FC = () => {
       >
         {e.name}
       </span>
-      <span
-        style={{
-          color: 'rgba(var(--vrcd-purple-raw),0.9)' as unknown as string,
-          letterSpacing: '0.08em',
-          flexShrink: 0
-        }}
-      >
-        {e.stage}
-      </span>
+      <span style={{ flexShrink: 0 }}>{e.stage}</span>
       {progressPct !== null && (
         <>
           <div
             style={{
               flex: 1,
-              minWidth: '60px',
-              height: '6px',
-              borderRadius: '3px',
-              background: 'rgba(var(--vrcd-neon-raw),0.08)',
-              border: '1px solid rgba(var(--vrcd-neon-raw),0.2)',
-              overflow: 'hidden',
-              position: 'relative'
+              minWidth: 60,
+              height: 4,
+              borderRadius: 999,
+              background: 'rgba(255,255,255,0.08)',
+              overflow: 'hidden'
             }}
           >
             <div
               style={{
                 width: `${progressPct}%`,
                 height: '100%',
-                background: directionColor,
-                boxShadow: `0 0 8px ${directionColor}`,
+                background: 'var(--vrcd-neon)',
+                borderRadius: 999,
                 transition: 'width 0.3s linear'
               }}
             />
           </div>
-          <span style={{ color: 'var(--vrcd-neon)', flexShrink: 0, minWidth: '40px', textAlign: 'right' }}>
+          <span style={{ color: 'var(--quest-text)', flexShrink: 0, minWidth: 38, textAlign: 'right' }}>
             {progressPct.toFixed(0)}%
           </span>
         </>
       )}
-      {e.speed && (
-        <span style={{ color: 'rgba(var(--vrcd-neon-raw),0.75)', flexShrink: 0 }}>{e.speed}</span>
-      )}
-      {e.eta && (
-        <span style={{ color: 'rgba(var(--vrcd-neon-raw),0.5)', flexShrink: 0 }}>ETA {e.eta}</span>
-      )}
+      {e.speed && <span style={{ flexShrink: 0 }}>{e.speed}</span>}
+      {e.eta && <span style={{ color: 'var(--quest-text-dim)', flexShrink: 0 }}>ETA {e.eta}</span>}
       {entries.length > 1 && (
         <span
           style={{
-            color: 'rgba(var(--vrcd-neon-raw),0.4)',
+            color: 'var(--quest-text-dim)',
             flexShrink: 0,
             marginLeft: 'auto'
           }}
         >
-          [{safeIndex + 1}/{entries.length}]
+          {safeIndex + 1} of {entries.length}
         </span>
       )}
     </div>

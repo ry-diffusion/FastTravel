@@ -1,12 +1,15 @@
-
+/* ── Games view — Quest aesthetic ───────────────────────────────────────────
+ * Calm dark surfaces, rounded cards, soft borders, neutral hover states.
+ * The legacy --vrcd-* variables map to Quest tokens (see assets/index.css).
+ * --------------------------------------------------------------------------*/
 
 .games-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid rgba(var(--vrcd-neon-raw), 0.12);
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--quest-border);
 }
 
 .games-header-left {
@@ -16,8 +19,10 @@
 
 .games-header h2 {
   margin: 0;
-  color: var(--colorNeutralForeground1);
-  font-size: 1.5em;
+  color: var(--quest-text);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .device-info-bar {
@@ -27,13 +32,13 @@
 
 .connected-device {
   margin-right: 16px;
-  font-size: 0.9em;
-  color: #3c4043;
+  font-size: 13px;
+  color: var(--quest-text-muted);
 }
 
 .device-warning {
-  color: #d93025;
-  font-size: 0.9em;
+  color: var(--quest-error);
+  font-size: 13px;
 }
 
 .games-toolbar {
@@ -42,8 +47,8 @@
   align-items: center;
   margin-bottom: 8px;
   padding-bottom: 8px;
-  border-bottom: 1px solid rgba(var(--vrcd-neon-raw), 0.12);
-  flex-shrink: 0; /* Prevent toolbar from shrinking */
+  border-bottom: 1px solid var(--quest-border);
+  flex-shrink: 0;
 }
 
 .games-toolbar-left {
@@ -53,50 +58,99 @@
 }
 
 .last-synced {
-  color: var(--colorNeutralForeground2);
-  font-size: 0.9em;
+  color: var(--quest-text-muted);
+  font-size: 12px;
 }
 
 .game-count {
-  color: rgba(var(--vrcd-neon-raw), 0.7);
-  font-size: 0.9em;
-  font-family: var(--vrcd-font-mono);
+  color: var(--quest-text-muted);
+  font-size: 12px;
+}
+
+/* ── Quest-cast-style loader ──────────────────────────────────────────────
+ * Inspired by the "loading screen cast" indicator on Horizon OS: a row of
+ * three soft dots gently fading in sequence, with calm body copy below.
+ * ----------------------------------------------------------------------- */
+@keyframes questDotPulse {
+  0%, 80%, 100% { opacity: 0.25; transform: scale(0.85); }
+  40%            { opacity: 1;     transform: scale(1);    }
 }
 
 .loading-indicator {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  height: 200px;
-  color: var(--colorNeutralForeground2);
+  gap: 14px;
+  min-height: 160px;
+  color: var(--quest-text-muted);
+  font-size: 14px;
+}
+
+.loading-indicator::before {
+  content: '';
+  width: 56px;
+  height: 12px;
+  background:
+    radial-gradient(circle 5px at 8px 6px, var(--vrcd-neon) 95%, transparent) no-repeat,
+    radial-gradient(circle 5px at 28px 6px, var(--vrcd-neon) 95%, transparent) no-repeat,
+    radial-gradient(circle 5px at 48px 6px, var(--vrcd-neon) 95%, transparent) no-repeat;
+  background-size: 100% 100%;
+  animation: none;
+  position: relative;
+}
+
+.loading-indicator::after {
+  content: '';
+  position: absolute;
+  width: 56px;
+  height: 12px;
+  margin-top: -26px;
+  background:
+    radial-gradient(circle 5px at 8px 6px, #fff 95%, transparent) no-repeat,
+    radial-gradient(circle 5px at 28px 6px, #fff 95%, transparent) no-repeat,
+    radial-gradient(circle 5px at 48px 6px, #fff 95%, transparent) no-repeat;
+  background-size: 33.333% 100%, 33.333% 100%, 33.333% 100%;
+  background-position: 0 0, 50% 0, 100% 0;
+  mix-blend-mode: screen;
+  animation: questCastDots 1.2s linear infinite;
+  opacity: 0;
+}
+
+@keyframes questCastDots {
+  0%, 100% { opacity: 0; }
+  20%      { opacity: 1; transform: translateX(0); }
+  50%      { opacity: 1; transform: translateX(20px); }
+  80%      { opacity: 1; transform: translateX(40px); }
 }
 
 .no-games-message {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 200px;
-  color: var(--colorNeutralForeground2);
+  min-height: 200px;
+  color: var(--quest-text-muted);
   text-align: center;
+  font-size: 14px;
 }
 
 .error-message {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 200px;
-  color: var(--colorPaletteRedForegroundInverted);
+  min-height: 160px;
+  color: var(--quest-error);
   text-align: center;
+  font-size: 14px;
 }
 
 .games-list {
   list-style: none;
   padding: 0;
   margin: 0;
-  overflow-y: auto; /* Make list scrollable */
-  flex-grow: 1; /* Allow list to grow */
+  overflow-y: auto;
+  flex-grow: 1;
 }
-
 
 .game-info {
   display: flex;
@@ -112,16 +166,17 @@
 }
 
 .download-progress {
-  margin: 20px 0;
-  padding: 10px;
-  border-radius: 4px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  margin: 16px 0;
+  padding: 12px 14px;
+  border-radius: var(--quest-radius-md);
+  background: var(--quest-bg-raised);
+  border: 1px solid var(--quest-border);
 }
 
 .progress-bar {
-  height: 8px;
+  height: 6px;
   background-color: rgba(255, 255, 255, 0.08);
-  border-radius: 4px;
+  border-radius: var(--quest-radius-pill);
   overflow: hidden;
   margin-bottom: 8px;
 }
@@ -130,31 +185,31 @@
   height: 100%;
   background-color: var(--vrcd-neon);
   transition: width 0.3s ease;
+  border-radius: var(--quest-radius-pill);
 }
 
 .progress-text {
-  font-size: 0.8em;
-  color: var(--colorNeutralForeground2);
+  font-size: 12px;
+  color: var(--quest-text-muted);
   text-align: center;
 }
 
-/* TanStack Table Styles */
+/* ── Table view ──────────────────────────────────────────────────────────── */
 .games-container-table {
-  border-radius: 4px;
+  border-radius: var(--quest-radius-lg);
   padding: 16px;
   flex-grow: 1;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  border: 1px solid rgba(var(--vrcd-neon-raw),0.2);
-  background-color: #050514;
+  border: 1px solid var(--quest-border);
+  background-color: var(--quest-bg-raised);
 }
 
 .games-toolbar-right {
   display: flex;
   align-items: center;
   gap: 16px;
-  /* move to the right */
   margin-left: auto;
 }
 
@@ -163,33 +218,29 @@
   overflow-x: auto;
   flex-grow: 1;
   margin-top: 8px;
-  border: 1px solid rgba(var(--vrcd-neon-raw),0.2);
-  border-radius: 4px;
+  border: 1px solid var(--quest-border);
+  border-radius: var(--quest-radius-md);
   position: relative;
-  background-color: #050514;
+  background-color: var(--quest-bg-raised);
 }
 
 .games-table {
   width: 100%;
   border-collapse: collapse;
-  /* Ensure fixed layout is active */
   table-layout: fixed;
 }
 
 .games-table tbody {
-  /* Required for virtualizer absolute positioning context */
   position: relative;
 }
 
 .games-table th,
 .games-table td {
-  /* Remove border-bottom */
-  /* border-bottom: 1px solid #e0e0e0; */
-  padding: var(--row-pad-v, 10px) var(--row-pad-h, 12px);
+  padding: var(--row-pad-v, 12px) var(--row-pad-h, 14px);
   text-align: left;
   font-size: 13px;
   vertical-align: middle;
-  transition: background-color 0.2s;
+  transition: background-color 0.15s;
   box-sizing: border-box;
   overflow: hidden;
 }
@@ -197,32 +248,31 @@
 .games-table td {
   white-space: nowrap;
   text-overflow: ellipsis;
-  color: rgba(var(--vrcd-neon-raw), 0.88);
-  background-color: #050514;
+  color: var(--quest-text);
+  background-color: var(--quest-bg-raised);
+  border-top: 1px solid var(--quest-border);
 }
 
 .games-table th {
   font-weight: 600;
-  color: var(--vrcd-neon);
-  border-bottom: 1px solid rgba(var(--vrcd-neon-raw),0.3);
-  background-color: #050514;
+  color: var(--quest-text-muted);
+  font-size: 12px;
+  text-transform: none;
+  letter-spacing: 0;
+  border-bottom: 1px solid var(--quest-border);
+  background-color: var(--quest-bg-raised);
 }
 
-/* Cell Styling for Name/Package */
 .name-package-cell {
   display: flex;
   flex-direction: column;
-  line-height: 1.3; /* Adjust line height for spacing */
-  /* Ensure this wrapper itself handles overflow if needed, though td should handle it */
+  line-height: 1.3;
   overflow: hidden;
-  /* flex: 1;
-  width: 100%; */
-  /* width: 100%; // Usually not needed if TD handles width */
 }
 
 .game-name-main {
   font-weight: 500;
-  color: var(--vrcd-neon);
+  color: var(--quest-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -230,122 +280,99 @@
 
 .game-package-sub {
   font-size: 11px;
-  color: rgba(var(--vrcd-purple-raw),0.85);
-  font-family: var(--vrcd-font-mono);
+  color: var(--quest-text-dim);
   margin-top: 2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Remove specific game-package-cell styles that are now handled by game-package-sub */
-/* .game-package-cell { ... } */
-
-/* Ensure thumbnail cell aligns correctly */
 .game-thumbnail-cell {
   width: var(--row-thumb-size, 70px);
   height: var(--row-thumb-size, 70px);
-  padding: 5px; /* Adjust padding as needed */
-  display: flex; /* Use flex to center content vertically */
+  padding: 5px;
+  display: flex;
   align-items: center;
   justify-content: center;
-  /* Remove fixed height here if set on parent TR */
 }
 
 .game-thumbnail-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 4px;
-  display: block; /* Remove extra space below image */
+  border-radius: var(--quest-radius-sm);
+  display: block;
 }
 
-.cursor-pointer {
-  cursor: pointer;
-}
+.cursor-pointer { cursor: pointer; }
+.select-none { user-select: none; }
 
-.select-none {
-  user-select: none;
-}
-
-/* Filter Buttons Styles */
+/* ── Filter pill buttons ──────────────────────────────────────────────────── */
 .filter-buttons {
   display: flex;
-  gap: 8px;
-  margin-left: 16px;
+  gap: 6px;
+  margin-left: 12px;
 }
 
 .filter-buttons button {
-  padding: 3px 10px;
-  font-size: 0.75em;
-  font-family: var(--vrcd-font-mono);
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-family: var(--quest-font-sans);
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
   background-color: transparent;
-  color: rgba(var(--vrcd-neon-raw), 0.5);
-  border: 1px solid rgba(var(--vrcd-neon-raw), 0.22);
-  border-radius: 10px;
+  color: var(--quest-text-muted);
+  border: 1px solid var(--quest-border-strong);
+  border-radius: var(--quest-radius-pill);
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s, box-shadow 0.15s;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
 }
 
 .filter-buttons button:hover {
-  color: rgba(var(--vrcd-neon-raw), 0.85);
-  border-color: rgba(var(--vrcd-neon-raw), 0.5);
-  box-shadow: 0 0 6px rgba(var(--vrcd-neon-raw), 0.18);
+  color: var(--quest-text);
+  background-color: rgba(255, 255, 255, 0.04);
 }
 
 .filter-buttons button.active {
-  color: var(--vrcd-neon);
-  border-color: rgba(var(--vrcd-neon-raw), 0.7);
-  box-shadow: 0 0 8px rgba(var(--vrcd-neon-raw), 0.25);
-  background-color: rgba(var(--vrcd-neon-raw), 0.06);
+  color: #ffffff;
+  background-color: var(--vrcd-neon);
+  border-color: var(--vrcd-neon);
 }
 
 .filter-buttons button:disabled {
-  opacity: 0.3;
+  opacity: 0.4;
   cursor: default;
 }
 
-/* Add Row Background Styles */
+/* ── Row tinting for installed/update states ──────────────────────────── */
 .row-installed .game-name-main {
-  color: var(--colorBrandForeground1); /* Lighter green, slightly transparent */
+  color: var(--quest-success);
 }
-/* Style for rows with available updates (Added) */
 .row-update-available .game-name-main {
-  color: var(--colorPaletteLightGreenForeground1); /* A slightly more noticeable light green */
+  color: var(--quest-warn);
   font-weight: 600;
 }
-
-/* Standard hover for non-installed */
-/* .row-installed:hover {
-  background-color: var(--colorPaletteGreenBackground2);
-} */
-/* Standard hover for non-installed */
-/* .row-update-available:hover {
-  background-color: var(--colorPaletteGreenBackground2);
-} */
 
 .row-not-installed:hover td,
 .row-installed:hover td,
 .row-update-available:hover td {
-  background-color: rgba(var(--vrcd-neon-raw),0.12) !important;
+  background-color: rgba(255, 255, 255, 0.04) !important;
   cursor: pointer;
 }
 
-/* Resizer Styles */
+/* ── Resizer ──────────────────────────────────────────────────────────── */
 .resizer {
   position: absolute;
   right: 0;
   top: 0;
   height: 100%;
-  width: 5px; /* Handle width */
-  background: rgba(0, 0, 0, 0.1); /* Subtle handle color */
+  width: 5px;
+  background: rgba(255, 255, 255, 0.06);
   cursor: col-resize;
   user-select: none;
-  touch-action: none; /* Disable touch scrolling */
-  opacity: 0; /* Hide by default */
+  touch-action: none;
+  opacity: 0;
   transition: opacity 0.2s;
 }
 
@@ -355,23 +382,20 @@
   background: var(--vrcd-neon);
 }
 
-.games-table th {
-  z-index: 0;
-}
+.games-table th { z-index: 0; }
 
-/* Cell Styling for Version Column (Added) */
 .version-cell {
   display: flex;
   flex-direction: column;
-  justify-content: center; /* Align vertically */
+  justify-content: center;
   height: 100%;
   line-height: 1.3;
 }
 
 .list-version-main {
   font-weight: normal;
-  font-size: 1em;
-  color: rgba(var(--vrcd-neon-raw), 0.88);
+  font-size: 13px;
+  color: var(--quest-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -379,8 +403,7 @@
 
 .installed-version-info {
   font-size: 11px;
-  color: rgba(168, 85, 247, 0.85);
-  font-family: var(--vrcd-font-mono);
+  color: var(--quest-text-dim);
   margin-top: 2px;
   white-space: nowrap;
   overflow: hidden;
@@ -389,23 +412,22 @@
 
 /* Alternating row colours */
 .table-wrapper.alternating-rows tr.row-even td {
-  background-color: var(--row-even-color, #050514);
+  background-color: var(--row-even-color, var(--quest-bg-raised));
 }
 .table-wrapper.alternating-rows tr.row-odd td {
-  background-color: var(--row-odd-color, rgba(var(--vrcd-neon-raw),0.06));
+  background-color: var(--row-odd-color, rgba(255, 255, 255, 0.02));
 }
-/* Hover always wins over stripe colour */
 .table-wrapper.alternating-rows tr.row-even:hover td,
 .table-wrapper.alternating-rows tr.row-odd:hover td {
-  background-color: rgba(var(--vrcd-neon-raw),0.12);
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
-/* ── Card grid view ────────────────────────────────────────────── */
+/* ── Card grid ───────────────────────────────────────────────────────── */
 .games-card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(var(--card-min-w, 200px), 1fr));
-  gap: 12px;
-  padding: 12px;
+  gap: 14px;
+  padding: 14px;
   overflow-y: auto;
   flex: 1;
   align-content: start;
@@ -414,26 +436,27 @@
 .game-card {
   display: flex;
   flex-direction: column;
-  border-radius: 8px;
+  border-radius: var(--quest-radius-lg);
   overflow: hidden;
   cursor: pointer;
-  background-color: #050514;
-  border: 1px solid rgba(var(--vrcd-neon-raw), 0.3);
-  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+  background-color: var(--quest-surface);
+  border: 1px solid var(--quest-border);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s, background-color 0.18s;
   min-height: 220px;
 }
 
 .game-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 0 14px rgba(var(--vrcd-neon-raw), 0.25), 0 0 4px rgba(var(--vrcd-purple-raw), 0.2);
-  border-color: rgba(var(--vrcd-neon-raw), 0.65);
+  box-shadow: var(--quest-shadow-2);
+  border-color: var(--quest-border-strong);
+  background-color: var(--quest-surface-hover);
 }
 
 .game-card-thumbnail-wrap {
   position: relative;
   width: 100%;
   aspect-ratio: 1 / 1;
-  background-color: #02020e;
+  background-color: var(--quest-bg);
   overflow: hidden;
 }
 
@@ -446,99 +469,97 @@
 
 .game-card-badge {
   position: absolute;
-  top: 6px;
-  right: 6px;
-  font-size: 10px;
+  top: 8px;
+  right: 8px;
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.06em;
-  padding: 2px 7px;
-  border-radius: 10px;
+  letter-spacing: 0;
+  padding: 3px 9px;
+  border-radius: var(--quest-radius-pill);
   pointer-events: none;
+  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
 }
 
 .game-card-badge.installed {
-  background: rgba(var(--vrcd-neon-raw), 0.85);
-  color: #050514;
-  font-family: var(--vrcd-font-mono);
+  background: var(--quest-success);
+  color: #0c1b13;
 }
 
 .game-card-badge.update {
-  background: rgba(var(--vrcd-purple-raw), 0.9);
-  color: #fff;
-  font-family: var(--vrcd-font-mono);
+  background: var(--vrcd-neon);
+  color: #ffffff;
 }
 
 .game-card-badge.new-game {
-  background: rgba(var(--vrcd-neon-raw), 0.9);
-  color: #050514;
-  font-family: var(--vrcd-font-mono);
+  background: var(--quest-warn);
+  color: #2b1d05;
 }
 
 .game-card-badge.updated-game {
-  background: rgba(255, 165, 0, 0.9);
-  color: #050514;
-  font-family: var(--vrcd-font-mono);
+  background: var(--quest-warn);
+  color: #2b1d05;
 }
 
 .game-card-body {
-  padding: 8px 10px 10px;
+  padding: 10px 12px 12px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
   flex: 1;
 }
 
 .game-card-title {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
-  color: var(--vrcd-neon);
+  color: var(--quest-text);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  line-height: 1.3;
+  line-height: 1.35;
+  letter-spacing: -0.005em;
 }
 
 .game-card-meta {
-  font-size: 11px;
-  color: rgba(var(--vrcd-purple-raw), 0.85);
-  font-family: var(--vrcd-font-mono);
+  font-size: 12px;
+  color: var(--quest-text-muted);
 }
 
-.game-card-progress {
-  margin-top: 4px;
-}
+.game-card-progress { margin-top: 4px; }
 
 .game-card-status-text {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--vrcd-neon);
   margin-top: 2px;
-  font-family: var(--vrcd-font-mono);
 }
 
-/* ── Neon-themed search Input ──────────────────────────────────────────────── */
+/* ── Input restyling (Fluent components) ─────────────────────────────────── */
 .search-wrap .fui-Input {
-  background-color: #050514;
-  border-color: rgba(var(--vrcd-neon-raw), 0.3);
-  font-family: var(--vrcd-font-mono);
+  background-color: var(--quest-surface);
+  border: 1px solid var(--quest-border-strong);
+  border-radius: var(--quest-radius-pill);
+  padding: 2px 10px;
 }
 .search-wrap .fui-Input:hover {
-  border-color: rgba(var(--vrcd-neon-raw), 0.55);
+  border-color: var(--quest-border-strong);
+  background-color: var(--quest-surface-hover);
 }
 .search-wrap .fui-Input:focus-within {
-  border-color: rgba(var(--vrcd-neon-raw), 0.7);
-  box-shadow: 0 0 0 1px rgba(var(--vrcd-neon-raw), 0.3);
+  border-color: var(--vrcd-neon);
+  box-shadow: 0 0 0 3px rgba(61, 125, 255, 0.2);
 }
 .search-wrap .fui-Input input {
-  color: var(--vrcd-neon);
+  color: var(--quest-text);
   background-color: transparent;
   caret-color: var(--vrcd-neon);
 }
 .search-wrap .fui-Input input::placeholder {
-  color: rgba(var(--vrcd-neon-raw), 0.35);
+  color: var(--quest-text-dim);
 }
 .search-wrap .fui-Input .fui-Input__contentAfter,
 .search-wrap .fui-Input .fui-Input__contentBefore {
-  color: rgba(var(--vrcd-neon-raw), 0.5);
+  color: var(--quest-text-muted);
 }

@@ -1,3 +1,65 @@
+/* ── Quest cast-loading style loader ─────────────────────────── */
+@keyframes questIndeterminate {
+  0%   { left: -35%; width: 35%; }
+  60%  { left: 100%; width: 35%; }
+  100% { left: 100%; width: 35%; }
+}
+
+.quest-loader {
+  width: min(560px, 78%);
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  align-items: flex-start;
+}
+
+.quest-loader__track {
+  position: relative;
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.quest-loader__fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--vrcd-neon);
+  transition: width 0.35s ease-out;
+}
+
+.quest-loader__indeterminate {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--vrcd-neon);
+  animation: questIndeterminate 1.6s ease-in-out infinite;
+}
+
+.quest-loader__text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.quest-loader__title {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--quest-text);
+  letter-spacing: -0.01em;
+}
+
+.quest-loader__subtitle {
+  margin: 0;
+  font-size: 15px;
+  color: var(--quest-text-muted);
+  line-height: 1.5;
+}
+
 /* ── App shell ───────────────────────────────────────────────── */
 .app-container {
   display: flex;
