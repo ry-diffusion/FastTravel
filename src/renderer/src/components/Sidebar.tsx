@@ -6,14 +6,21 @@ import {
   Settings,
   Sun,
   Moon,
-  HelpCircle
+  HelpCircle,
+  BatteryFull,
+  BatteryMedium,
+  BatteryLow,
+  BatteryWarning,
+  HardDrive
 } from 'lucide-react'
 import { Button } from '@renderer/components/ui/button'
 import { Badge } from '@renderer/components/ui/badge'
 import { Separator } from '@renderer/components/ui/separator'
 import { Switch } from '@renderer/components/ui/switch'
+import { Progress } from '@renderer/components/ui/progress'
 import { Avatar, AvatarFallback, AvatarImage } from '@renderer/components/ui/avatar'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@renderer/components/ui/tooltip'
+import { cn } from '@renderer/lib/utils'
 import { useAdb } from '@renderer/hooks/useAdb'
 import { useGames } from '@renderer/hooks/useGames'
 import { useSettings } from '@renderer/hooks/useSettings'
@@ -40,7 +47,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const { isConnected, selectedDeviceDetails } = useAdb()
   const { games } = useGames()
-  const { colorScheme, setColorScheme, serverConfig } = useSettings()
+  const { colorScheme, setColorScheme } = useSettings()
   const { queue: downloadQueue } = useDownload()
   const { queue: uploadQueue } = useUpload()
 
@@ -52,9 +59,6 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const isDark = colorScheme === 'dark'
 
-  // Server online = baseUri is set and non-empty
-  const serverOnline = Boolean(serverConfig?.baseUri)
-
   const deviceLabel = useMemo(() => {
     if (!isConnected || !selectedDeviceDetails) return null
     return (
@@ -64,6 +68,44 @@ const Sidebar: React.FC<SidebarProps> = ({
       'Headset'
     )
   }, [isConnected, selectedDeviceDetails])
+
+  const battery =
+    isConnected && typeof selectedDeviceDetails?.batteryLevel === 'number'
+      ? selectedDeviceDetails.batteryLevel
+      : null
+
+  const { storageFreeGB, storageTotalGB, storageUsedPct } = useMemo(() => {
+    const parse = (s: string | null | undefined): number | null => {
+      if (!s) return null
+      const m = /([\d.]+)\s*([GMTK])/i.exec(s)
+      if (!m) return null
+      const n = parseFloat(m[1])
+      const unit = m[2].toUpperCase()
+      const mult = unit === 'T' ? 1024 : unit === 'M' ? 1 / 1024 : unit === 'K' ? 1 / 1048576 : 1
+      return n * mult
+    }
+    const free = parse(selectedDeviceDetails?.storageFree)
+    const total = parse(selectedDeviceDetails?.storageTotal)
+    const used = free != null && total != null && total > 0
+      ? Math.max(0, Math.min(100, ((total - free) / total) * 100))
+      : null
+    return { storageFreeGB: free, storageTotalGB: total, storageUsedPct: used }
+  }, [selectedDeviceDetails?.storageFree, selectedDeviceDetails?.storageTotal])
+
+  const BatteryIcon =
+    battery == null
+      ? BatteryWarning
+      : battery >= 70
+        ? BatteryFull
+        : battery >= 30
+          ? BatteryMedium
+          : BatteryLow
+  const batteryTone =
+    battery == null
+      ? 'text-muted-foreground'
+      : battery >= 30
+        ? 'text-foreground'
+        : 'text-amber-500'
 
   const navItem = (
     view: SidebarView,
@@ -125,36 +167,48 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Footer — pinned to bottom */}
       <div className="mt-auto border-t border-border px-3 pt-3 pb-3 space-y-3">
-        {/* Status rows */}
-        <dl className="space-y-1.5 text-xs">
-          {/* Server */}
-          <div className="flex items-center justify-between gap-2">
-            <dt className="text-muted-foreground">Server</dt>
-            <dd className={serverOnline ? 'text-emerald-500' : 'text-amber-500'}>
-              {serverOnline ? 'Online' : 'Offline'}
-            </dd>
-          </div>
+        {/* Device status block */}
+        {isConnected && deviceLabel ? (
+          <div className="space-y-2.5 rounded-md bg-muted/30 p-2.5">
+            <div className="flex items-center gap-2">
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" aria-hidden />
+              <span className="truncate text-xs font-medium text-foreground" title={deviceLabel}>
+                {deviceLabel}
+              </span>
+            </div>
 
-          {/* Device */}
-          <div className="flex items-center justify-between gap-2">
-            <dt className="text-muted-foreground">Device</dt>
-            <dd
-              className={
-                isConnected && deviceLabel ? 'text-emerald-500' : 'text-muted-foreground'
-              }
-            >
-              {isConnected && deviceLabel ? deviceLabel : 'Not connected'}
-            </dd>
-          </div>
+            <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+              {battery != null && (
+                <span className={cn('flex items-center gap-1', batteryTone)}>
+                  <BatteryIcon className="h-3.5 w-3.5" aria-hidden />
+                  <span className="tabular-nums">{battery}%</span>
+                </span>
+              )}
+              {storageFreeGB != null && storageTotalGB != null && (
+                <span className="flex items-center gap-1" title={`${storageFreeGB.toFixed(1)} GB free of ${storageTotalGB.toFixed(0)} GB`}>
+                  <HardDrive className="h-3.5 w-3.5" aria-hidden />
+                  <span className="tabular-nums">{storageFreeGB.toFixed(0)} GB free</span>
+                </span>
+              )}
+            </div>
 
-          {/* Library */}
-          <div className="flex items-center justify-between gap-2">
-            <dt className="text-muted-foreground">Library</dt>
-            <dd className="text-foreground">
-              {games.length} {games.length === 1 ? 'game' : 'games'}
-            </dd>
+            {storageUsedPct != null && (
+              <Progress value={storageUsedPct} className="h-1" />
+            )}
           </div>
-        </dl>
+        ) : (
+          <div className="flex items-center gap-2 rounded-md bg-muted/20 px-2.5 py-2 text-xs text-muted-foreground">
+            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground/40" aria-hidden />
+            No device connected
+          </div>
+        )}
+
+        <div className="flex items-center justify-between gap-2 px-0.5 text-xs">
+          <span className="text-muted-foreground">Library</span>
+          <span className="text-foreground tabular-nums">
+            {games.length.toLocaleString()} {games.length === 1 ? 'game' : 'games'}
+          </span>
+        </div>
 
         {/* Theme toggle */}
         <div className="flex items-center justify-between gap-2">
