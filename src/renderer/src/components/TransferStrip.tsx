@@ -80,9 +80,18 @@ const TransferStrip: React.FC = () => {
 
   const pct = Math.min(100, Math.max(0, Math.round(entry.progress ?? 0)))
 
+  const speedOk =
+    entry.speed &&
+    !/undefined|nan/i.test(entry.speed) &&
+    !/^0(\.0+)?\s*(b|kb|mb|gb|tb)\/s/i.test(entry.speed.trim())
+  let etaOk = false
+  if (entry.eta && !/undefined|nan/i.test(entry.eta) && entry.eta !== '-') {
+    const m = /^(\d+):(\d{1,2}):(\d{1,2})$/.exec(entry.eta.trim())
+    etaOk = !m || parseInt(m[1], 10) <= 24
+  }
   const meta: string[] = [entry.stage]
-  if (entry.speed) meta.push(entry.speed)
-  if (entry.eta) meta.push(`ETA ${entry.eta}`)
+  if (speedOk) meta.push(entry.speed as string)
+  if (etaOk) meta.push(`ETA ${entry.eta}`)
 
   return (
     <div className="flex items-center gap-3 border-b border-border bg-card px-4 py-2">

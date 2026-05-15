@@ -37,12 +37,39 @@ function formatAddedTime(timestamp: number): string {
   }
 }
 
+// Drop speed values the backend hasn't computed yet (e.g. "0 B/s",
+// "16.97 undefined/s", empty string). Only return a string when it
+// looks like a real rate.
+function cleanSpeed(raw: string | undefined): string | null {
+  if (!raw) return null
+  const s = raw.trim()
+  if (!s || s === '-' || /^0(\.0+)?\s*(b|kb|mb|gb|tb)\/s/i.test(s)) return null
+  if (/undefined|nan/i.test(s)) return null
+  return s
+}
+
+// Hide bogus ETA values (the backend emits "2562047:47:16" or huge
+// values before it has speed data). Anything over 24 h is suspicious.
+function cleanEta(raw: string | undefined): string | null {
+  if (!raw) return null
+  const s = raw.trim()
+  if (!s || s === '-' || /undefined|nan/i.test(s)) return null
+  const m = /^(\d+):(\d{1,2}):(\d{1,2})$/.exec(s)
+  if (m) {
+    const hours = parseInt(m[1], 10)
+    if (!Number.isFinite(hours) || hours > 24) return null
+  }
+  return s
+}
+
 function statusLabel(item: DownloadItem): string {
   switch (item.status) {
     case 'Queued':
       return 'Queued'
-    case 'Downloading':
-      return item.speed ? `Downloading · ${item.speed}` : 'Downloading'
+    case 'Downloading': {
+      const speed = cleanSpeed(item.speed)
+      return speed ? `Downloading · ${speed}` : 'Downloading'
+    }
     case 'Extracting':
       return 'Extracting'
     case 'Installing':
@@ -274,8 +301,8 @@ const DownloadRow: React.FC<DownloadRowProps> = ({
           </div>
         )}
 
-        {item.status === 'Downloading' && item.eta && item.eta !== '-' && (
-          <span className="text-xs text-muted-foreground">ETA {item.eta}</span>
+        {item.status === 'Downloading' && cleanEta(item.eta) && (
+          <span className="text-xs text-muted-foreground">ETA {cleanEta(item.eta)}</span>
         )}
       </div>
 
