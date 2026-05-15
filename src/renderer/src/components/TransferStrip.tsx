@@ -72,8 +72,13 @@ const TransferStrip: React.FC = () => {
 
   if (activeEntries.length === 0) return null
 
-  const entry = activeEntries[index]
-  const pct = Math.min(100, Math.max(0, Math.round(entry.progress)))
+  // Clamp during render so a stale index from the previous render
+  // (entries shrank, useEffect hasn't fired yet) doesn't yield undefined.
+  const safeIndex = Math.min(index, activeEntries.length - 1)
+  const entry = activeEntries[safeIndex]
+  if (!entry) return null
+
+  const pct = Math.min(100, Math.max(0, Math.round(entry.progress ?? 0)))
 
   const meta: string[] = [entry.stage]
   if (entry.speed) meta.push(entry.speed)
