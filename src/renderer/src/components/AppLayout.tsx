@@ -12,7 +12,6 @@ import { Button } from '@renderer/components/ui/button'
 import { Card, CardContent } from '@renderer/components/ui/card'
 
 import { ErrorBoundary } from './ErrorBoundary'
-import { UpdateNotification } from './UpdateNotification'
 import CreditsDialog from './CreditsDialog'
 import UploadGamesDialog from './UploadGamesDialog'
 import Sidebar, { SidebarView } from './Sidebar'
@@ -312,9 +311,6 @@ const AppLayout: React.FC = () => {
           </div>
         </main>
       </div>
-
-      {/* Update notification — manages own visibility */}
-      <UpdateNotification />
 
       {/* Off-limits dialogs — rendered outside the layout grid */}
       <UploadGamesDialog />

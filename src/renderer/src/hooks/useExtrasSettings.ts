@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 
 // ─── Storage keys ────────────────────────────────────────────────────────────
-export const DISABLE_AUTO_UPDATE_KEY = 'vrcyberdeck:disableAutoUpdate'
 export const FONT_SCALE_KEY = 'vrcyberdeck:fontScale'
 export const DELETE_ON_REMOVE_KEY = 'vrcyberdeck:deleteOnRemove'
 export const DISABLE_SIDELOADING_KEY = 'vrcyberdeck:disableSideloading'
@@ -135,10 +134,6 @@ export function applyAccentColor(hex: string | null): void {
   } catch { /* ignore */ }
 }
 
-export function isAutoUpdateDisabled(): boolean {
-  return readBool(DISABLE_AUTO_UPDATE_KEY, false)
-}
-
 export function getFontScale(): number {
   const n = readNumber(FONT_SCALE_KEY, 1)
   return Math.max(0.75, Math.min(2.0, n))
@@ -146,14 +141,12 @@ export function getFontScale(): number {
 
 // ─── React hook for Settings UI ─────────────────────────────────────────────
 export interface ExtrasSettings {
-  disableAutoUpdate: boolean
   fontScale: number
   deleteOnRemove: DeleteOnRemove
   disableSideloading: boolean
   colorblindMode: boolean
   accentColor: string | null
   fontFamily: FontFamilyChoice
-  setDisableAutoUpdate: (v: boolean) => void
   setFontScale: (v: number) => void
   setDeleteOnRemove: (v: DeleteOnRemove) => void
   setDisableSideloading: (v: boolean) => void
@@ -163,7 +156,6 @@ export interface ExtrasSettings {
 }
 
 export function useExtrasSettings(): ExtrasSettings {
-  const [disableAutoUpdate, setDisableAutoUpdateState] = useState<boolean>(() => readBool(DISABLE_AUTO_UPDATE_KEY, false))
   const [fontScale, setFontScaleState] = useState<number>(() => getFontScale())
   const [deleteOnRemove, setDeleteOnRemoveState] = useState<DeleteOnRemove>(readDeleteOnRemove)
   const [disableSideloading, setDisableSideloadingState] = useState<boolean>(() => readBool(DISABLE_SIDELOADING_KEY, false))
@@ -179,7 +171,6 @@ export function useExtrasSettings(): ExtrasSettings {
     try { localStorage.setItem(key, String(value)) } catch { /* ignore */ }
   }
 
-  const setDisableAutoUpdate = useCallback((v: boolean) => { setDisableAutoUpdateState(v); persistBool(DISABLE_AUTO_UPDATE_KEY, v) }, [])
   const setFontScale = useCallback((v: number) => {
     const clamped = Math.max(0.75, Math.min(2.0, v))
     setFontScaleState(clamped)
@@ -238,8 +229,8 @@ export function useExtrasSettings(): ExtrasSettings {
   }, [colorblindMode, accentColor])
 
   return {
-    disableAutoUpdate, fontScale, deleteOnRemove, disableSideloading, colorblindMode, accentColor, fontFamily,
-    setDisableAutoUpdate, setFontScale, setDeleteOnRemove, setDisableSideloading, setColorblindMode, setAccentColor, setFontFamily
+    fontScale, deleteOnRemove, disableSideloading, colorblindMode, accentColor, fontFamily,
+    setFontScale, setDeleteOnRemove, setDisableSideloading, setColorblindMode, setAccentColor, setFontFamily
   }
 }
 

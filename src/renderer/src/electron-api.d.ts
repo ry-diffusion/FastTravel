@@ -6,7 +6,6 @@ import {
   GameAPIRenderer,
   SettingsAPIRenderer,
   UploadAPIRenderer,
-  UpdateAPIRenderer,
   DependencyAPIRenderer,
   LogsAPIRenderer,
   MirrorAPIRenderer,
@@ -32,7 +31,6 @@ declare global {
       downloads: DownloadAPIRenderer
       settings: SettingsAPIRenderer
       uploads: UploadAPIRenderer
-      updates: UpdateAPIRenderer
       logs: LogsAPIRenderer
       mirrors: MirrorAPIRenderer
       dialog: {

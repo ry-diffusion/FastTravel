@@ -13,7 +13,6 @@ import gameService from './services/gameService'
 import metaStoreService from './services/metaStoreService'
 import downloadService from './services/downloadService'
 import uploadService from './services/uploadService'
-import updateService from './services/updateService'
 import logsService from './services/logsService'
 import mirrorService from './services/mirrorService'
 import wifiBookmarksService from './services/wifiBookmarksService'
@@ -253,17 +252,6 @@ function createWindow(): void {
             await wifiBookmarksService.initialize()
             console.log('WiFi Bookmarks Service initialized.')
             dependencyService.setDependencyServiceStatus('INITIALIZED')
-
-            // Initialize Update Service
-            if (mainWindow) {
-              updateService.initialize()
-              console.log('Update Service initialized.')
-
-              // Check for updates on startup
-              updateService.checkForUpdates().catch((err) => {
-                console.error('Failed to check for updates on startup:', err)
-              })
-            }
 
             typedWebContentsSend.send(
               mainWindow,
@@ -579,72 +567,6 @@ app.whenReady().then(async () => {
       `[IPC] Setting app connection state - Device: ${selectedDevice}, Connected: ${isConnected}`
     )
     downloadService.setAppConnectionState(selectedDevice, isConnected)
-  })
-
-  // --- Update Handlers ---
-  typedIpcMain.handle('update:check-for-updates', async () => {
-    console.log('[IPC] Check for updates requested')
-    return updateService.checkForUpdates()
-  })
-
-  typedIpcMain.on('update:download', (_event, url) => {
-    console.log('[IPC] Open download page requested for:', url)
-    updateService.openDownloadPage(url)
-  })
-
-  typedIpcMain.on('update:open-releases', () => {
-    console.log('[IPC] Open releases page requested')
-    updateService.openReleasesPage()
-  })
-
-  typedIpcMain.on('update:open-repository', () => {
-    console.log('[IPC] Open repository page requested')
-    updateService.openRepositoryPage()
-  })
-
-  typedIpcMain.on('update:start-download', () => {
-    console.log('[IPC] Start download requested')
-    updateService.startDownload().catch((err) => {
-      console.error('[IPC Handler Error] startDownload failed:', err)
-    })
-  })
-
-  typedIpcMain.on('update:install', () => {
-    console.log('[IPC] Install update requested')
-    updateService.installUpdate().catch((err) => {
-      console.error('[IPC Handler Error] installUpdate failed:', err)
-    })
-  })
-
-  // Set up update service event forwarding to renderer
-  updateService.on('checking-for-update', () => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      typedWebContentsSend.send(mainWindow, 'update:checking-for-update')
-    }
-  })
-
-  updateService.on('update-available', (info) => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      typedWebContentsSend.send(mainWindow, 'update:update-available', info)
-    }
-  })
-
-  updateService.on('error', (err) => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      typedWebContentsSend.send(mainWindow, 'update:error', err)
-    }
-  })
-
-  updateService.on('download-progress', (progressInfo) => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      typedWebContentsSend.send(mainWindow, 'update:download-progress', progressInfo)
-    }
-  })
-
-  updateService.on('update-downloaded', (updateInfo) => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      typedWebContentsSend.send(mainWindow, 'update:update-downloaded', updateInfo)
-    }
   })
 
   // --- Settings Handlers ---

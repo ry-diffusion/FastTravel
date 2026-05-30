@@ -66,8 +66,6 @@ const SwitchRow: React.FC<SwitchRowProps> = ({ label, description, checked, onCh
 
 const AppearanceSection: React.FC = () => {
   const {
-    disableAutoUpdate,
-    setDisableAutoUpdate,
     fontScale,
     setFontScale,
     deleteOnRemove,
@@ -99,16 +97,6 @@ const AppearanceSection: React.FC = () => {
 
   return (
     <div className="space-y-5">
-      {/* Disable auto-update */}
-      <SwitchRow
-        id="disable-auto-update"
-        label="Disable auto-update check on launch"
-        description="Prevents the app from checking GitHub for updates when it starts. You can still update manually."
-        checked={disableAutoUpdate}
-        onChange={setDisableAutoUpdate}
-      />
-      <Separator className="opacity-40" />
-
       {/* Disable sideloading */}
       <SwitchRow
         id="disable-sideloading"

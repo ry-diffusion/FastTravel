@@ -7,8 +7,6 @@ import {
   PackageInfo,
   UploadItem,
   UploadPreparationProgress,
-  UpdateInfo,
-  UpdateProgressInfo,
   BlacklistEntry,
   Mirror,
   MirrorTestResult,
@@ -102,9 +100,6 @@ export interface IPCChannels {
   'app:get-system-username': DefineChannel<[], string>
   'app:get-sound': DefineChannel<[name: string], string | null>
 
-  // Update related channels
-  'update:check-for-updates': DefineChannel<[], void>
-
   // Settings related channels
   'settings:get-download-path': DefineChannel<[], string>
   'settings:set-download-path': DefineChannel<[path: string], void>
@@ -176,11 +171,6 @@ export interface IPCSendChannels {
   'download:set-sideloading-disabled': boolean
   'upload:remove': string
   'upload:cancel': string
-  'update:download': string
-  'update:open-releases': void
-  'update:open-repository': void
-  'update:start-download': void
-  'update:install': void
   'app:confirm-close': void
 }
 
@@ -201,11 +191,6 @@ export interface IPCEvents {
   'upload:queue-updated': [queue: UploadItem[]]
   'settings:download-speed-limit-changed': [limit: number]
   'settings:upload-speed-limit-changed': [limit: number]
-  'update:checking-for-update': []
-  'update:update-available': [updateInfo: UpdateInfo]
-  'update:error': [error: Error]
-  'update:download-progress': [progressInfo: UpdateProgressInfo]
-  'update:update-downloaded': [updateInfo: UpdateInfo]
   'mirrors:test-progress': [id: string, status: 'testing' | 'success' | 'failed', error?: string]
   'mirrors:mirrors-updated': [mirrors: Mirror[]]
   'app:close-requested': []
